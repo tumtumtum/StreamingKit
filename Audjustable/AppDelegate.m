@@ -34,7 +34,7 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {	
-	NSURL* url = [NSURL URLWithString:@"http://audjustable.googlecode.com/files/sample.m4a"];
+	NSURL* url = [NSURL URLWithString:@"https://github.com/downloads/tumtumtum/audjustable/sample.m4a"];
     
 	[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:url] withQueueItemId:url];
 }

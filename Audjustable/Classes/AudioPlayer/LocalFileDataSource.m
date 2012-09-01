@@ -74,8 +74,6 @@
 {
     NSURL* url = [[NSURL alloc] initFileURLWithPath:self.filePath];
     
-    BLOG(@"Opening %@", filePath);
-    
     if (stream)
     {
         CFReadStreamClose(stream);
@@ -148,8 +146,6 @@
     if (CFReadStreamSetProperty(stream, kCFStreamPropertyFileCurrentOffset, (__bridge CFTypeRef)[NSNumber numberWithLongLong:offset]) != TRUE)
     {
         position = 0;
-        
-        BLOG(@"Problem setting stream position");
     }
     else
     {

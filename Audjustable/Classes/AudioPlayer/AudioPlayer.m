@@ -741,12 +741,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 entry.bufferIndex = -1;
                 
-                BLOG(@"Finished playing %@", entry.queueItemId);
-
                 if (playbackThread)
                 {
-                    BLOG(@"Trying to call CFRunLoopPerformBlock due to finished playing %@", entry.queueItemId);
-
                     CFRunLoopPerformBlock([playbackThreadRunLoop getCFRunLoop], NSDefaultRunLoopMode, ^
                     {
                         [self audioQueueFinishedPlaying:entry];
@@ -903,7 +899,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
-        BLOG(@"Could not set hardware codec policy");
     }
 #endif
         
@@ -1086,9 +1081,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             pthread_mutex_lock(&queueBuffersMutex);
         }
     }
-    
-    BLOG(@"Started buffering %@", entry.queueItemId);
-    
+
     if (audioFileStream)
     {
         AudioFileStreamClose(audioFileStream);
@@ -1100,8 +1093,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
-        BLOG(@"Error creating AudioFileStream");
-        
         return;
     }
     
@@ -1133,8 +1124,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) audioQueueFinishedPlaying:(QueueEntry*)entry
 {
     pthread_mutex_lock(&queueBuffersMutex);
-    
-    BLOG(@"didFinishPlaying on runloop");
     
     QueueEntry* next = [bufferingQueue dequeue];
     
@@ -1174,20 +1163,14 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             dispatch_async(dispatch_get_main_queue(), ^
             {
-                BLOG(@"didFinishPlaying: %@", queueItemId);
-                
                 [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
             });
         }
         
         if (nextIsDifferent)
         {
-            BLOG(@"Switch to playing: %@", currentlyPlayingEntry.queueItemId);
-            
             dispatch_async(dispatch_get_main_queue(), ^
             {
-                BLOG(@"didStartPlaying: %@", playingQueueItemId);
-                
                 [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
             });
         }
@@ -1205,8 +1188,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             dispatch_async(dispatch_get_main_queue(), ^
             {
-                BLOG(@"didFinishPlaying: %@", queueItemId);
-                
                 [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
             });
         }
@@ -1223,8 +1204,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else if (newFileToPlay)
         {
-            BLOG(@"Playing new file");
-            
             QueueEntry* entry = [upcomingQueue dequeue];
             
             self.internalState = AudioPlayerInternalStateWaitingForData;
@@ -1236,8 +1215,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }            
         else if (seekToTimeWasRequested && currentlyPlayingEntry && currentlyPlayingEntry != currentlyReadingEntry)
         {
-            BLOG(@"Seek was requested -- switching files necessary");
-            
             currentlyPlayingEntry.bufferIndex = -1;
             [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES];
             
@@ -1248,11 +1225,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else if (currentlyReadingEntry == nil)
         {
-            BLOG(@"Finished reading previous file");
-            
             if (nextIsIncompatible && currentlyPlayingEntry != nil)
             {
-                BLOG(@"Holding off cause next is incompatible");
+                // Holding off cause next is incompatible
             }
             else
             {                    
@@ -1268,8 +1243,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 {
                     if (self.internalState != AudioPlayerInternalStateStopped)
                     {
-                        BLOG(@"End of playing queue -- Stopping AudioQueue");
-                        
                         [self stopAudioQueue];
                     }
                 }
@@ -1338,8 +1311,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         if (seekToTimeWasRequested && currentlyReadingEntry == currentlyPlayingEntry)
         {
-            BLOG(@"Seeking to %d in file %@", (int)requestedSeekTime, currentlyReadingEntry.queueItemId);
-            
             [self processSeekToTime];
 			
             seekToTimeWasRequested = NO;
@@ -1481,8 +1452,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {    
         audioQueueFlushing = YES;
         
-        BLOG(@"AudioQueueStop");
-        
         error = AudioQueueStop(audioQueue, true);
         
         audioQueue = nil;
@@ -1529,8 +1498,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     
     audioQueueFlushing = YES;
-    
-    BLOG(@"AudioQueueReset");
     
     error = AudioQueueReset(audioQueue);
     
@@ -1636,8 +1603,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) dataSourceEof:(DataSource*)dataSourceIn
 {
-    BLOG(@"eof %@", [dataSourceIn description]);
-
     if (currentlyReadingEntry.dataSource != dataSourceIn)
     {
         return;
@@ -1659,9 +1624,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         if (audioQueue)
         {
-            BLOG(@"Finished buffering %@", currentlyReadingEntry.queueItemId);
-            
-            currentlyReadingEntry.bufferIndex = audioPacketsReadCount;                    
+            currentlyReadingEntry.bufferIndex = audioPacketsReadCount;
             currentlyReadingEntry = nil;
         }
         else
@@ -1681,8 +1644,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (self.internalState != AudioPlayerInternalStatePaused)
         {
             self.internalState = AudioPlayerInternalStatePaused;
-            
-            BLOG(@"AudioQueuePause");
             
             if (audioQueue)
             {
