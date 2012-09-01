@@ -16,7 +16,7 @@ Audjustable is audio streaming class for iOS and OSX.  Audjustable uses CoreAudi
 
 ## Usage
 
-Download the [source](https://github.com/tumtumtum/audjustable/zipball/master) which includes a simple audio player project that streams audio over HTTP or locally using the `HttpDataSource` or `LocalFileDataSource" classes respectively.
+Download the [source](https://github.com/tumtumtum/audjustable/zipball/master) which includes a simple audio player project that streams audio over HTTP or locally using the `HttpDataSource` or `LocalFileDataSource` classes respectively.
 
 If you would like to integrate the AudioPlayer directly into your project you only need to copy the files inside the `/Audjustable/Classes/AudioPlayer` [directory](https://github.com/tumtumtum/audjustable/tree/master/Audjustable/Classes/AudioPlayer) into your project.
 
