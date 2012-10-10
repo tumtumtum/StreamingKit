@@ -2,7 +2,7 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- http://http://code.google.com/p/bluecucumber
+ https://github.com/tumtumtum/audjustable
  
  Inspired by Matt Gallagher's AudioStreamer:
  https://github.com/mattgallagher/AudioStreamer 
@@ -188,5 +188,6 @@ AudioQueueBufferRefLookupEntry;
 -(void) stop;
 -(void) flushStop;
 -(void) dispose;
+-(NSObject*) currentlyPlayingQueueItemId;
 
 @end

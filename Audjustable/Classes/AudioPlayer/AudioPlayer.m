@@ -2,7 +2,7 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- http://http://code.google.com/p/bluecucumber
+ https://github.com/tumtumtum/audjustable
  
  Inspired by Matt Gallagher's AudioStreamer:
  https://github.com/mattgallagher/AudioStreamer 
@@ -695,7 +695,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (currentlyPlayingEntry)
     {
-        currentlyPlayingEntry->bytesPlayed += bufferIn->mAudioDataByteSize;
+        if (!audioQueueFlushing)
+        {
+            currentlyPlayingEntry->bytesPlayed += bufferIn->mAudioDataByteSize;
+        }
     }
     
     int index = (int)bufferIn % audioQueueBufferRefLookupCount;
@@ -1750,6 +1753,18 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     [self stop];
     [self stopThread];
+}
+
+-(NSObject*) currentlyPlayingQueueItemId
+{
+    QueueEntry* entry = currentlyPlayingEntry;
+    
+    if (entry == nil)
+    {
+        return nil;
+    }
+    
+    return entry.queueItemId;
 }
 
 @end

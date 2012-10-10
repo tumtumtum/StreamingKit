@@ -2,7 +2,7 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- http://http://code.google.com/p/bluecucumber
+ https://github.com/tumtumtum/audjustable
  
  Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
@@ -48,6 +48,8 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
             break;
         case kCFStreamEventHasBytesAvailable:
             [datasource dataAvailable];
+            break;
+        default:
             break;
     }
 }
