@@ -103,6 +103,7 @@ AudioPlayerErrorCode;
 -(void) audioPlayer:(AudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(AudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration;
 @optional
 -(void) audioPlayer:(AudioPlayer*)audioPlayer internalStateChanged:(AudioPlayerInternalState)state;
+-(void) audioPlayer:(AudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 @end
 
 @class QueueEntry;

@@ -468,7 +468,34 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     @synchronized(self)
     {
+        NSMutableArray* array = [[NSMutableArray alloc] initWithCapacity:bufferingQueue.count + upcomingQueue.count];
+        
+        QueueEntry* entry = [bufferingQueue dequeue];
+        
+        if (entry && entry != currentlyPlayingEntry)
+        {
+            [array addObject:[entry queueItemId]];
+        }
+        
+        while (bufferingQueue.count > 0)
+        {
+            [array addObject:[[bufferingQueue dequeue] queueItemId]];
+        }
+        
+        for (QueueEntry* entry in upcomingQueue)
+        {
+            [array addObject:entry.queueItemId];
+        }
+        
         [upcomingQueue removeAllObjects];
+        
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
+            {
+                [self.delegate audioPlayer:self didCancelQueuedItems:array];
+            }
+        });
     }
 }
 
@@ -1258,12 +1285,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry.dataSource.delegate = nil;
             [currentlyReadingEntry.dataSource unregisterForEvents];
             
-            if (currentlyReadingEntry)
+            if (currentlyPlayingEntry)
             {
                 [self processDidFinishPlaying:currentlyPlayingEntry withNext:nil];
             }
             
             pthread_mutex_lock(&queueBuffersMutex);
+            
+            if ([bufferingQueue peek] == currentlyPlayingEntry)
+            {
+                [bufferingQueue dequeue];
+            }
             
             currentlyPlayingEntry = nil;
             currentlyReadingEntry = nil;
@@ -1276,15 +1308,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry.dataSource.delegate = nil;
             [currentlyReadingEntry.dataSource unregisterForEvents];
             
-            if (currentlyReadingEntry)
+            if (currentlyPlayingEntry)
             {
                 [self processDidFinishPlaying:currentlyPlayingEntry withNext:nil];
             }
             
             pthread_mutex_lock(&queueBuffersMutex);
+
+            if ([bufferingQueue peek] == currentlyPlayingEntry)
+            {
+                [bufferingQueue dequeue];
+            }
+            
             currentlyPlayingEntry = nil;
             currentlyReadingEntry = nil;
-
             pthread_mutex_unlock(&queueBuffersMutex);
             
             [self resetAudioQueue];

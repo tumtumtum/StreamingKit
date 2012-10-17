@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A16CB9AD162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */; };
+		A16CB9AE162EC4AB00CFD1E8 /* DataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AC162EC4AB00CFD1E8 /* DataSourceWrapper.m */; };
+		A16CB9B1162EC5E300CFD1E8 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */; };
+		A16CB9B3162EC5E900CFD1E8 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A16CB9B2162EC5E900CFD1E8 /* Default-568h@2x.png */; };
 		A186B4E4157F80E700BD0084 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A186B4E3157F80E700BD0084 /* UIKit.framework */; };
 		A186B4E6157F80E700BD0084 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A186B4E5157F80E700BD0084 /* Foundation.framework */; };
 		A186B4EE157F80E700BD0084 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A186B4EC157F80E700BD0084 /* InfoPlist.strings */; };
@@ -25,6 +29,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A16CB9A9162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AutoRecoveringHttpDataSource.h; sourceTree = "<group>"; };
+		A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AutoRecoveringHttpDataSource.m; sourceTree = "<group>"; };
+		A16CB9AB162EC4AB00CFD1E8 /* DataSourceWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataSourceWrapper.h; sourceTree = "<group>"; };
+		A16CB9AC162EC4AB00CFD1E8 /* DataSourceWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataSourceWrapper.m; sourceTree = "<group>"; };
+		A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		A16CB9B2162EC5E900CFD1E8 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "../Default-568h@2x.png"; sourceTree = "<group>"; };
 		A186B4DF157F80E600BD0084 /* Audjustable.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Audjustable.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A186B4E3157F80E700BD0084 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A186B4E5157F80E700BD0084 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -58,6 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A16CB9B1162EC5E300CFD1E8 /* SystemConfiguration.framework in Frameworks */,
 				A186B51A157F819500BD0084 /* CFNetwork.framework in Frameworks */,
 				A186B518157F818900BD0084 /* CoreFoundation.framework in Frameworks */,
 				A186B514157F817500BD0084 /* AudioToolbox.framework in Frameworks */,
@@ -72,6 +83,7 @@
 		A186B4D4157F80E600BD0084 = {
 			isa = PBXGroup;
 			children = (
+				A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */,
 				A186B4E9157F80E700BD0084 /* Audjustable */,
 				A186B4E2157F80E700BD0084 /* Frameworks */,
 				A186B4E0157F80E600BD0084 /* Products */,
@@ -116,6 +128,7 @@
 				A186B51B157F81D900BD0084 /* Resources */,
 				A186B4EB157F80E700BD0084 /* Audjustable-Info.plist */,
 				A186B4EC157F80E700BD0084 /* InfoPlist.strings */,
+				A16CB9B2162EC5E900CFD1E8 /* Default-568h@2x.png */,
 				A186B4EF157F80E700BD0084 /* main.m */,
 				A186B4F1157F80E700BD0084 /* Audjustable-Prefix.pch */,
 			);
@@ -135,6 +148,10 @@
 		A186B4FF157F813100BD0084 /* AudioPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				A16CB9A9162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.h */,
+				A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */,
+				A16CB9AB162EC4AB00CFD1E8 /* DataSourceWrapper.h */,
+				A16CB9AC162EC4AB00CFD1E8 /* DataSourceWrapper.m */,
 				A186B500157F813100BD0084 /* AudioPlayer.h */,
 				A186B501157F813100BD0084 /* AudioPlayer.m */,
 				A186B502157F813100BD0084 /* CoreFoundationDataSource.h */,
@@ -209,6 +226,7 @@
 			files = (
 				A186B4EE157F80E700BD0084 /* InfoPlist.strings in Resources */,
 				A186B51D157F825400BD0084 /* sample.m4a in Resources */,
+				A16CB9B3162EC5E900CFD1E8 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -227,6 +245,8 @@
 				A186B50F157F813100BD0084 /* HttpDataSource.m in Sources */,
 				A186B510157F813100BD0084 /* LocalFileDataSource.m in Sources */,
 				A186B511157F813100BD0084 /* AudioPlayerView.m in Sources */,
+				A16CB9AD162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m in Sources */,
+				A16CB9AE162EC4AB00CFD1E8 /* DataSourceWrapper.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
