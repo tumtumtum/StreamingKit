@@ -456,6 +456,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     free(audioQueueBufferLookup);
 }
 
+#if TARGET_OS_IPHONE
 -(void) startSystemBackgroundTask
 {
 	pthread_mutex_lock(&playerMutex);
@@ -474,7 +475,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	}
     pthread_mutex_unlock(&playerMutex);
 }
+#endif
 
+#if TARGET_OS_IPHONE
 -(void) stopSystemBackgroundTask
 {
 	pthread_mutex_lock(&playerMutex);
@@ -488,6 +491,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	}
     pthread_mutex_unlock(&playerMutex);
 }
+#endif
 
 -(DataSource*) dataSourceFromURL:(NSURL*)url
 {
@@ -554,8 +558,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         pthread_mutex_lock(&playerMutex);
         {
+#if TARGET_OS_IPHONE
             [self startSystemBackgroundTask];
-
+#endif
             [self clearQueue];
 
             [upcomingQueue enqueue:[[QueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
@@ -1003,8 +1008,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) createAudioQueue
 {
 	OSStatus error;
-	
+
+#if TARGET_OS_IPHONE
 	[self startSystemBackgroundTask];
+#endif
 	
     if (audioQueue)
     {
@@ -1583,18 +1590,22 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
+#if TARGET_OS_IPHONE
 		if (backgroundTaskId == UIBackgroundTaskInvalid)
 		{
 			[self startSystemBackgroundTask];
 		}
+#endif
 		
         [self stopAudioQueue];
         [self createAudioQueue];
         
         AudioQueueStart(audioQueue, NULL);
     }
-	
+
+#if TARGET_OS_IPHONE
 	[self stopSystemBackgroundTask];
+#endif
     
     return YES;
 }

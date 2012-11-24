@@ -153,8 +153,10 @@ AudioQueueBufferRefLookupEntry;
 	int packetsFilled;
     
     int fillBufferIndex;
-    
+
+#if TARGET_OS_IPHONE
 	UIBackgroundTaskIdentifier backgroundTaskId;
+#endif
 	
     AudioPlayerErrorCode errorCode;
     AudioPlayerStopReason stopReason;
