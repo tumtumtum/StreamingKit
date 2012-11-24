@@ -97,6 +97,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
     if (reachabilityRef != NULL)
     {
+        SCNetworkReachabilitySetCallback(reachabilityRef, NULL, NULL);
         SCNetworkReachabilityUnscheduleFromRunLoop(reachabilityRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
     }
 }
@@ -115,6 +116,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) dealloc
 {
+    self.innerDataSource.delegate = nil;
+    
     [self stopNotifier];
     
     if (reachabilityRef!= NULL)

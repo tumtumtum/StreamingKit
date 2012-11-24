@@ -5,7 +5,7 @@
  https://github.com/tumtumtum/audjustable
  
  Inspired by Matt Gallagher's AudioStreamer:
- https://github.com/mattgallagher/AudioStreamer 
+ https://github.com/mattgallagher/AudioStreamer
  
  Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
@@ -33,14 +33,14 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**********************************************************************************/
+ **********************************************************************************/
 
 #import <Foundation/Foundation.h>
 #import <pthread.h>
 #import "DataSource.h"
 #include <AudioToolbox/AudioToolbox.h>
 
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (8 * 1024)
+#define AudioPlayerDefaultNumberOfAudioQueueBuffers (2 * 1024)
 
 typedef enum
 {
@@ -121,8 +121,8 @@ AudioQueueBufferRefLookupEntry;
     UInt8* readBuffer;
     int readBufferSize;
 	
-	dispatch_queue_t fastApiSerialQueue;
-
+    NSOperationQueue* fastApiQueue;
+    
     QueueEntry* currentlyPlayingEntry;
     QueueEntry* currentlyReadingEntry;
     
@@ -143,9 +143,9 @@ AudioQueueBufferRefLookupEntry;
     NSThread* playbackThread;
     NSRunLoop* playbackThreadRunLoop;
     NSConditionLock* threadFinishedCondLock;
-
+    
     AudioFileStreamID audioFileStream;
-        
+    
     BOOL discontinuous;
     BOOL nextIsIncompatible;
     
@@ -153,20 +153,22 @@ AudioQueueBufferRefLookupEntry;
 	int packetsFilled;
     
     int fillBufferIndex;
-
+    
 	UIBackgroundTaskIdentifier backgroundTaskId;
 	
     AudioPlayerErrorCode errorCode;
     AudioPlayerStopReason stopReason;
     
+    pthread_mutex_t playerMutex;
     pthread_mutex_t queueBuffersMutex;
     pthread_cond_t queueBufferReadyCondition;
     
+    volatile BOOL waiting;
     volatile BOOL disposeWasRequested;
     volatile BOOL seekToTimeWasRequested;
     volatile BOOL newFileToPlay;
-    volatile double requestedSeekTime;    
-    volatile BOOL audioQueueFlushing;    
+    volatile double requestedSeekTime;
+    volatile BOOL audioQueueFlushing;
     volatile SInt64 audioPacketsReadCount;
     volatile SInt64 audioPacketsPlayedCount;
 }

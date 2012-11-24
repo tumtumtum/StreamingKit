@@ -42,6 +42,11 @@
 -(void) dataSourceEof:(DataSource*)dataSource;
 @end
 
+@protocol AudioDataSource<NSObject>
+@property (readwrite) double averageBitRate;
+@property (readwrite) long long audioDataOffset;
+@end
+
 @interface DataSource : NSObject
 
 @property (readonly) long long position;
