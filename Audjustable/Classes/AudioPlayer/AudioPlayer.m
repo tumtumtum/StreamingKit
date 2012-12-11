@@ -407,10 +407,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         pthread_mutexattr_t attr;
         
+        pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&playerMutex, &attr);
-        pthread_mutex_init(&queueBuffersMutex, NULL);
-        pthread_cond_init(&queueBufferReadyCondition, NULL);
+        int err;
+        
+        err = pthread_mutex_init(&playerMutex, &attr);
+        err = pthread_mutex_init(&queueBuffersMutex, NULL);
+        err = pthread_cond_init(&queueBufferReadyCondition, NULL);
         
         threadFinishedCondLock = [[NSConditionLock alloc] initWithCondition:0];
         
@@ -456,7 +459,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     free(audioQueueBufferLookup);
 }
 
-#if TARGET_OS_IPHONE
 -(void) startSystemBackgroundTask
 {
 	pthread_mutex_lock(&playerMutex);
@@ -475,9 +477,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	}
     pthread_mutex_unlock(&playerMutex);
 }
-#endif
 
-#if TARGET_OS_IPHONE
 -(void) stopSystemBackgroundTask
 {
 	pthread_mutex_lock(&playerMutex);
@@ -491,7 +491,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	}
     pthread_mutex_unlock(&playerMutex);
 }
-#endif
 
 -(DataSource*) dataSourceFromURL:(NSURL*)url
 {
@@ -558,9 +557,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         pthread_mutex_lock(&playerMutex);
         {
-#if TARGET_OS_IPHONE
             [self startSystemBackgroundTask];
-#endif
+
             [self clearQueue];
 
             [upcomingQueue enqueue:[[QueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
@@ -706,7 +704,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 [self enqueueBuffer];
                 
-                if (seekToTimeWasRequested)
+                if (seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
                 {
                     return;
                 }
@@ -731,6 +729,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             if (packetsDescRemaining <= 0)
             {
                 [self enqueueBuffer];
+                
+                if (seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
+                {
+                    return;
+                }
             }
         }
     }
@@ -747,8 +750,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 			if (bytesLeft < numberBytes)
 			{
 				[self enqueueBuffer];
+                
+                if (seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
+                {
+                    return;
+                }
 			}
-
+			
 			pthread_mutex_lock(&playerMutex);
 			{
 				int copySize;
@@ -829,10 +837,19 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	
     pthread_mutex_lock(&queueBuffersMutex);
     
-    bufferUsed[bufferIndex] = false;
-    numberOfBuffersUsed--;
-    
     BOOL signal = NO;
+    
+    if (bufferUsed[bufferIndex])
+    {
+        bufferUsed[bufferIndex] = false;
+        numberOfBuffersUsed--;
+    }
+    else
+    {
+        // This should never happen
+        
+        signal = YES;
+    }
     
     if (!audioQueueFlushing)
     {
@@ -858,8 +875,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             }
         }
     }
-    
-    if (audioQueueFlushing)
+
+    if (self.internalState == AudioPlayerInternalStateStopped
+        || self.internalState == AudioPlayerInternalStateStopping
+        || self.internalState == AudioPlayerInternalStateDisposed
+        || self.internalState == AudioPlayerInternalStateError
+        || self.internalState == AudioPlayerInternalStateWaitingForQueueToStart)
+    {
+        signal = waiting || numberOfBuffersUsed < 8;
+    }
+    else if (audioQueueFlushing)
     {
         signal = signal || (audioQueueFlushing && numberOfBuffersUsed < 8);
     }
@@ -871,7 +896,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else
         {
-            if (waiting && numberOfBuffersUsed < audioQueueBufferCount / 2)
+            if ((waiting && numberOfBuffersUsed < audioQueueBufferCount / 2) || (numberOfBuffersUsed < 8))
             {
                 signal = YES;
             }
@@ -928,6 +953,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             return;
         }
         
+        if (audioQueueFlushing || newFileToPlay)
+        {
+            pthread_mutex_unlock(&playerMutex);
+            
+            return;
+        }
+        
         pthread_mutex_lock(&queueBuffersMutex);
         
         bufferUsed[fillBufferIndex] = true;
@@ -941,7 +973,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         if (packetsFilled)
         {
-            
             error = AudioQueueEnqueueBuffer(audioQueue, buffer, packetsFilled, packetDescs);
         }
         else
@@ -979,11 +1010,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     pthread_mutex_unlock(&playerMutex);
     
     pthread_mutex_lock(&queueBuffersMutex);
+
+    waiting = YES;
     
-    while (bufferUsed[fillBufferIndex])
+    while (bufferUsed[fillBufferIndex] && !(seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed))
     {
-        waiting = YES;
-        
         if (numberOfBuffersUsed == 0)
         {
             memset(&bufferUsed[0], 0, sizeof(bool) * audioQueueBufferCount);
@@ -1008,15 +1039,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) createAudioQueue
 {
 	OSStatus error;
-
-#if TARGET_OS_IPHONE
+	
 	[self startSystemBackgroundTask];
-#endif
 	
     if (audioQueue)
     {
-        AudioQueueStop(audioQueue, YES);
-        AudioQueueDispose(audioQueue, YES);
+        error = AudioQueueStop(audioQueue, YES);
+        error = AudioQueueDispose(audioQueue, YES);
         
         audioQueue = nil;
     }
@@ -1057,7 +1086,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         error = AudioQueueAllocateBuffer(audioQueue, currentlyPlayingEntry->packetBufferSize, &audioQueueBuffer[i]);
         
-        int hash = (int)audioQueueBuffer[i] % audioQueueBufferRefLookupCount;
+        unsigned int hash = (unsigned int)audioQueueBuffer[i] % audioQueueBufferRefLookupCount;
         
         while (true)
         {
@@ -1168,6 +1197,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         CFRunLoopWakeUp([runLoop getCFRunLoop]);
     }
+    
+    pthread_mutex_lock(&queueBuffersMutex);
+    
+    if (waiting)
+    {
+        pthread_cond_signal(&queueBufferReadyCondition);
+    }
+    
+    pthread_mutex_unlock(&queueBuffersMutex);
+    
 }
 
 -(void) seekToTime:(double)value
@@ -1487,39 +1526,42 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) startInternal
 {
-    playbackThreadRunLoop = [NSRunLoop currentRunLoop];
-    
-    NSThread.currentThread.threadPriority = 1;
-    
-    bytesFilled = 0;
-    packetsFilled = 0;
-    
-    [playbackThreadRunLoop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
-    
-    do
-    {
-        [playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:5]];
-        
-        if (![self processRunloop])
-        {
-            break;
-        }
-    }
-    while (true);
-    
-    disposeWasRequested = NO;
-    seekToTimeWasRequested = NO;
-    
-    currentlyReadingEntry.dataSource.delegate = nil;
-    currentlyPlayingEntry.dataSource.delegate = nil;
-    
-    currentlyReadingEntry = nil;
-    currentlyPlayingEntry = nil;
-    
-    self.internalState = AudioPlayerInternalStateDisposed;
-    
-    [threadFinishedCondLock lock];
-    [threadFinishedCondLock unlockWithCondition:1];
+	@autoreleasepool
+	{		
+		playbackThreadRunLoop = [NSRunLoop currentRunLoop];
+		
+		NSThread.currentThread.threadPriority = 1;
+		
+		bytesFilled = 0;
+		packetsFilled = 0;
+		
+		[playbackThreadRunLoop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
+		
+		do
+		{
+			[playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:5]];
+			
+			if (![self processRunloop])
+			{
+				break;
+			}
+		}
+		while (true);
+		
+		disposeWasRequested = NO;
+		seekToTimeWasRequested = NO;
+		
+		currentlyReadingEntry.dataSource.delegate = nil;
+		currentlyPlayingEntry.dataSource.delegate = nil;
+		
+		currentlyReadingEntry = nil;
+		currentlyPlayingEntry = nil;
+		
+		self.internalState = AudioPlayerInternalStateDisposed;
+		
+		[threadFinishedCondLock lock];
+		[threadFinishedCondLock unlockWithCondition:1];
+	}
 }
 
 -(void) processSeekToTime
@@ -1590,22 +1632,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
-#if TARGET_OS_IPHONE
 		if (backgroundTaskId == UIBackgroundTaskInvalid)
 		{
 			[self startSystemBackgroundTask];
 		}
-#endif
 		
         [self stopAudioQueue];
         [self createAudioQueue];
         
-        AudioQueueStart(audioQueue, NULL);
+        self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
+        
+        error = AudioQueueStart(audioQueue, NULL);
     }
-
-#if TARGET_OS_IPHONE
+	
 	[self stopSystemBackgroundTask];
-#endif
     
     return YES;
 }
@@ -1625,6 +1665,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         audioQueueFlushing = YES;
         
         error = AudioQueueStop(audioQueue, true);
+        error = AudioQueueDispose(audioQueue, true);
         
         audioQueue = nil;
     }
@@ -1660,34 +1701,33 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) resetAudioQueue
 {
 	OSStatus error;
-	
-    if (!audioQueue)
-    {
-        return;
-    }
     
+    pthread_mutex_lock(&playerMutex);
+	
     audioQueueFlushing = YES;
     
-    error = AudioQueueReset(audioQueue);
-    
-    if (error)
+    if (audioQueue)
     {
-		dispatch_async(dispatch_get_main_queue(), ^
-                       {
-                           [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
-                       });
+        error = AudioQueueReset(audioQueue);
+        
+        if (error)
+        {
+            dispatch_async(dispatch_get_main_queue(), ^
+            {
+                [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
+            });
+        }
     }
     
+    pthread_mutex_unlock(&playerMutex);
+        
     pthread_mutex_lock(&queueBuffersMutex);
     
     if (numberOfBuffersUsed != 0)
     {
         numberOfBuffersUsed = 0;
         
-        for (int i = 0; i < audioQueueBufferCount; i++)
-        {
-            bufferUsed[i] = false;
-        }
+        memset(&bufferUsed[0], 0, sizeof(bool) * audioQueueBufferCount);
     }
     
     pthread_cond_signal(&queueBufferReadyCondition);

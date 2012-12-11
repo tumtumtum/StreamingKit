@@ -131,8 +131,8 @@ AudioQueueBufferRefLookupEntry;
     
     AudioQueueBufferRef* audioQueueBuffer;
     AudioQueueBufferRefLookupEntry* audioQueueBufferLookup;
-    int audioQueueBufferRefLookupCount;
-    int audioQueueBufferCount;
+    unsigned int audioQueueBufferRefLookupCount;
+    unsigned int audioQueueBufferCount;
     AudioStreamPacketDescription* packetDescs;
     bool* bufferUsed;
     int numberOfBuffersUsed;
@@ -153,10 +153,8 @@ AudioQueueBufferRefLookupEntry;
 	int packetsFilled;
     
     int fillBufferIndex;
-
-#if TARGET_OS_IPHONE
+    
 	UIBackgroundTaskIdentifier backgroundTaskId;
-#endif
 	
     AudioPlayerErrorCode errorCode;
     AudioPlayerStopReason stopReason;
