@@ -1536,17 +1536,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		packetsFilled = 0;
 		
 		[playbackThreadRunLoop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
-		
-		do
+
+		while (true)
 		{
-			[playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:5]];
-			
 			if (![self processRunloop])
 			{
 				break;
 			}
+
+			[playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:10]];
 		}
-		while (true);
 		
 		disposeWasRequested = NO;
 		seekToTimeWasRequested = NO;
