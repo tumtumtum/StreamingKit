@@ -318,7 +318,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     internalState = value;
     
-    if ([self.delegate respondsToSelector:@selector(internalStateChanged:)])
+    if ([self.delegate respondsToSelector:@selector(audioPlayer:internalStateChanged:)])
     {
         dispatch_async(dispatch_get_main_queue(), ^
                        {
