@@ -709,13 +709,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 }
             }
             
-            AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
-            
-            if (bytesFilled + packetSize > bufferToFill->mAudioDataBytesCapacity)
+            if (bytesFilled + packetSize > currentlyReadingEntry->packetBufferSize)
             {
                 return;
             }
-
+            
+            AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
             memcpy((char*)bufferToFill->mAudioData + bytesFilled, (const char*)inputData + packetOffset, packetSize);
             
             packetDescs[packetsFilled] = packetDescriptionsIn[i];
@@ -802,19 +801,22 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     QueueEntry* entry = nil;
     
-    pthread_mutex_lock(&playerMutex);
-    
     if (currentlyPlayingEntry)
     {
-        entry = currentlyPlayingEntry;
-        
-        if (!audioQueueFlushing)
+        SPIN_LOCK_LOCK(&currentlyPlayingLock);
         {
-            currentlyPlayingEntry->bytesPlayed += bufferIn->mAudioDataByteSize;
+            if (currentlyPlayingEntry)
+            {
+                entry = currentlyPlayingEntry;
+                
+                if (!audioQueueFlushing)
+                {
+                    currentlyPlayingEntry->bytesPlayed += bufferIn->mAudioDataByteSize;
+                }
+            }
         }
+        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     }
-    
-    pthread_mutex_unlock(&playerMutex);
     
     int index = (int)bufferIn % audioQueueBufferRefLookupCount;
     
@@ -1315,13 +1317,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) audioQueueFinishedPlaying:(QueueEntry*)entry
 {
     pthread_mutex_lock(&playerMutex);
-    pthread_mutex_lock(&queueBuffersMutex);
-    
-    QueueEntry* next = [bufferingQueue dequeue];
-    
-    [self processDidFinishPlaying:entry withNext:next];
-    
-    pthread_mutex_unlock(&queueBuffersMutex);
+    {
+        pthread_mutex_lock(&queueBuffersMutex);
+        {
+            QueueEntry* next = [bufferingQueue dequeue];
+            
+            [self processDidFinishPlaying:entry withNext:next];
+        }
+        pthread_mutex_unlock(&queueBuffersMutex);
+    }
     pthread_mutex_unlock(&playerMutex);
 }
 
@@ -1347,10 +1351,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             seekToTimeWasRequested = NO;
         }
         
-        pthread_mutex_lock(&playerMutex);
-        currentlyPlayingEntry = next;
+        SPIN_LOCK_LOCK(&currentlyPlayingLock);
+        {
+            currentlyPlayingEntry = next;
+        }
+        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
+        
         currentlyPlayingEntry->bytesPlayed = 0;
-        pthread_mutex_unlock(&playerMutex);
         
         NSObject* playingQueueItemId = currentlyPlayingEntry.queueItemId;
         
@@ -1372,9 +1379,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     else
     {
-        pthread_mutex_lock(&playerMutex);
-        currentlyPlayingEntry = nil;
-        pthread_mutex_unlock(&playerMutex);
+        SPIN_LOCK_LOCK(&currentlyPlayingLock);
+        {
+            currentlyPlayingEntry = nil;
+        }
+        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
         
         if (currentlyReadingEntry == nil)
         {
@@ -1441,7 +1450,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 [bufferingQueue dequeue];
             }
             
-            currentlyPlayingEntry = nil;
+            SPIN_LOCK_LOCK(&currentlyPlayingLock);
+            {
+                currentlyPlayingEntry = nil;
+            }
+            SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
+            
             currentlyReadingEntry = nil;
             seekToTimeWasRequested = NO;
             
@@ -1464,7 +1478,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 [bufferingQueue dequeue];
             }
             
-            currentlyPlayingEntry = nil;
+            SPIN_LOCK_LOCK(&currentlyPlayingLock);
+            {
+                currentlyPlayingEntry = nil;
+            }
+            SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
+            
             currentlyReadingEntry = nil;
             pthread_mutex_unlock(&queueBuffersMutex);
             
@@ -1562,7 +1581,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		currentlyPlayingEntry.dataSource.delegate = nil;
 		
 		currentlyReadingEntry = nil;
-		currentlyPlayingEntry = nil;
+        
+        SPIN_LOCK_LOCK(&currentlyPlayingLock);
+        {
+            currentlyPlayingEntry = nil;
+        }
+        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
 		
 		self.internalState = AudioPlayerInternalStateDisposed;
 		
@@ -1713,22 +1737,22 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	OSStatus error;
     
     pthread_mutex_lock(&playerMutex);
-	
-    audioQueueFlushing = YES;
-    
-    if (audioQueue)
     {
-        error = AudioQueueReset(audioQueue);
+        audioQueueFlushing = YES;
         
-        if (error)
+        if (audioQueue)
         {
-            dispatch_async(dispatch_get_main_queue(), ^
+            error = AudioQueueReset(audioQueue);
+            
+            if (error)
             {
-                [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
-            });
+                dispatch_async(dispatch_get_main_queue(), ^
+                {
+                    [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
+                });
+            }
         }
     }
-    
     pthread_mutex_unlock(&playerMutex);
         
     pthread_mutex_lock(&queueBuffersMutex);

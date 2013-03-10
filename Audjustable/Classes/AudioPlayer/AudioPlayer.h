@@ -159,6 +159,7 @@ AudioQueueBufferRefLookupEntry;
     AudioPlayerErrorCode errorCode;
     AudioPlayerStopReason stopReason;
     
+    int currentlyPlayingLock;
     pthread_mutex_t playerMutex;
     pthread_mutex_t queueBuffersMutex;
     pthread_cond_t queueBufferReadyCondition;
