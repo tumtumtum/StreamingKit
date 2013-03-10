@@ -321,9 +321,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if ([self.delegate respondsToSelector:@selector(audioPlayer:internalStateChanged:)])
     {
         dispatch_async(dispatch_get_main_queue(), ^
-                       {
-                           [self.delegate audioPlayer:self internalStateChanged:internalState];
-                       });
+        {
+            [self.delegate audioPlayer:self internalStateChanged:internalState];
+        });
     }
     
     AudioPlayerState newState;
@@ -409,11 +409,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-        int err;
         
-        err = pthread_mutex_init(&playerMutex, &attr);
-        err = pthread_mutex_init(&queueBuffersMutex, NULL);
-        err = pthread_cond_init(&queueBufferReadyCondition, NULL);
+        pthread_mutex_init(&playerMutex, &attr);
+        pthread_mutex_init(&queueBuffersMutex, NULL);
+        pthread_cond_init(&queueBufferReadyCondition, NULL);
         
         threadFinishedCondLock = [[NSConditionLock alloc] initWithCondition:0];
         
@@ -710,12 +709,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 }
             }
             
-            if (bytesFilled + packetSize > currentlyReadingEntry->packetBufferSize)
+            AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
+            
+            if (bytesFilled + packetSize > bufferToFill->mAudioDataBytesCapacity)
             {
                 return;
             }
-            
-            AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
+
             memcpy((char*)bufferToFill->mAudioData + bytesFilled, (const char*)inputData + packetOffset, packetSize);
             
             packetDescs[packetsFilled] = packetDescriptionsIn[i];
@@ -800,13 +800,21 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return;
     }
     
+    QueueEntry* entry = nil;
+    
+    pthread_mutex_lock(&playerMutex);
+    
     if (currentlyPlayingEntry)
     {
+        entry = currentlyPlayingEntry;
+        
         if (!audioQueueFlushing)
         {
             currentlyPlayingEntry->bytesPlayed += bufferIn->mAudioDataByteSize;
         }
     }
+    
+    pthread_mutex_unlock(&playerMutex);
     
     int index = (int)bufferIn % audioQueueBufferRefLookupCount;
     
@@ -853,8 +861,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (!audioQueueFlushing)
     {
-        QueueEntry* entry = currentlyPlayingEntry;
-        
         if (entry != nil)
         {
             if (entry.bufferIndex <= audioPacketsPlayedCount && entry.bufferIndex != -1)
@@ -1032,7 +1038,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) didEncounterError:(AudioPlayerErrorCode)errorCodeIn
 {
-    errorCode = errorCode;
+    errorCode = errorCodeIn;
     self.internalState = AudioPlayerInternalStateError;
 }
 
@@ -1044,8 +1050,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	
     if (audioQueue)
     {
-        error = AudioQueueStop(audioQueue, YES);
-        error = AudioQueueDispose(audioQueue, YES);
+        AudioQueueStop(audioQueue, YES);
+        AudioQueueDispose(audioQueue, YES);
         
         audioQueue = nil;
     }
@@ -1069,13 +1075,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 #if TARGET_OS_IPHONE
     UInt32 val = kAudioQueueHardwareCodecPolicy_PreferHardware;
     
-    error = AudioQueueSetProperty(audioQueue, kAudioQueueProperty_HardwareCodecPolicy, &val, sizeof(UInt32));
+    AudioQueueSetProperty(audioQueue, kAudioQueueProperty_HardwareCodecPolicy, &val, sizeof(UInt32));
     
     AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
-    
-    if (error)
-    {
-    }
 #endif
     
     memset(audioQueueBufferLookup, 0, sizeof(AudioQueueBufferRefLookupEntry) * audioQueueBufferRefLookupCount);
@@ -1146,6 +1148,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
 		return;
 	}
+    
+    AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
     
     free(cookieData);
 }
@@ -1343,8 +1347,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             seekToTimeWasRequested = NO;
         }
         
+        pthread_mutex_lock(&playerMutex);
         currentlyPlayingEntry = next;
         currentlyPlayingEntry->bytesPlayed = 0;
+        pthread_mutex_unlock(&playerMutex);
         
         NSObject* playingQueueItemId = currentlyPlayingEntry.queueItemId;
         
@@ -1366,7 +1372,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     else
     {
+        pthread_mutex_lock(&playerMutex);
         currentlyPlayingEntry = nil;
+        pthread_mutex_unlock(&playerMutex);
         
         if (currentlyReadingEntry == nil)
         {
@@ -1616,7 +1624,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self resetAudioQueue];
     }
     
-    currentlyPlayingEntry->bytesPlayed = 0;
+    if (currentlyPlayingEntry)
+    {
+        currentlyPlayingEntry->bytesPlayed = 0;
+    }
 }
 
 -(BOOL) startAudioQueue
@@ -1641,7 +1652,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
         
-        error = AudioQueueStart(audioQueue, NULL);
+        AudioQueueStart(audioQueue, NULL);
     }
 	
 	[self stopSystemBackgroundTask];
@@ -1664,7 +1675,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         audioQueueFlushing = YES;
         
         error = AudioQueueStop(audioQueue, true);
-        error = AudioQueueDispose(audioQueue, true);
+        error = error | AudioQueueDispose(audioQueue, true);
         
         audioQueue = nil;
     }

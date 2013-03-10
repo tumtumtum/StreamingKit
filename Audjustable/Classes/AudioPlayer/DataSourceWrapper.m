@@ -52,6 +52,11 @@
     return self;
 }
 
+-(void) dealloc
+{
+    self.innerDataSource.delegate = nil;
+}
+
 -(long long) length
 {
     return self.innerDataSource.length;
