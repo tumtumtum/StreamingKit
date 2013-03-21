@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8AC7AD4816E55CD70069BDE7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A186B4E5157F80E700BD0084 /* Foundation.framework */; };
+		8AC7AD5416E55D260069BDE7 /* AutoRecoveringHttpDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */; };
+		8AC7AD5616E55D260069BDE7 /* DataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AC162EC4AB00CFD1E8 /* DataSourceWrapper.m */; };
+		8AC7AD5816E55D260069BDE7 /* AudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = A186B501157F813100BD0084 /* AudioPlayer.m */; };
+		8AC7AD5A16E55D260069BDE7 /* CoreFoundationDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A186B503157F813100BD0084 /* CoreFoundationDataSource.m */; };
+		8AC7AD5C16E55D260069BDE7 /* DataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A186B505157F813100BD0084 /* DataSource.m */; };
+		8AC7AD5E16E55D260069BDE7 /* HttpDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A186B507157F813100BD0084 /* HttpDataSource.m */; };
+		8AC7AD6016E55D260069BDE7 /* LocalFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A186B509157F813100BD0084 /* LocalFileDataSource.m */; };
 		A16CB9AD162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */; };
 		A16CB9AE162EC4AB00CFD1E8 /* DataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A16CB9AC162EC4AB00CFD1E8 /* DataSourceWrapper.m */; };
 		A16CB9B1162EC5E300CFD1E8 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */; };
@@ -28,7 +36,20 @@
 		A186B51D157F825400BD0084 /* sample.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A186B51C157F820F00BD0084 /* sample.m4a */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		8AC7AD4516E55CD70069BDE7 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/${PRODUCT_NAME}";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		8AC7AD4716E55CD70069BDE7 /* libaudjustable.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libaudjustable.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A16CB9A9162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AutoRecoveringHttpDataSource.h; sourceTree = "<group>"; };
 		A16CB9AA162EC4AB00CFD1E8 /* AutoRecoveringHttpDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AutoRecoveringHttpDataSource.m; sourceTree = "<group>"; };
 		A16CB9AB162EC4AB00CFD1E8 /* DataSourceWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataSourceWrapper.h; sourceTree = "<group>"; };
@@ -64,6 +85,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8AC7AD4416E55CD70069BDE7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8AC7AD4816E55CD70069BDE7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A186B4DC157F80E600BD0084 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -83,7 +112,6 @@
 		A186B4D4157F80E600BD0084 = {
 			isa = PBXGroup;
 			children = (
-				A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */,
 				A186B4E9157F80E700BD0084 /* Audjustable */,
 				A186B4E2157F80E700BD0084 /* Frameworks */,
 				A186B4E0157F80E600BD0084 /* Products */,
@@ -94,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				A186B4DF157F80E600BD0084 /* Audjustable.app */,
+				8AC7AD4716E55CD70069BDE7 /* libaudjustable.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -101,6 +130,7 @@
 		A186B4E2157F80E700BD0084 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A16CB9B0162EC5E300CFD1E8 /* SystemConfiguration.framework */,
 				A186B519157F819500BD0084 /* CFNetwork.framework */,
 				A186B517157F818900BD0084 /* CoreFoundation.framework */,
 				A186B513157F817500BD0084 /* AudioToolbox.framework */,
@@ -177,6 +207,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8AC7AD4616E55CD70069BDE7 /* audjustable */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8AC7AD5016E55CD70069BDE7 /* Build configuration list for PBXNativeTarget "audjustable" */;
+			buildPhases = (
+				8AC7AD4316E55CD70069BDE7 /* Sources */,
+				8AC7AD4416E55CD70069BDE7 /* Frameworks */,
+				8AC7AD4516E55CD70069BDE7 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = audjustable;
+			productName = audjustable;
+			productReference = 8AC7AD4716E55CD70069BDE7 /* libaudjustable.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		A186B4DE157F80E600BD0084 /* Audjustable */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A186B4F7157F80E700BD0084 /* Build configuration list for PBXNativeTarget "Audjustable" */;
@@ -200,7 +247,7 @@
 		A186B4D6157F80E600BD0084 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0430;
+				LastUpgradeCheck = 0460;
 			};
 			buildConfigurationList = A186B4D9157F80E600BD0084 /* Build configuration list for PBXProject "Audjustable" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -215,6 +262,7 @@
 			projectRoot = "";
 			targets = (
 				A186B4DE157F80E600BD0084 /* Audjustable */,
+				8AC7AD4616E55CD70069BDE7 /* audjustable */,
 			);
 		};
 /* End PBXProject section */
@@ -233,6 +281,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8AC7AD4316E55CD70069BDE7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8AC7AD5416E55D260069BDE7 /* AutoRecoveringHttpDataSource.m in Sources */,
+				8AC7AD5616E55D260069BDE7 /* DataSourceWrapper.m in Sources */,
+				8AC7AD5816E55D260069BDE7 /* AudioPlayer.m in Sources */,
+				8AC7AD5A16E55D260069BDE7 /* CoreFoundationDataSource.m in Sources */,
+				8AC7AD5C16E55D260069BDE7 /* DataSource.m in Sources */,
+				8AC7AD5E16E55D260069BDE7 /* HttpDataSource.m in Sources */,
+				8AC7AD6016E55D260069BDE7 /* LocalFileDataSource.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A186B4DB157F80E600BD0084 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -264,12 +326,57 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		8AC7AD5116E55CD70069BDE7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DSTROOT = /tmp/audjustable.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "audjustable/audjustable-Prefix.pch";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		8AC7AD5216E55CD70069BDE7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DSTROOT = /tmp/audjustable.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "audjustable/audjustable-Prefix.pch";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 		A186B4F5157F80E700BD0084 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -284,7 +391,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -296,6 +403,10 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -303,7 +414,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -336,6 +447,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8AC7AD5016E55CD70069BDE7 /* Build configuration list for PBXNativeTarget "audjustable" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8AC7AD5116E55CD70069BDE7 /* Debug */,
+				8AC7AD5216E55CD70069BDE7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A186B4D9157F80E600BD0084 /* Build configuration list for PBXProject "Audjustable" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
