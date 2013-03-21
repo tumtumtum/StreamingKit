@@ -1286,6 +1286,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
+        pthread_mutex_unlock(&queueBuffersMutex);
+        
         return;
     }
     
