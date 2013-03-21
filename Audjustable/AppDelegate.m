@@ -34,12 +34,12 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {	
-	NSURL* url = [NSURL URLWithString:@"https://github.com/downloads/tumtumtum/audjustable/sample.m4a"];
+	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
     
 	[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:url] withQueueItemId:url];
 }
 
--(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView *)audioPlayerView
+-(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView*)audioPlayerView
 {
 	NSString * path = [[NSBundle mainBundle] pathForResource:@"sample" ofType:@"m4a"];
 	NSURL* url = [NSURL fileURLWithPath:path];
