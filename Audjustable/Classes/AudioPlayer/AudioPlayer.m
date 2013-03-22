@@ -1439,6 +1439,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             currentlyReadingEntry.dataSource.delegate = nil;
             [currentlyReadingEntry.dataSource unregisterForEvents];
+            [currentlyReadingEntry.dataSource close];
             
             if (currentlyPlayingEntry)
             {
@@ -1467,6 +1468,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             currentlyReadingEntry.dataSource.delegate = nil;
             [currentlyReadingEntry.dataSource unregisterForEvents];
+            [currentlyReadingEntry.dataSource close];
             
             if (currentlyPlayingEntry)
             {

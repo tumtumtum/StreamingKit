@@ -87,6 +87,16 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     }
 }
 
+-(void) close
+{
+    if (stream)
+    {
+        CFReadStreamClose(stream);
+        
+        stream = 0;
+    }
+}
+
 -(void) seekToOffset:(long long)offset
 {
 }
