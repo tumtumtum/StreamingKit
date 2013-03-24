@@ -672,12 +672,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     else if (memcmp(&currentAudioStreamBasicDescription, &currentlyReadingEntry->audioStreamBasicDescription, sizeof(currentAudioStreamBasicDescription)) != 0)
     {
-        if (audioPacketsPlayedCount == 0 && audioPacketsReadCount == 0)
+        if (currentlyReadingEntry == currentlyPlayingEntry)
         {
-            NSLog(@"CreateAudioQueue");
-            
             [self createAudioQueue];
-            [self setInternalState:AudioPlayerInternalStateWaitingForData];
         }
         else
         {
@@ -925,7 +922,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
     }
     
-    if (signal)
+    if (signal || YES)
     {
         pthread_cond_signal(&queueBufferReadyCondition);
     }
@@ -1543,14 +1540,21 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                     QueueEntry* entry = [upcomingQueue dequeue];
                     
                     BOOL startPlaying = currentlyPlayingEntry == nil;
+                    BOOL wasCurrentlyPlayingNothing = currentlyPlayingEntry == nil;
                     
                     [self setCurrentlyReadingEntry:entry andStartPlaying:startPlaying];
+                    
+                    if (wasCurrentlyPlayingNothing)
+                    {
+                        [self setInternalState:AudioPlayerInternalStateWaitingForData];
+                    }
                 }
                 else if (currentlyPlayingEntry == nil)
                 {
                     if (self.internalState != AudioPlayerInternalStateStopped)
                     {
                         [self stopAudioQueue];
+                        stopReason = AudioPlayerStopReasonEof;
                     }
                 }
             }
@@ -1818,7 +1822,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     
     pthread_cond_signal(&queueBufferReadyCondition);
-    pthread_mutex_unlock(&queueBuffersMutex);
+    
     
     bytesFilled = 0;
     fillBufferIndex = 0;
@@ -1832,6 +1836,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     audioPacketsReadCount = 0;
     audioPacketsPlayedCount = 0;
     audioQueueFlushing = NO;
+    
+    pthread_mutex_unlock(&queueBuffersMutex);
 }
 
 -(void) dataSourceDataAvailable:(DataSource*)dataSourceIn
@@ -1922,6 +1928,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             currentlyReadingEntry.bufferIndex = audioPacketsReadCount;
             currentlyReadingEntry = nil;
+            
+            if (self.internalState == AudioPlayerInternalStatePlaying)
+            {
+                if (audioQueue)
+                {
+                    if (![self audioQueueIsRunning])
+                    {
+                        [self startAudioQueue];
+                    }
+                }
+            }
         }
         else
         {
