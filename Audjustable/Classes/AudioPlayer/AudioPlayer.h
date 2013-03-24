@@ -147,7 +147,6 @@ AudioQueueBufferRefLookupEntry;
     AudioFileStreamID audioFileStream;
     
     BOOL discontinuous;
-    BOOL nextIsIncompatible;
     
     int bytesFilled;
 	int packetsFilled;
