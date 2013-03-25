@@ -42,7 +42,7 @@ audioPlayer.delegate = self;
 
 ## Other
 
-Background playback on iOS is easily added to your application by using the  `AudioSessionInitialize` to your AppDelegate.
+Background playback on iOS is easily added to your application by calling the  `AudioSessionInitialize` in your AppDelegate.
 
 ### Authors and Contributors
 Copyright 2012, Thong Nguyen (@tumtumtum)
