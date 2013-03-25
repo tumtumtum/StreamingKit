@@ -4,11 +4,14 @@
 
 Audjustable is audio streaming class for iOS and OSX.  Audjustable uses CoreAudio to decompress and playback audio whilst providing a clean and simple object-oriented API.
 
+The primary motivation of this project was to decouple the input (DataSource/InputStreams) from the actual player logic in order to allow advanced customizable input handling such as: HTTP streaming, encryption, auto-recovery, dynamic-buffering. Along the way other features such as gapless playback were added as the opportunity arose.
+
 ## Features
 
 * Simple OOP API
 * Easy to read source
 * Adjustable audio buffering
+* Mostly asynchronous API
 * Buffered and gapless playback
 * Easy to implement audio data sources (HTTP and local file system DataSources provided)
 * Easy to extend DataSource to support adaptive buffering, encryption etc
