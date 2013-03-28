@@ -93,7 +93,10 @@
         [self unregisterForEvents];
     }
     
-    CFReadStreamClose(stream);
+    if (stream)
+    {
+        CFReadStreamClose(stream);
+    }
     
     stream = nil;
     relativePosition = 0;
