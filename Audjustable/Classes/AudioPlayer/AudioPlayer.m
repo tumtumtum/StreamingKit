@@ -1069,7 +1069,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         audioQueue = nil;
     }
     
+    SPIN_LOCK_LOCK(&currentlyPlayingLock);
     currentAudioStreamBasicDescription = currentlyPlayingEntry->audioStreamBasicDescription;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
     error = AudioQueueNewOutput(&currentlyPlayingEntry->audioStreamBasicDescription, AudioQueueOutputCallbackProc, (__bridge void*)self, NULL, NULL, 0, &audioQueue);
     
@@ -1174,7 +1176,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
+    SPIN_LOCK_LOCK(&currentlyPlayingLock);
     QueueEntry* entry = currentlyPlayingEntry;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
     if (entry == nil)
     {
@@ -1196,7 +1200,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
+    SPIN_LOCK_LOCK(&currentlyPlayingLock);
     QueueEntry* entry = currentlyPlayingEntry;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
     return [entry progress];
 }
@@ -1359,7 +1365,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     double progress = [entry progress];
     double duration = [entry duration];
     
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     BOOL nextIsDifferent = currentlyPlayingEntry != next;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
     if (next)
     {
@@ -1371,14 +1379,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         
         SPIN_LOCK_LOCK(&currentlyPlayingLock);
-        {
-            currentlyPlayingEntry = next;
-            currentlyPlayingEntry->bytesPlayed = 0;
-            
-        }
-        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
-        
+        currentlyPlayingEntry = next;
+        currentlyPlayingEntry->bytesPlayed = 0;
         NSObject* playingQueueItemId = playingQueueItemId = currentlyPlayingEntry.queueItemId;
+        SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
         
         if (nextIsDifferent && entry)
         {
@@ -1655,45 +1659,49 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) processSeekToTime
 {
 	OSStatus error;
-    NSAssert(currentlyReadingEntry == currentlyPlayingEntry, @"playing and reading must be the same");
+    SPIN_LOCK_LOCK(&currentlyPlayingLock);
+    QueueEntry* currentEntry = currentlyReadingEntry;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
-    if ([currentlyPlayingEntry calculatedBitRate] == 0.0 || currentlyPlayingEntry.dataSource.length <= 0)
+    NSAssert(currentEntry == currentlyPlayingEntry, @"playing and reading must be the same");
+    
+    if (!currentEntry || ([currentEntry calculatedBitRate] == 0.0 || currentlyPlayingEntry.dataSource.length <= 0))
     {
         return;
     }
     
-    long long seekByteOffset = currentlyPlayingEntry->audioDataOffset + (requestedSeekTime / self.duration) * (currentlyReadingEntry.audioDataLengthInBytes);
+    long long seekByteOffset = currentEntry->audioDataOffset + (requestedSeekTime / self.duration) * (currentlyReadingEntry.audioDataLengthInBytes);
     
-    if (seekByteOffset > currentlyPlayingEntry.dataSource.length - (2 * currentlyPlayingEntry->packetBufferSize))
+    if (seekByteOffset > currentEntry.dataSource.length - (2 * currentEntry->packetBufferSize))
     {
-        seekByteOffset = currentlyPlayingEntry.dataSource.length - 2 * currentlyPlayingEntry->packetBufferSize;
+        seekByteOffset = currentEntry.dataSource.length - 2 * currentEntry->packetBufferSize;
     }
     
-    currentlyPlayingEntry->seekTime = requestedSeekTime;
-    currentlyPlayingEntry->lastProgress = requestedSeekTime;
+    currentEntry->seekTime = requestedSeekTime;
+    currentEntry->lastProgress = requestedSeekTime;
     
-    double calculatedBitRate = [currentlyPlayingEntry calculatedBitRate];
+    double calculatedBitRate = [currentEntry calculatedBitRate];
     
-    if (currentlyPlayingEntry->packetDuration > 0 && calculatedBitRate > 0)
+    if (currentEntry->packetDuration > 0 && calculatedBitRate > 0)
     {
         UInt32 ioFlags = 0;
         SInt64 packetAlignedByteOffset;
-        SInt64 seekPacket = floor(requestedSeekTime / currentlyPlayingEntry->packetDuration);
+        SInt64 seekPacket = floor(requestedSeekTime / currentEntry->packetDuration);
         
         error = AudioFileStreamSeek(audioFileStream, seekPacket, &packetAlignedByteOffset, &ioFlags);
         
         if (!error && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated))
         {
-            double delta = ((seekByteOffset - (SInt64)currentlyPlayingEntry->audioDataOffset) - packetAlignedByteOffset) / calculatedBitRate * 8;
+            double delta = ((seekByteOffset - (SInt64)currentEntry->audioDataOffset) - packetAlignedByteOffset) / calculatedBitRate * 8;
             
-            currentlyPlayingEntry->seekTime -= delta;
+            currentEntry->seekTime -= delta;
             
-            seekByteOffset = packetAlignedByteOffset + currentlyPlayingEntry->audioDataOffset;
+            seekByteOffset = packetAlignedByteOffset + currentEntry->audioDataOffset;
         }
     }
     
-    [currentlyReadingEntry updateAudioDataSource];
-    [currentlyReadingEntry.dataSource seekToOffset:seekByteOffset];
+    [currentEntry updateAudioDataSource];
+    [currentEntry.dataSource seekToOffset:seekByteOffset];
     
     if (seekByteOffset > 0)
     {
@@ -1705,9 +1713,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self resetAudioQueue];
     }
     
-    if (currentlyPlayingEntry)
+    if (currentEntry)
     {
-        currentlyPlayingEntry->bytesPlayed = 0;
+        currentEntry->bytesPlayed = 0;
     }
 }
 
@@ -2081,7 +2089,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(NSObject*) currentlyPlayingQueueItemId
 {
+    SPIN_LOCK_LOCK(&currentlyPlayingLock);
     QueueEntry* entry = currentlyPlayingEntry;
+    SPIN_LOCK_UNLOCK(&currentlyPlayingLock);
     
     if (entry == nil)
     {
