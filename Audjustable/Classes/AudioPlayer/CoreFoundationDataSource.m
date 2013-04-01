@@ -81,7 +81,7 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     {
         [self unregisterForEvents];
         
-        CFReadStreamClose(stream);
+        [self close];
         
         stream = 0;
     }
@@ -92,6 +92,7 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     if (stream)
     {
         CFReadStreamClose(stream);
+        CFRelease(stream);
         
         stream = 0;
     }

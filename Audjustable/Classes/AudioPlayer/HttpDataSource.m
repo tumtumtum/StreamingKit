@@ -96,9 +96,10 @@
     if (stream)
     {
         CFReadStreamClose(stream);
+        CFRelease(stream);
     }
     
-    stream = nil;
+    stream = 0;
     relativePosition = 0;
     seekStart = offset;
     

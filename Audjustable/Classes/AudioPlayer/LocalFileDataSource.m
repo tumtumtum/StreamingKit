@@ -77,6 +77,7 @@
     if (stream)
     {
         CFReadStreamClose(stream);
+        CFRelease(stream);
         
         stream = 0;
     }
