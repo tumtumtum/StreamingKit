@@ -8,7 +8,7 @@
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 1. Redistributions of source code must retain the above copyright 
+ 1. Redistributions of source code must retain the above copyright
  notice, this list of conditions and the following disclaimer.
  2. Redistributions in binary form must reproduce the above copyright
  notice, this list of conditions and the following disclaimer in the
@@ -30,7 +30,7 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**********************************************************************************/
+ **********************************************************************************/
 
 #import "HttpDataSource.h"
 #import "LocalFileDataSource.h"
@@ -60,34 +60,33 @@
     return self;
 }
 
-
-+(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)fileExtension
++(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)mimeType
 {
     static dispatch_once_t onceToken;
     static NSDictionary* fileTypesByMimeType;
     
     dispatch_once(&onceToken, ^
-    {
-        fileTypesByMimeType =
-        @{
-            @"audio/mp3": @(kAudioFileMP3Type),
-            @"audio/mpg": @(kAudioFileMP3Type),
-            @"audio/mpeg": @(kAudioFileMP3Type),
-            @"audio/wav": @(kAudioFileWAVEType),
-            @"audio/aifc": @(kAudioFileAIFCType),
-            @"audio/aiff": @(kAudioFileAIFFType),
-            @"audio/x-m4a": @(kAudioFileM4AType),
-            @"audio/x-mp4": @(kAudioFileMPEG4Type),
-            @"audio/m4a": @(kAudioFileM4AType),
-            @"audio/mp4": @(kAudioFileMPEG4Type),
-            @"audio/caf": @(kAudioFileCAFType),
-            @"audio/aac": @(kAudioFileAAC_ADTSType),
-            @"audio/ac3": @(kAudioFileAC3Type),
-            @"audio/3gp": @(kAudioFile3GPType)
-        };
-    });
+                  {
+                      fileTypesByMimeType =
+                      @{
+                        @"audio/mp3": @(kAudioFileMP3Type),
+                        @"audio/mpg": @(kAudioFileMP3Type),
+                        @"audio/mpeg": @(kAudioFileMP3Type),
+                        @"audio/wav": @(kAudioFileWAVEType),
+                        @"audio/aifc": @(kAudioFileAIFCType),
+                        @"audio/aiff": @(kAudioFileAIFFType),
+                        @"audio/x-m4a": @(kAudioFileM4AType),
+                        @"audio/x-mp4": @(kAudioFileMPEG4Type),
+                        @"audio/m4a": @(kAudioFileM4AType),
+                        @"audio/mp4": @(kAudioFileMPEG4Type),
+                        @"audio/caf": @(kAudioFileCAFType),
+                        @"audio/aac": @(kAudioFileAAC_ADTSType),
+                        @"audio/ac3": @(kAudioFileAC3Type),
+                        @"audio/3gp": @(kAudioFile3GPType)
+                        };
+                  });
     
-    NSNumber* number = [fileTypesByMimeType objectForKey:fileExtension];
+    NSNumber* number = [fileTypesByMimeType objectForKey:mimeType];
     
     if (!number)
     {
@@ -107,22 +106,22 @@
     if (fileLength < 0)
     {
         CFTypeRef copyPropertyMessage = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
-
+        
         httpHeaders = (__bridge NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)copyPropertyMessage);
-
+        
         CFRelease(copyPropertyMessage);
         
         if (seekStart == 0)
         {
             fileLength = [[httpHeaders objectForKey:@"Content-Length"] integerValue];
-        }
-        
-        NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
-        AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
-        
-        if (typeIdFromMimeType != 0)
-        {
-            audioFileTypeHint = typeIdFromMimeType;
+            
+            NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
+            AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
+            
+            if (typeIdFromMimeType != 0)
+            {
+                audioFileTypeHint = typeIdFromMimeType;
+            }
         }
     }
     
@@ -191,36 +190,36 @@
     }
     
     stream = CFReadStreamCreateForHTTPRequest(NULL, message);
-
+    
 	if (!CFReadStreamSetProperty(stream, kCFStreamPropertyHTTPShouldAutoredirect, kCFBooleanTrue))
     {
         CFRelease(message);
         
         return;
     }
-
+    
     // Proxy support
-
+    
     CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
     CFReadStreamSetProperty(stream, kCFStreamPropertyHTTPProxy, proxySettings);
     CFRelease(proxySettings);
-
+    
     // SSL support
-
+    
     if ([url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
     {
         NSDictionary* sslSettings = [NSDictionary dictionaryWithObjectsAndKeys:
-         (NSString*)kCFStreamSocketSecurityLevelNegotiatedSSL, kCFStreamSSLLevel,
-         [NSNumber numberWithBool:YES], kCFStreamSSLAllowsExpiredCertificates,
-         [NSNumber numberWithBool:YES], kCFStreamSSLAllowsExpiredRoots,
-         [NSNumber numberWithBool:YES], kCFStreamSSLAllowsAnyRoot,
-         [NSNumber numberWithBool:NO], kCFStreamSSLValidatesCertificateChain,
-         [NSNull null], kCFStreamSSLPeerName,
-		 nil];
+                                     (NSString*)kCFStreamSocketSecurityLevelNegotiatedSSL, kCFStreamSSLLevel,
+                                     [NSNumber numberWithBool:YES], kCFStreamSSLAllowsExpiredCertificates,
+                                     [NSNumber numberWithBool:YES], kCFStreamSSLAllowsExpiredRoots,
+                                     [NSNumber numberWithBool:YES], kCFStreamSSLAllowsAnyRoot,
+                                     [NSNumber numberWithBool:NO], kCFStreamSSLValidatesCertificateChain,
+                                     [NSNull null], kCFStreamSSLPeerName,
+                                     nil];
         
         CFReadStreamSetProperty(stream, kCFStreamPropertySSLSettings, (__bridge CFTypeRef)sslSettings);
     }
-
+    
     // Open
     
     if (!CFReadStreamOpen(stream))
