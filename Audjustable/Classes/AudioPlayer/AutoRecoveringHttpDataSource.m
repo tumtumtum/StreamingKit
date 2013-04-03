@@ -146,6 +146,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     
     [self stopNotifier];
     
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    
     if (reachabilityRef!= NULL)
     {
         CFRelease(reachabilityRef);
