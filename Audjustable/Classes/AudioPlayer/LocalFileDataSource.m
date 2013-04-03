@@ -50,9 +50,48 @@
         self.filePath = filePathIn;
         
         [self open];
+        
+        audioFileTypeHint = [LocalFileDataSource audioFileTypeHintFromFileExtension:filePathIn.pathExtension];
     }
     
     return self;
+}
+
++(AudioFileTypeID) audioFileTypeHintFromFileExtension:(NSString*)fileExtension
+{
+    static dispatch_once_t onceToken;
+    static NSDictionary* fileTypesByFileExtensions;
+    
+    dispatch_once(&onceToken, ^
+    {
+        fileTypesByFileExtensions =
+        @{
+            @"mp3": @(kAudioFileMP3Type),
+            @"wav": @(kAudioFileWAVEType),
+            @"aifc": @(kAudioFileAIFCType),
+            @"aiff": @(kAudioFileAIFFType),
+            @"m4a": @(kAudioFileM4AType),
+            @"mp4": @(kAudioFileMPEG4Type),
+            @"caf": @(kAudioFileCAFType),
+            @"aac": @(kAudioFileAAC_ADTSType),
+            @"ac3": @(kAudioFileAC3Type),
+            @"3gp": @(kAudioFile3GPType)
+        };
+    });
+    
+    NSNumber* number = [fileTypesByFileExtensions objectForKey:fileExtension];
+    
+    if (!number)
+    {
+        return 0;
+    }
+    
+    return (AudioFileTypeID)number.intValue;
+}
+
+-(AudioFileTypeID) audioFileTypeHint
+{
+    return audioFileTypeHint;
 }
 
 -(void) dealloc

@@ -42,10 +42,12 @@
     int fileLength;
     int discontinuous;
     NSDictionary* httpHeaders;
+    AudioFileTypeID audioFileTypeHint;
 }
 
 @property (readwrite, retain) NSURL* url;
 
++(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)fileExtension;
 -(id) initWithURL:(NSURL*)url;
 
 @end

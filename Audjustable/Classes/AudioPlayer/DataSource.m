@@ -74,4 +74,9 @@
     return NO;
 }
 
+-(AudioFileTypeID) audioFileTypeHint
+{
+    return 0;
+}
+
 @end

@@ -33,6 +33,7 @@
 **********************************************************************************/
 
 #import <Foundation/Foundation.h>
+#include <AudioToolbox/AudioToolbox.h>
 
 @class DataSource;
 
@@ -60,5 +61,6 @@
 
 -(void) seekToOffset:(long long)offset;
 -(int) readIntoBuffer:(UInt8*)buffer withSize:(int)size;
+-(AudioFileTypeID) audioFileTypeHint;
 
 @end

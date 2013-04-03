@@ -1276,8 +1276,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) setCurrentlyReadingEntry:(QueueEntry*)entry andStartPlaying:(BOOL)startPlaying
 {
-	OSStatus error;
-    
     pthread_mutex_lock(&queueBuffersMutex);
     
     if (startPlaying)
@@ -1297,15 +1295,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         AudioFileStreamClose(audioFileStream);
         
         audioFileStream = 0;
-    }
-    
-    error = AudioFileStreamOpen((__bridge void*)self, AudioFileStreamPropertyListenerProc, AudioFileStreamPacketsProc, kAudioFileM4AType, &audioFileStream);
-    
-    if (error)
-    {
-        pthread_mutex_unlock(&queueBuffersMutex);
-        
-        return;
     }
     
     if (currentlyReadingEntry)
@@ -1867,6 +1856,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (read == 0)
     {
         return;
+    }
+    
+    if (audioFileStream == 0)
+    {
+        error = AudioFileStreamOpen((__bridge void*)self, AudioFileStreamPropertyListenerProc, AudioFileStreamPacketsProc, dataSourceIn.audioFileTypeHint, &audioFileStream);
+        
+        if (error)
+        {
+            return;
+        }
     }
     
     if (read < 0)

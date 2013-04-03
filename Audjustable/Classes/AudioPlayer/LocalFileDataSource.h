@@ -39,7 +39,10 @@
 @private
     long long position;
     long long length;
+    AudioFileTypeID audioFileTypeHint;
 }
+
++(AudioFileTypeID) audioFileTypeHintFromFileExtension:(NSString*)fileExtension;
 
 @property (readonly, copy) NSString* filePath;
 

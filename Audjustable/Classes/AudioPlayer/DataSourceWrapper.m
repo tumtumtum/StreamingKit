@@ -52,6 +52,11 @@
     return self;
 }
 
+-(AudioFileTypeID) audioFileTypeHint
+{
+    return self.innerDataSource.audioFileTypeHint;
+}
+
 -(void) dealloc
 {
     self.innerDataSource.delegate = nil;
