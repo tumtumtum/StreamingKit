@@ -115,14 +115,14 @@
         if (seekStart == 0)
         {
             fileLength = [[httpHeaders objectForKey:@"Content-Length"] integerValue];
-            
-            NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
-            AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
-            
-            if (typeIdFromMimeType != 0)
-            {
-                audioFileTypeHint = typeIdFromMimeType;
-            }
+        }
+        
+        NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
+        AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
+        
+        if (typeIdFromMimeType != 0)
+        {
+            audioFileTypeHint = typeIdFromMimeType;
         }
     }
     
