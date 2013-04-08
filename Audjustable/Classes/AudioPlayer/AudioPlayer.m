@@ -42,7 +42,7 @@
 #import "libkern/OSAtomic.h"
 
 #define BitRateEstimationMinPackets (64)
-#define AudioPlayerBuffersNeededToStart (32)
+#define AudioPlayerBuffersNeededToStart (16)
 #define AudioPlayerDefaultReadBufferSize (16 * 1024)
 #define AudioPlayerDefaultPacketBufferSize (2048)
 
