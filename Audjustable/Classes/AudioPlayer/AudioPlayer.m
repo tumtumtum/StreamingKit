@@ -42,7 +42,7 @@
 #import "libkern/OSAtomic.h"
 
 #define BitRateEstimationMinPackets (64)
-#define AudioPlayerBuffersNeededToStart (32)
+#define AudioPlayerBuffersNeededToStart (16)
 #define AudioPlayerDefaultReadBufferSize (16 * 1024)
 #define AudioPlayerDefaultPacketBufferSize (2048)
 
@@ -338,6 +338,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         case AudioPlayerInternalStateWaitingForData:
         case AudioPlayerInternalStateWaitingForQueueToStart:
         case AudioPlayerInternalStatePlaying:
+        case AudioPlayerInternalStateRebuffering:
             newState = AudioPlayerStatePlaying;
             break;
         case AudioPlayerInternalStateStopping:
@@ -872,6 +873,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         signal = YES;
     }
     
+    if (!audioQueueFlushing && [self progress] > 4.0 && numberOfBuffersUsed == 0 ) {
+        self.internalState = AudioPlayerInternalStateRebuffering;
+    }
+
+    
     if (!audioQueueFlushing)
     {
         if (entry != nil)
@@ -1017,6 +1023,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 return;
             }
         }
+        
+        if (self.internalState == AudioPlayerInternalStateRebuffering && numberOfBuffersUsed >= AudioPlayerBuffersNeededToStart) {
+            self.internalState =AudioPlayerInternalStatePlaying;
+        }
+
         
         if (++fillBufferIndex >= audioQueueBufferCount)
         {
