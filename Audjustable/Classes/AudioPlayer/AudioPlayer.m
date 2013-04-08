@@ -1410,7 +1410,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         if (currentlyReadingEntry == nil)
         {
-            self.internalState = AudioPlayerInternalStateStopping;
+			if (upcomingQueue.count == 0)
+			{
+				stopReason = AudioPlayerStopReasonNoStop;
+				self.internalState = AudioPlayerInternalStateStopping;
+			}
         }
         
         if (nextIsDifferent && entry)
