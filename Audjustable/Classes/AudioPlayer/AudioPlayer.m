@@ -1024,10 +1024,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             }
         }
         
-        if (self.internalState == AudioPlayerInternalStateRebuffering && numberOfBuffersUsed >= AudioPlayerBuffersNeededToStart) {
-            self.internalState =AudioPlayerInternalStatePlaying;
+        if (self.internalState == AudioPlayerInternalStateRebuffering && numberOfBuffersUsed >= AudioPlayerBuffersNeededToStart)
+        {
+            self.internalState = AudioPlayerInternalStatePlaying;
         }
-
         
         if (++fillBufferIndex >= audioQueueBufferCount)
         {
