@@ -107,7 +107,7 @@
     {
         CFTypeRef copyPropertyMessage = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
         
-        httpHeaders = (__bridge NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)copyPropertyMessage);
+        httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)copyPropertyMessage);
         
         CFRelease(copyPropertyMessage);
         
