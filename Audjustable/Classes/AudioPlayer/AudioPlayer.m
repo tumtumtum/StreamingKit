@@ -1632,7 +1632,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 				break;
 			}
 
-			[playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:10]];
+			NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:10];
+			[playbackThreadRunLoop runMode:NSDefaultRunLoopMode beforeDate:date];
 		}
 		
 		disposeWasRequested = NO;
