@@ -23,6 +23,8 @@ Download the [source](https://github.com/tumtumtum/audjustable/zipball/master) w
 
 If you would like to integrate the AudioPlayer directly into your project you only need to copy the files inside the `/Audjustable/Classes/AudioPlayer` [directory](https://github.com/tumtumtum/audjustable/tree/master/Audjustable/Classes/AudioPlayer) into your project.
 
+Audjustable is also available as a [Cooapod](http://cocoapods.org/?q=audjustable).
+
 ## Code
 
 There are two main classes.  The `DataSource` class which is the abstract base class for the various compressed audio data sources (HTTP, local file are provided). The `AudioPlayer` class manages and renders audio from a queue DataSources.
