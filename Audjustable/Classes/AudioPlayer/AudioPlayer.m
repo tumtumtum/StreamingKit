@@ -605,12 +605,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             break;
         case kAudioFileStreamProperty_DataFormat:
         {
-            AudioStreamBasicDescription newBasicDescription;
-            UInt32 size = sizeof(newBasicDescription);
-            
-            AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_DataFormat, &size, &newBasicDescription);
-            
-            currentlyReadingEntry->audioStreamBasicDescription = newBasicDescription;
+            if (currentlyReadingEntry->audioStreamBasicDescription.mSampleRate == 0) {
+                AudioStreamBasicDescription newBasicDescription;
+                UInt32 size = sizeof(newBasicDescription);
+
+                AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_DataFormat, &size, &newBasicDescription);
+                currentlyReadingEntry->audioStreamBasicDescription = newBasicDescription;
+            }
             
             currentlyReadingEntry->sampleRate = currentlyReadingEntry->audioStreamBasicDescription.mSampleRate;
             currentlyReadingEntry->packetDuration = currentlyReadingEntry->audioStreamBasicDescription.mFramesPerPacket / currentlyReadingEntry->sampleRate;
@@ -650,6 +651,44 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
             discontinuous = YES;
+        }
+            break;
+        case kAudioFileStreamProperty_FormatList:
+        {
+            Boolean outWriteable;
+            UInt32 formatListSize;
+            OSStatus err = AudioFileStreamGetPropertyInfo(inAudioFileStream, kAudioFileStreamProperty_FormatList, &formatListSize, &outWriteable);
+            if (err)
+            {
+                break;
+            }
+
+            AudioFormatListItem *formatList = malloc(formatListSize);
+            err = AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_FormatList, &formatListSize, formatList);
+            if (err)
+            {
+                free(formatList);
+                break;
+            }
+
+            for (int i = 0; i * sizeof(AudioFormatListItem) < formatListSize; i += sizeof(AudioFormatListItem))
+            {
+                AudioStreamBasicDescription pasbd = formatList[i].mASBD;
+
+                if (pasbd.mFormatID == kAudioFormatMPEG4AAC_HE ||
+                    pasbd.mFormatID == kAudioFormatMPEG4AAC_HE_V2)
+                {
+                    //
+                    // We've found HE-AAC, remember this to tell the audio queue
+                    // when we construct it.
+                    //
+#if !TARGET_IPHONE_SIMULATOR
+                    currentlyReadingEntry->audioStreamBasicDescription = pasbd;
+#endif
+                    break;
+                }
+            }
+            free(formatList);
         }
             break;
     }
