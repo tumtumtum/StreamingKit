@@ -1226,12 +1226,14 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (entry == nil)
     {
+		pthread_mutex_unlock(&playerMutex);
+        
         return 0;
     }
     
     double retval = [entry duration];
     
-    pthread_mutex_unlock(&playerMutex);
+	pthread_mutex_unlock(&playerMutex);
     
     return retval;
 }
@@ -1251,6 +1253,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     pthread_mutex_lock(&playerMutex);
     
     QueueEntry* entry = currentlyPlayingEntry;
+    
+    if (entry == nil)
+    {
+    	pthread_mutex_unlock(&playerMutex);
+        
+        return 0;
+    }
     
     double retval = [entry progress];
     
@@ -2143,6 +2152,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (entry == nil)
     {
+        pthread_mutex_unlock(&playerMutex);
+        
         return nil;
     }
     
