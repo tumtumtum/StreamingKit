@@ -213,7 +213,7 @@
     
     double calculatedBitRate = [self calculatedBitRate];
     
-    if (calculatedBitRate == 0 || self->dataSource.length == 0)
+    if (calculatedBitRate == 0 || dataSource.length == 0)
     {
         return 0;
     }
@@ -1220,20 +1220,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
-    pthread_mutex_lock(&playerMutex);
+    OSSpinLockLock(&currentlyPlayingLock);
     
     QueueEntry* entry = currentlyPlayingEntry;
     
     if (entry == nil)
     {
-		pthread_mutex_unlock(&playerMutex);
+		OSSpinLockUnlock(&currentlyPlayingLock);
         
         return 0;
     }
     
     double retval = [entry duration];
     
-	pthread_mutex_unlock(&playerMutex);
+	OSSpinLockUnlock(&currentlyPlayingLock);
     
     return retval;
 }
@@ -1250,20 +1250,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
-    pthread_mutex_lock(&playerMutex);
+    OSSpinLockLock(&currentlyPlayingLock);
     
     QueueEntry* entry = currentlyPlayingEntry;
     
     if (entry == nil)
     {
-    	pthread_mutex_unlock(&playerMutex);
+    	OSSpinLockUnlock(&currentlyPlayingLock);
         
         return 0;
     }
     
     double retval = [entry progress];
     
-    pthread_mutex_unlock(&playerMutex);
+    OSSpinLockUnlock(&currentlyPlayingLock);
     
     return retval;
 }
@@ -2146,20 +2146,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(NSObject*) currentlyPlayingQueueItemId
 {
-    pthread_mutex_lock(&playerMutex);
+    OSSpinLockLock(&currentlyPlayingLock);
     
     QueueEntry* entry = currentlyPlayingEntry;
     
     if (entry == nil)
     {
-        pthread_mutex_unlock(&playerMutex);
+        OSSpinLockUnlock(&currentlyPlayingLock);
         
         return nil;
     }
     
     NSObject* retval = entry.queueItemId;
     
-    pthread_mutex_unlock(&playerMutex);
+    OSSpinLockUnlock(&currentlyPlayingLock);
     
     return retval;
 }
