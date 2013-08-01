@@ -1097,6 +1097,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     errorCode = errorCodeIn;
     self.internalState = AudioPlayerInternalStateError;
+    
+    dispatch_async(dispatch_get_main_queue(), ^
+                   {
+                       [self.delegate audioPlayer:self didEncounterError:errorCode];
+                   });
 }
 
 -(void) createAudioQueue
