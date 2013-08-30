@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "Audjustable"
-  s.version      = "0.0.6"
+  s.version      = "0.0.7"
   s.summary      = "A fast and extensible audio streamer for iOS and OSX with support for gapless playback and custom (non-HTTP) sources."
   s.homepage     = "http://tumtumtum.github.com/audjustable/"
   s.license      = 'MIT'
