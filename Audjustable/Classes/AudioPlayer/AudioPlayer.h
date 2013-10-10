@@ -191,6 +191,8 @@ AudioQueueBufferRefLookupEntry;
 -(void) resume;
 -(void) stop;
 -(void) flushStop;
+-(void) mute;
+-(void) unmute;
 -(void) dispose;
 -(NSObject*) currentlyPlayingQueueItemId;
 
