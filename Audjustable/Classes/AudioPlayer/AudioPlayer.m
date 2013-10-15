@@ -451,6 +451,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     free(packetDescs);
     free(audioQueueBuffer);
     free(audioQueueBufferLookup);
+    free(levelMeterState);
 }
 
 -(void) startSystemBackgroundTask
@@ -1215,6 +1216,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
     
+    // Re set metering enabled in case the user set it before the queue was created
+    [self setMeteringEnabled:meteringEnabled];
+
     free(cookieData);
 }
 
@@ -2167,6 +2171,57 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     OSSpinLockUnlock(&currentlyPlayingLock);
     
     return retval;
+}
+
+#pragma mark Metering
+
+-(void) setMeteringEnabled:(BOOL)enabled
+{
+    // If the audioQueue isn't already created, set the property for later
+    if (!audioQueue) {
+        meteringEnabled = enabled;
+        return;
+    }
+    UInt32 on = enabled ? 1 : 0;
+    OSStatus error = AudioQueueSetProperty(audioQueue, kAudioQueueProperty_EnableLevelMetering, &on, sizeof(on));
+    if (error) {
+        meteringEnabled = NO;
+    } else {
+        meteringEnabled = YES;
+    }
+}
+
+-(BOOL) isMeteringEnabled
+{
+    return meteringEnabled;
+}
+
+-(void) updateMeters
+{
+    if (!meteringEnabled) NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
+
+    NSInteger channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
+    if (numberOfChannels != channels) {
+        numberOfChannels = channels;
+        if (levelMeterState) free(levelMeterState);
+        levelMeterState = malloc(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
+    }
+
+    UInt32 sizeofMeters = sizeof(AudioQueueLevelMeterState) * numberOfChannels;
+
+    AudioQueueGetProperty(audioQueue, kAudioQueueProperty_CurrentLevelMeterDB, levelMeterState, &sizeofMeters);
+}
+
+-(float) peakPowerForChannel:(NSUInteger)channelNumber
+{
+    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels)) return 0;
+    return levelMeterState[channelNumber].mPeakPower;
+}
+
+-(float) averagePowerForChannel:(NSUInteger)channelNumber
+{
+    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels)) return 0;
+    return levelMeterState[channelNumber].mAveragePower;
 }
 
 @end
