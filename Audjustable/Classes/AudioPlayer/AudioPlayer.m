@@ -733,7 +733,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             if (currentlyReadingEntry->processedPacketsSizeTotal < 0xfffff)
             {
-                OSAtomicAdd32(packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
+                OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
                 OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
             }
             
