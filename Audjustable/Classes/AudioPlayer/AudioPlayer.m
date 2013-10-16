@@ -2143,6 +2143,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
 }
 
+-(void) mute
+{
+    AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 0);
+}
+
+-(void) unmute
+{
+    AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
+}
+
 -(void) dispose
 {
     [self stop];
