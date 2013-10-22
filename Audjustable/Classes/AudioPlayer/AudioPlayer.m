@@ -1216,7 +1216,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
     
-    // Re set metering enabled in case the user set it before the queue was created
+    // Reset metering enabled in case the user set it before the queue was created
+    
     [self setMeteringEnabled:meteringEnabled];
 
     free(cookieData);
@@ -2185,36 +2186,50 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 #pragma mark Metering
 
--(void) setMeteringEnabled:(BOOL)enabled
+-(void) setMeteringEnabled:(BOOL)value
 {
-    // If the audioQueue isn't already created, set the property for later
-    if (!audioQueue) {
-        meteringEnabled = enabled;
+    if (!audioQueue)
+    {
+        meteringEnabled = value;
+        
         return;
     }
-    UInt32 on = enabled ? 1 : 0;
+    
+    UInt32 on = value ? 1 : 0;
     OSStatus error = AudioQueueSetProperty(audioQueue, kAudioQueueProperty_EnableLevelMetering, &on, sizeof(on));
-    if (error) {
+    
+    if (error)
+    {
         meteringEnabled = NO;
-    } else {
+    }
+    else
+    {
         meteringEnabled = YES;
     }
 }
 
--(BOOL) isMeteringEnabled
+-(BOOL) meteringEnabled
 {
     return meteringEnabled;
 }
 
 -(void) updateMeters
 {
-    if (!meteringEnabled) NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
+    if (!meteringEnabled)
+    {
+        NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
+    }
 
     NSInteger channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
-    if (numberOfChannels != channels) {
+    
+    if (numberOfChannels != channels)
+    {
         numberOfChannels = channels;
+        
         if (levelMeterState) free(levelMeterState);
-        levelMeterState = malloc(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
+        {
+            levelMeterState = malloc(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
+        }
     }
 
     UInt32 sizeofMeters = sizeof(AudioQueueLevelMeterState) * numberOfChannels;
@@ -2222,15 +2237,23 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     AudioQueueGetProperty(audioQueue, kAudioQueueProperty_CurrentLevelMeterDB, levelMeterState, &sizeofMeters);
 }
 
--(float) peakPowerForChannel:(NSUInteger)channelNumber
+-(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber
 {
-    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels)) return 0;
+    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels))
+    {
+        return 0;
+    }
+    
     return levelMeterState[channelNumber].mPeakPower;
 }
 
--(float) averagePowerForChannel:(NSUInteger)channelNumber
+-(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber
 {
-    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels)) return 0;
+    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels))
+    {
+        return 0;
+    }
+    
     return levelMeterState[channelNumber].mAveragePower;
 }
 
