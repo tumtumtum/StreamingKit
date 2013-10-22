@@ -172,6 +172,10 @@ AudioQueueBufferRefLookupEntry;
     volatile BOOL audioQueueFlushing;
     volatile SInt64 audioPacketsReadCount;
     volatile SInt64 audioPacketsPlayedCount;
+
+    BOOL meteringEnabled;
+    AudioQueueLevelMeterState *levelMeterState;
+    NSInteger numberOfChannels;
 }
 
 @property (readonly) double duration;
@@ -179,6 +183,8 @@ AudioQueueBufferRefLookupEntry;
 @property (readwrite) AudioPlayerState state;
 @property (readonly) AudioPlayerStopReason stopReason;
 @property (readwrite, unsafe_unretained) id<AudioPlayerDelegate> delegate;
+//! Turns level metering on or off. Default is off
+@property(getter=isMeteringEnabled) BOOL meteringEnabled;
 
 -(id) init;
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
@@ -195,5 +201,11 @@ AudioQueueBufferRefLookupEntry;
 -(void) unmute;
 -(void) dispose;
 -(NSObject*) currentlyPlayingQueueItemId;
+//! Call to refresh meter values
+- (void) updateMeters;
+//! Returns peak power in decibels for a given channel
+- (float) peakPowerForChannel:(NSUInteger)channelNumber;
+//! Returns average power in decibels for a given channel
+- (float) averagePowerForChannel:(NSUInteger)channelNumber;
 
 @end

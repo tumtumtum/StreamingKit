@@ -153,7 +153,7 @@
     
     stream = 0;
     relativePosition = 0;
-    seekStart = offset;
+    seekStart = (int)offset;
     
     [self open];
     [self reregisterForEvents];
