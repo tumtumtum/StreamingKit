@@ -18,12 +18,12 @@
  documentation and/or other materials provided with the distribution.
  3. All advertising materials mentioning features or use of this software
  must display the following acknowledgement:
- This product includes software developed by the <organization>.
- 4. Neither the name of the <organization> nor the
+ This product includes software developed by Thong Nguyen (tumtumtum@gmail.com)
+ 4. Neither the name of Thong Nguyen nor the
  names of its contributors may be used to endorse or promote products
  derived from this software without specific prior written permission.
  
- THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ''AS IS'' AND ANY
+ THIS SOFTWARE IS PROVIDED BY Thong Nguyen''AS IS'' AND ANY
  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -248,12 +248,13 @@
 @interface AudioPlayer()
 @property (readwrite) AudioPlayerInternalState internalState;
 
+-(void) logInfo:(NSString*)line;
 -(void) processQueue:(BOOL)skipCurrent;
 -(void) createAudioQueue;
 -(void) enqueueBuffer;
--(void) resetAudioQueue;
+-(void) resetAudioQueueWithReason:(NSString*)reason;
 -(BOOL) startAudioQueue;
--(void) stopAudioQueue;
+-(void) stopAudioQueueWithReason:(NSString*)reason;
 -(BOOL) processRunloop;
 -(void) wakeupPlaybackThread;
 -(void) audioQueueFinishedPlaying:(QueueEntry*)entry;
@@ -374,6 +375,14 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     AudioQueueGetProperty(audioQueue, kAudioQueueProperty_IsRunning, &isRunning, &isRunningSize);
     
     return isRunning ? YES : NO;
+}
+
+-(void) logInfo:(NSString*)line
+{
+    if ([self->delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
+    {
+        [self->delegate audioPlayer:self logInfo:line];
+    }
 }
 
 -(id) init
@@ -1219,7 +1228,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     // Reset metering enabled in case the user set it before the queue was created
     
     [self setMeteringEnabled:meteringEnabled];
-
+    
     free(cookieData);
 }
 
@@ -1338,7 +1347,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		{
 			newFileToPlay = YES;
 			
-			[self resetAudioQueue];
+			[self resetAudioQueueWithReason:@"from skipCurrent"];
 		}
 		
 		[self wakeupPlaybackThread];
@@ -1355,7 +1364,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             pthread_mutex_unlock(&queueBuffersMutex);
             
-            [self resetAudioQueue];
+            [self resetAudioQueueWithReason:@"from setCurrentlyReadingEntry"];
             
             pthread_mutex_lock(&queueBuffersMutex);
         }
@@ -1513,7 +1522,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else if (self.internalState == AudioPlayerInternalStateStopped && stopReason == AudioPlayerStopReasonUserAction)
         {
-            [self stopAudioQueue];
+            [self stopAudioQueueWithReason:@"from processRunLoop/1"];
             
             currentlyReadingEntry.dataSource.delegate = nil;
             [currentlyReadingEntry.dataSource unregisterForEvents];
@@ -1565,7 +1574,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry = nil;
             pthread_mutex_unlock(&queueBuffersMutex);
             
-            [self resetAudioQueue];
+            [self resetAudioQueueWithReason:@"from processRunLoop"];
         }
         else if (currentlyReadingEntry == nil)
         {
@@ -1613,7 +1622,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 {
                     if (self.internalState != AudioPlayerInternalStateStopped)
                     {
-                        [self stopAudioQueue];
+                        [self stopAudioQueueWithReason:@"from processRunLoop/2"];
                         stopReason = AudioPlayerStopReasonEof;
                     }
                 }
@@ -1767,7 +1776,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (audioQueue)
     {
-        [self resetAudioQueue];
+        [self resetAudioQueueWithReason:@"from seekToTime"];
     }
     
     if (currentEntry)
@@ -1793,7 +1802,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 			[self startSystemBackgroundTask];
 		}
 		
-        [self stopAudioQueue];
+        [self stopAudioQueueWithReason:@"from startAudioQueue"];
         [self createAudioQueue];
         
         self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
@@ -1806,18 +1815,22 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     return YES;
 }
 
--(void) stopAudioQueue
+-(void) stopAudioQueueWithReason:(NSString*)reason
 {
 	OSStatus error;
 	
 	if (!audioQueue)
     {
+        [self logInfo:[@"stopAudioQueue/1 " stringByAppendingString:reason]];
+        
         self.internalState = AudioPlayerInternalStateStopped;
         
         return;
     }
     else
     {
+        [self logInfo:[@"stopAudioQueue/2 " stringByAppendingString:reason]];
+        
         audioQueueFlushing = YES;
         
         error = AudioQueueStop(audioQueue, true);
@@ -1854,9 +1867,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     self.internalState = AudioPlayerInternalStateStopped;
 }
 
--(void) resetAudioQueue
+-(void) resetAudioQueueWithReason:(NSString*)reason
 {
 	OSStatus error;
+    
+    [self logInfo:[@"resetAudioQueue/1 " stringByAppendingString:reason]];
     
     pthread_mutex_lock(&playerMutex);
     {
@@ -2010,6 +2025,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 {
                     if (![self audioQueueIsRunning])
                     {
+                        [self logInfo:@"startAudioQueue from dataSourceEof"];
+                        
                         [self startAudioQueue];
                     }
                 }
@@ -2066,7 +2083,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             if (seekToTimeWasRequested)
             {
-                [self resetAudioQueue];
+                [self resetAudioQueueWithReason:@"from resume"];
             }
             
             error = AudioQueueStart(audioQueue, 0);
@@ -2219,7 +2236,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
     }
-
+    
     NSInteger channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
     
     if (numberOfChannels != channels)
@@ -2231,9 +2248,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             levelMeterState = malloc(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
         }
     }
-
+    
     UInt32 sizeofMeters = sizeof(AudioQueueLevelMeterState) * numberOfChannels;
-
+    
     AudioQueueGetProperty(audioQueue, kAudioQueueProperty_CurrentLevelMeterDB, levelMeterState, &sizeofMeters);
 }
 
