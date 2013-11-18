@@ -197,4 +197,9 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     }
 }
 
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"Auto-recovering HTTP data source with file length: %lld and position: %lld", self.length, self.position];
+}
+
 @end

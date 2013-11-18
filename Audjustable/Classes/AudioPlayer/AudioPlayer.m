@@ -2005,6 +2005,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self enqueueBuffer];
     }
     
+    [self logInfo:[NSString stringWithFormat:@"dataSourceEof for dataSource: %@", dataSourceIn]];
+    
     NSObject* queueItemId = currentlyReadingEntry.queueItemId;
     
     dispatch_async(dispatch_get_main_queue(), ^
