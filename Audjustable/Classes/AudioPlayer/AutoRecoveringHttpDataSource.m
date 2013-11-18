@@ -1,9 +1,9 @@
 /**********************************************************************************
  AudioPlayer.m
-
+ 
  Created by Thong Nguyen on 16/10/2012.
  https://github.com/tumtumtum/audjustable
-
+ 
  Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #import "AutoRecoveringHttpDataSource.h"
 
 #define MAX_IMMEDIATE_RECONNECT_ATTEMPTS (8)
+#define MAX_ATTEMPTS_WITH_SERVER_ERROR (MAX_IMMEDIATE_RECONNECT_ATTEMPTS + 2)
 
 @interface AutoRecoveringHttpDataSource()
 {
@@ -178,7 +179,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     [self seekToOffset:self.position];
 }
 
--(void) dataSourceErrorOccured:(DataSource*)dataSource
+-(void) processRetryOnError
 {
     if (![self hasGotNetworkConnection])
     {
@@ -187,13 +188,41 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         return;
     }
     
-    if (reconnectAttempts > MAX_IMMEDIATE_RECONNECT_ATTEMPTS)
+    if (!(self.innerDataSource.httpStatusCode >= 200 && self.innerDataSource.httpStatusCode <= 299) && reconnectAttempts >= MAX_ATTEMPTS_WITH_SERVER_ERROR)
+    {
+        [self.delegate dataSourceErrorOccured:self];
+    }
+    else if (reconnectAttempts > MAX_IMMEDIATE_RECONNECT_ATTEMPTS)
     {
         [self performSelector:@selector(attemptReconnect) withObject:nil afterDelay:5];
     }
     else
     {
         [self attemptReconnect];
+    }
+}
+
+-(void) dataSourceEof:(DataSource*)dataSource
+{
+    if ([self position] != [self length])
+    {
+        [self processRetryOnError];
+        
+        return;
+    }
+    
+    [self.delegate dataSourceEof:dataSource];
+}
+
+-(void) dataSourceErrorOccured:(DataSource*)dataSource
+{
+    if (self.innerDataSource.httpStatusCode == 416 /* Range out of bounds */)
+    {
+        [self.delegate dataSourceEof:dataSource];
+    }
+    else
+    {
+        [self processRetryOnError];
     }
 }
 

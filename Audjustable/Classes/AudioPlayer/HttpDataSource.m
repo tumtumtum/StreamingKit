@@ -105,23 +105,34 @@
 {
     if (fileLength < 0)
     {
-        CFTypeRef copyPropertyMessage = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
+        CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
         
-        httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)copyPropertyMessage);
+        httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
         
-        CFRelease(copyPropertyMessage);
+        self.httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
         
-        if (seekStart == 0)
+        CFRelease(response);
+        
+        if (self.httpStatusCode == 200)
         {
-            fileLength = [[httpHeaders objectForKey:@"Content-Length"] integerValue];
+            if (seekStart == 0)
+            {
+                fileLength = [[httpHeaders objectForKey:@"Content-Length"] integerValue];
+            }
+            
+            NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
+            AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
+            
+            if (typeIdFromMimeType != 0)
+            {
+                audioFileTypeHint = typeIdFromMimeType;
+            }
         }
-        
-        NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
-        AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
-        
-        if (typeIdFromMimeType != 0)
+        else
         {
-            audioFileTypeHint = typeIdFromMimeType;
+            [self errorOccured];
+            
+            return;
         }
     }
     

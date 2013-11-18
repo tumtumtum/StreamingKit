@@ -30,7 +30,7 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**********************************************************************************/
+ **********************************************************************************/
 
 #import "CoreFoundationDataSource.h"
 
@@ -46,6 +46,7 @@
 }
 
 @property (readwrite, retain) NSURL* url;
+@property (readwrite) UInt32 httpStatusCode;
 
 +(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)fileExtension;
 -(id) initWithURL:(NSURL*)url;
