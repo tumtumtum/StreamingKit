@@ -190,7 +190,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     
     if (!(self.innerDataSource.httpStatusCode >= 200 && self.innerDataSource.httpStatusCode <= 299) && reconnectAttempts >= MAX_ATTEMPTS_WITH_SERVER_ERROR)
     {
-        [self.delegate dataSourceErrorOccured:self];
+        [super dataSourceErrorOccured:self];
     }
     else if (reconnectAttempts > MAX_IMMEDIATE_RECONNECT_ATTEMPTS)
     {
@@ -211,26 +211,26 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         return;
     }
     
-    [self.delegate dataSourceEof:dataSource];
+    [self.delegate dataSourceEof:self];
 }
 
 -(void) dataSourceErrorOccured:(DataSource*)dataSource
 {
     if (self.innerDataSource.httpStatusCode == 416 /* Range out of bounds */)
     {
-        [self.delegate dataSourceEof:dataSource];
+        [super dataSourceEof:dataSource];
     }
     else
     {
         [self processRetryOnError];
     }
-
+    
 }
 
 -(NSString*) description
 {
     return [NSString stringWithFormat:@"Auto-recovering HTTP data source with file length: %lld and position: %lld", self.length, self.position];
-
+    
 }
 
 @end
