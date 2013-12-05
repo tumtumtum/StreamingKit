@@ -2021,7 +2021,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry.bufferIndex = audioPacketsReadCount;
             currentlyReadingEntry = nil;
             
-            if (self.internalState == AudioPlayerInternalStatePlaying)
+            if (self.internalState | AudioPlayerInternalStateRunning)
             {
                 if (audioQueue)
                 {
