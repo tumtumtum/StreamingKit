@@ -123,9 +123,25 @@
     
     stream = CFReadStreamCreateWithFile(NULL, (__bridge CFURLRef)url);
     
-    SInt32 errorCode;
-    
-    NSNumber* number = (__bridge_transfer NSNumber*)CFURLCreatePropertyFromResource(NULL, (__bridge CFURLRef)url, kCFURLFileLength, &errorCode);
+    NSError *fileError;
+
+    NSFileManager *manager = [[NSFileManager alloc] init];
+
+    NSString *path = [NSString stringWithUTF8String:[url fileSystemRepresentation]];
+
+    NSDictionary *attributes = [manager attributesOfItemAtPath:path
+                                                         error:&fileError];
+
+    if (fileError)
+    {
+        CFReadStreamClose(stream);
+        CFRelease(stream);
+        stream = 0;
+        return;
+    }
+
+    NSNumber* number = [attributes objectForKey:@"NSFileSize"];
+
     
     if (number)
     {
