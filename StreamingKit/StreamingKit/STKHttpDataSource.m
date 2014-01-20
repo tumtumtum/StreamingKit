@@ -220,7 +220,7 @@
 {
     self->currentUrl = urlProvider();
     
-    CFHTTPMessageRef message = CFHTTPMessageCreateRequest(NULL, (CFStringRef)@"GET", (__bridge CFURLRef)self.url, kCFHTTPVersion1_1);
+    CFHTTPMessageRef message = CFHTTPMessageCreateRequest(NULL, (CFStringRef)@"GET", (__bridge CFURLRef)self->currentUrl, kCFHTTPVersion1_1);
     
     if (seekStart > 0)
     {
@@ -235,12 +235,16 @@
     {
         CFRelease(message);
         
+        [self errorOccured];
+        
         return;
     }
     
 	if (!CFReadStreamSetProperty(stream, kCFStreamPropertyHTTPShouldAutoredirect, kCFBooleanTrue))
     {
         CFRelease(message);
+        
+        [self errorOccured];
         
         return;
     }
@@ -273,6 +277,8 @@
     {
         CFRelease(stream);
         CFRelease(message);
+        
+        [self errorOccured];
         
         return;
     }
