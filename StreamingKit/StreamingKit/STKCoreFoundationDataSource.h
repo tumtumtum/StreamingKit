@@ -41,7 +41,7 @@
 @property (readwrite, retain) STKCoreFoundationDataSource* datasource;
 @end
 
-@interface STKCoreFoundationDataSource : DataSource
+@interface STKCoreFoundationDataSource : STKDataSource
 {
 @protected
     CFReadStreamRef stream;

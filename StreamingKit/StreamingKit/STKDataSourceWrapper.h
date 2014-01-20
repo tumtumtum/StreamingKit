@@ -34,10 +34,10 @@
 
 #import "STKDataSource.h"
 
-@interface DataSourceWrapper : DataSource<STKDataSourceDelegate>
+@interface STKDataSourceWrapper : STKDataSource<STKDataSourceDelegate>
 
--(id) initWithDataSource:(DataSource*)innerDataSource;
+-(id) initWithDataSource:(STKDataSource*)innerDataSource;
 
-@property (readonly) DataSource* innerDataSource;
+@property (readonly) STKDataSource* innerDataSource;
 
 @end

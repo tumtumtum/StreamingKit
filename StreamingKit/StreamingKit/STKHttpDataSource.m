@@ -35,11 +35,11 @@
 #import "STKHttpDataSource.h"
 #import "STKLocalFileDataSource.h"
 
-@interface HttpDataSource()
+@interface STKHttpDataSource()
 -(void) open;
 @end
 
-@implementation HttpDataSource
+@implementation STKHttpDataSource
 @synthesize url;
 
 -(id) initWithURL:(NSURL*)urlIn
@@ -54,7 +54,7 @@
         
         [self open];
         
-        audioFileTypeHint = [LocalFileDataSource audioFileTypeHintFromFileExtension:urlIn.pathExtension];
+        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:urlIn.pathExtension];
     }
     
     return self;
@@ -122,7 +122,7 @@
             }
             
             NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
-            AudioFileTypeID typeIdFromMimeType = [HttpDataSource audioFileTypeHintFromMimeType:contentType];
+            AudioFileTypeID typeIdFromMimeType = [STKHttpDataSource audioFileTypeHintFromMimeType:contentType];
             
             if (typeIdFromMimeType != 0)
             {

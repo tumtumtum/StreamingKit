@@ -194,10 +194,10 @@ AudioQueueBufferRefLookupEntry;
 
 -(id) init;
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
--(DataSource*) dataSourceFromURL:(NSURL*)url;
+-(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 -(void) play:(NSURL*)url;
--(void) queueDataSource:(DataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
--(void) setDataSource:(DataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
+-(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
+-(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
 -(void) seekToTime:(double)value;
 -(void) pause;
 -(void) resume;

@@ -34,13 +34,13 @@
 
 #import "STKDataSourceWrapper.h"
 
-@interface DataSourceWrapper()
-@property (readwrite) DataSource* innerDataSource;
+@interface STKDataSourceWrapper()
+@property (readwrite) STKDataSource* innerDataSource;
 @end
 
-@implementation DataSourceWrapper
+@implementation STKDataSourceWrapper
 
--(id) initWithDataSource:(DataSource*)innerDataSourceIn
+-(id) initWithDataSource:(STKDataSource*)innerDataSourceIn
 {
     if (self = [super init])
     {
@@ -102,17 +102,17 @@
     return self.innerDataSource.hasBytesAvailable;
 }
 
--(void) dataSourceDataAvailable:(DataSource*)dataSource
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSource
 {
     [self.delegate dataSourceDataAvailable:self];
 }
 
--(void) dataSourceErrorOccured:(DataSource*)dataSource
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSource
 {
     [self.delegate dataSourceErrorOccured:self];
 }
 
--(void) dataSourceEof:(DataSource*)dataSource
+-(void) dataSourceEof:(STKDataSource*)dataSource
 {
     [self.delegate dataSourceEof:self];
 }

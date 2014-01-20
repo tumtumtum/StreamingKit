@@ -34,7 +34,7 @@
 
 #import "STKCoreFoundationDataSource.h"
 
-@interface LocalFileDataSource : STKCoreFoundationDataSource
+@interface STKLocalFileDataSource : STKCoreFoundationDataSource
 {
 @private
     long long position;

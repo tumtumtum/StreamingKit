@@ -34,7 +34,7 @@
 
 #import "STKDataSource.h"
 
-@implementation DataSource
+@implementation STKDataSource
 @synthesize delegate;
 
 -(long long) length

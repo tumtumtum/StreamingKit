@@ -35,12 +35,12 @@
 #import <Foundation/Foundation.h>
 #include <AudioToolbox/AudioToolbox.h>
 
-@class DataSource;
+@class STKDataSource;
 
 @protocol STKDataSourceDelegate<NSObject>
--(void) dataSourceDataAvailable:(DataSource*)dataSource;
--(void) dataSourceErrorOccured:(DataSource*)dataSource;
--(void) dataSourceEof:(DataSource*)dataSource;
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSource;
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSource;
+-(void) dataSourceEof:(STKDataSource*)dataSource;
 @end
 
 @protocol AudioDataSource<NSObject>
@@ -48,7 +48,7 @@
 @property (readwrite) long long audioDataOffset;
 @end
 
-@interface DataSource : NSObject
+@interface STKDataSource : NSObject
 
 @property (readonly) long long position;
 @property (readonly) long long length;

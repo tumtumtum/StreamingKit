@@ -34,13 +34,13 @@
 
 #import "STKLocalFileDataSource.h"
 
-@interface LocalFileDataSource()
+@interface STKLocalFileDataSource()
 @property (readwrite, copy) NSString* filePath;
 
 -(void) open;
 @end
 
-@implementation LocalFileDataSource
+@implementation STKLocalFileDataSource
 @synthesize filePath;
 
 -(id) initWithFilePath:(NSString*)filePathIn
@@ -51,7 +51,7 @@
         
         [self open];
         
-        audioFileTypeHint = [LocalFileDataSource audioFileTypeHintFromFileExtension:filePathIn.pathExtension];
+        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:filePathIn.pathExtension];
     }
     
     return self;

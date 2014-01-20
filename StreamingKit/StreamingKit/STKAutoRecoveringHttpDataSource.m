@@ -68,12 +68,12 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 @implementation STKAutoRecoveringHttpDataSource
 
--(HttpDataSource*) innerHttpDataSource
+-(STKHttpDataSource*) innerHttpDataSource
 {
-    return (HttpDataSource*)self.innerDataSource;
+    return (STKHttpDataSource*)self.innerDataSource;
 }
 
--(id) initWithHttpDataSource:(HttpDataSource*)innerDataSourceIn
+-(id) initWithHttpDataSource:(STKHttpDataSource*)innerDataSourceIn
 {
     if (self = [super initWithDataSource:innerDataSourceIn])
     {
@@ -165,7 +165,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     }
 }
 
--(void) dataSourceDataAvailable:(DataSource*)dataSource
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSource
 {
     reconnectAttempts = 0;
     
@@ -202,7 +202,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     }
 }
 
--(void) dataSourceEof:(DataSource*)dataSource
+-(void) dataSourceEof:(STKDataSource*)dataSource
 {
     if ([self position] != [self length])
     {
@@ -214,7 +214,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     [self.delegate dataSourceEof:self];
 }
 
--(void) dataSourceErrorOccured:(DataSource*)dataSource
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSource
 {
     if (self.innerDataSource.httpStatusCode == 416 /* Range out of bounds */)
     {

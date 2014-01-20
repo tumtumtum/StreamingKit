@@ -34,7 +34,7 @@
 
 #import "STKCoreFoundationDataSource.h"
 
-@interface HttpDataSource : STKCoreFoundationDataSource
+@interface STKHttpDataSource : STKCoreFoundationDataSource
 {
 @private
     int seekStart;

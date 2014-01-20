@@ -114,7 +114,7 @@
     AudioStreamBasicDescription audioStreamBasicDescription;
 }
 @property (readwrite, retain) NSObject* queueItemId;
-@property (readwrite, retain) DataSource* dataSource;
+@property (readwrite, retain) STKDataSource* dataSource;
 @property (readwrite) int bufferIndex;
 @property (readonly) UInt64 audioDataLengthInBytes;
 
@@ -122,20 +122,20 @@
 -(double) calculatedBitRate;
 -(double) progress;
 
--(id) initWithDataSource:(DataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
--(id) initWithDataSource:(DataSource*)dataSource andQueueItemId:(NSObject*)queueItemId andBufferIndex:(int)bufferIndex;
+-(id) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
+-(id) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId andBufferIndex:(int)bufferIndex;
 
 @end
 
 @implementation QueueEntry
 @synthesize dataSource, queueItemId, bufferIndex;
 
--(id) initWithDataSource:(DataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn
+-(id) initWithDataSource:(STKDataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn
 {
     return [self initWithDataSource:dataSourceIn andQueueItemId:queueItemIdIn andBufferIndex:-1];
 }
 
--(id) initWithDataSource:(DataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn andBufferIndex:(int)bufferIndexIn
+-(id) initWithDataSource:(STKDataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn andBufferIndex:(int)bufferIndexIn
 {
     if (self = [super init])
     {
@@ -500,17 +500,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 #endif
 }
 
--(DataSource*) dataSourceFromURL:(NSURL*)url
+-(STKDataSource*) dataSourceFromURL:(NSURL*)url
 {
-    DataSource* retval;
+    STKDataSource* retval;
     
     if ([url.scheme isEqualToString:@"file"])
     {
-        retval = [[LocalFileDataSource alloc] initWithFilePath:url.path];
+        retval = [[STKLocalFileDataSource alloc] initWithFilePath:url.path];
     }
     else
     {
-        retval = [[HttpDataSource alloc] initWithURL:url];
+        retval = [[STKHttpDataSource alloc] initWithURL:url];
     }
     
     return retval;
@@ -557,7 +557,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	[self setDataSource:[self dataSourceFromURL:url] withQueueItemId:url];
 }
 
--(void) setDataSource:(DataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
+-(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
 {
     [fastApiQueue cancelAllOperations];
     
@@ -578,7 +578,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
      }];
 }
 
--(void) queueDataSource:(DataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
+-(void) queueDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
 {
 	[fastApiQueue addOperationWithBlock:^
      {
@@ -1926,7 +1926,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     pthread_mutex_unlock(&queueBuffersMutex);
 }
 
--(void) dataSourceDataAvailable:(DataSource*)dataSourceIn
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSourceIn
 {
 	OSStatus error;
     
@@ -1989,7 +1989,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
 }
 
--(void) dataSourceErrorOccured:(DataSource*)dataSourceIn
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSourceIn
 {
     if (currentlyReadingEntry.dataSource != dataSourceIn)
     {
@@ -1999,7 +1999,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     [self didEncounterError:AudioPlayerErrorDataNotFound];
 }
 
--(void) dataSourceEof:(DataSource*)dataSourceIn
+-(void) dataSourceEof:(STKDataSource*)dataSourceIn
 {
     if (currentlyReadingEntry.dataSource != dataSourceIn)
     {
