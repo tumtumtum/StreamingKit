@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>A5188B80-95E0-46CF-BEC9-273724D5616A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>StreamingKit</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>821E27F3-2BD4-4B06-BB39-F4C3ECC1BBAD</key>
+		<string>https://github.com/tumtumtum/audjustable.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>StreamingKit.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>821E27F3-2BD4-4B06-BB39-F4C3ECC1BBAD</key>
+		<string>..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/tumtumtum/audjustable.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>821E27F3-2BD4-4B06-BB39-F4C3ECC1BBAD</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>821E27F3-2BD4-4B06-BB39-F4C3ECC1BBAD</string>
+			<key>IDESourceControlWCCName</key>
+			<string>audjustable</string>
+		</dict>
+	</array>
+</dict>
+</plist>

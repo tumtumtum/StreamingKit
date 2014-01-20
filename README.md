@@ -1,50 +1,44 @@
-### Audjustable Audio Streamer
+## StreamingKit
 
-[Homepage](http://tumtumtum.github.com/audjustable)
+StreamingKit (formally Audjustable) is an audio streaming library for iOS and OSX.  StreamingKit uses CoreAudio to decompress and playback audio whilst providing a clean and simple object-oriented API.
 
-Audjustable is an audio streaming class for iOS and OSX.  Audjustable uses CoreAudio to decompress and playback audio whilst providing a clean and simple object-oriented API.
+The primary motivation of this project was to decouple the input data sources from the actual player logic in order to allow advanced customizable input handling such as HTTP streaming, encryption/decryption, auto-recovery, dynamic-buffering. Along the way other features such as gapless playback were added.
 
-The primary motivation of this project was to decouple the input (DataSource/InputStreams) from the actual player logic in order to allow advanced customizable input handling such as: HTTP streaming, encryption, auto-recovery, dynamic-buffering. Along the way other features such as gapless playback were added as the opportunity arose.
-
-## Features
+## Main Features
 
 * Simple OOP API
 * Easy to read source
-* Adjustable audio buffering
 * Mostly asynchronous API
 * Buffered and gapless playback
 * Easy to implement audio data sources (HTTP and local file system DataSources provided)
 * Easy to extend DataSource to support adaptive buffering, encryption, etc.
 * Optimised for low CPU/battery usage
 
-## Usage
+## Installation
 
-Download the [source](https://github.com/tumtumtum/audjustable/zipball/master) which includes a simple audio player project that streams audio over HTTP or locally using the `HttpDataSource` or `LocalFileDataSource` classes respectively.
+StreamingKit is also available as a [Cocoapod](http://cocoapods.org/?q=StreamingKit) and a static lib. You can also simply manually copy all the source files located inside StreamingKit/StreamingKit/* into your project.
 
-If you would like to integrate the AudioPlayer directly into your project you only need to copy the files inside the `/Audjustable/Classes/AudioPlayer` [directory](https://github.com/tumtumtum/audjustable/tree/master/Audjustable/Classes/AudioPlayer) into your project.
+## Example
 
-Audjustable is also available as a [Cocoapod](http://cocoapods.org/?q=audjustable).
-
-## Code
-
-There are two main classes.  The `DataSource` class which is the abstract base class for the various compressed audio data sources (HTTP, local file are provided). The `AudioPlayer` class manages and renders audio from a queue DataSources.
+There are two main classes.  The `STKDataSource` class which is the abstract base class for the various compressed audio data sources (HTTP, local file are provided). The `STKAudioPlayer` class manages and renders audio from a queue DataSources.
 
 ```objective-c
 
 // Create AudioPlayer
 
-AudioPlayer* audioPlayer = [[AudioPlayer alloc] init];
+STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 audioPlayer.delegate = self;
 
 // Queue on a URL to play. Each queue item has a unique ID (item1) that to identify the related file in delegate callbacks
 
-[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:@"https://github.com/downloads/tumtumtum/audjustable/sample.m4a"] withQueueItemId:@"item1"];
+[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"] withQueueItemId:@"item1"];
+
 
 ```
 
-## Other
+## Background Playback
 
-Background playback on iOS is easily added to your application by calling the  `AudioSessionInitialize` in your AppDelegate.
+Background playback on iOS is easily added to your application by calling the  `AudioSessionInitialize` in your AppDelegate and adding audio to the `UIBackgroundModes` key in your plist file. 
 
 ### Authors and Contributors
-Copyright 2012, Thong Nguyen (@tumtumtum)
+Copyright (c) 2012-2014, Thong Nguyen (@tumtumtum)
