@@ -38,7 +38,7 @@ audioPlayer.delegate = self;
 
 ## More
 
-More documentation is available on the project [wiki](wiki)
+More documentation is available on the project [wiki](https://github.com/tumtumtum/StreamingKit/wiki)
 
 ### Authors and Contributors
 Copyright (c) 2012-2014, Thong Nguyen (@tumtumtum)
