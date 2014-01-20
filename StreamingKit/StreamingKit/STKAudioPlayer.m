@@ -562,6 +562,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	[self setDataSource:[self dataSourceFromURL:url] withQueueItemId:url];
 }
 
+-(void) playWithDataSource:(STKDataSource*)dataSource
+{
+	[self setDataSource:dataSource withQueueItemId:dataSource];
+}
+
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
 {
     [fastApiQueue cancelAllOperations];

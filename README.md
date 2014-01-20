@@ -10,7 +10,7 @@ The primary motivation of this project was to decouple the input data sources fr
 * Easy to read source
 * Mostly asynchronous API
 * Buffered and gapless playback
-* Easy to implement audio data sources (HTTP and local file system DataSources provided)
+* Easy to implement audio data sources (Local, HTTP, Auto Recovering HTTP DataSources are provided)
 * Easy to extend DataSource to support adaptive buffering, encryption, etc.
 * Optimised for low CPU/battery usage
 
@@ -20,7 +20,7 @@ StreamingKit is also available as a [Cocoapod](http://cocoapods.org/?q=Streaming
 
 ## Example
 
-There are two main classes.  The `STKDataSource` class which is the abstract base class for the various compressed audio data sources (HTTP, local file are provided). The `STKAudioPlayer` class manages and renders audio from a queue DataSources.
+There are two main classes.  The `STKDataSource` class which is the abstract base class for the various compressed audio data sources. The `STKAudioPlayer` class manages and renders audio from a queue DataSources. By default `STKAudioPlayer` will automatically parse URLs and create the appropriate data source internally.
 
 ```objective-c
 
@@ -29,9 +29,7 @@ There are two main classes.  The `STKDataSource` class which is the abstract bas
 STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 audioPlayer.delegate = self;
 
-// Queue on a URL to play. Each queue item has a unique ID (item1) that to identify the related file in delegate callbacks
-
-[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"] withQueueItemId:@"item1"];
+[audioPlayer play:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
 
 
 ```

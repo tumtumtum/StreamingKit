@@ -99,6 +99,7 @@ typedef enum
 }
 AudioPlayerErrorCode;
 
+@class STKDataSource;
 @class STKAudioPlayer;
 
 @protocol STKAudioPlayerDelegate <NSObject>
@@ -197,6 +198,7 @@ AudioQueueBufferRefLookupEntry;
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
 -(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 -(void) play:(NSURL*)url;
+-(void) playWithDataSource:(STKDataSource*)dataSource;
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
 -(void) seekToTime:(double)value;
