@@ -10,6 +10,7 @@
 #import "STKAudioPlayer.h"
 #import "AudioPlayerView.h"
 #import "SampleQueueId.h"
+#import <AVFoundation/AVFoundation.h>
 
 @interface AppDelegate()
 {
@@ -22,6 +23,10 @@
 
 -(BOOL) application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
+    NSError* error;
+    
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
+    
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     
 	self.window.backgroundColor = [UIColor whiteColor];
