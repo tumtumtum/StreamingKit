@@ -24,8 +24,6 @@ There are two main classes.  The `STKDataSource` class which is the abstract bas
 
 ```objective-c
 
-// Create AudioPlayer
-
 STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 audioPlayer.delegate = self;
 
