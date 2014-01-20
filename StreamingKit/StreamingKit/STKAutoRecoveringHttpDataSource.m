@@ -73,6 +73,11 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     return (STKHttpDataSource*)self.innerDataSource;
 }
 
+-(id) initWithDataSource:(STKDataSource *)innerDataSource
+{
+    return [self initWithHttpDataSource:(STKHttpDataSource*)innerDataSource];
+}
+
 -(id) initWithHttpDataSource:(STKHttpDataSource*)innerDataSourceIn
 {
     if (self = [super initWithDataSource:innerDataSourceIn])
@@ -143,6 +148,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) dealloc
 {
+    NSLog(@"STKAutoRecoveringHttpDataSource dealloc");
+    
     self.innerDataSource.delegate = nil;
     
     [self stopNotifier];

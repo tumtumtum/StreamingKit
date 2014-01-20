@@ -34,21 +34,15 @@
 
 #import "STKCoreFoundationDataSource.h"
 
-@interface STKHttpDataSource : STKCoreFoundationDataSource
-{
-@private
-    int seekStart;
-    int relativePosition;
-    long long fileLength;
-    int discontinuous;
-    NSDictionary* httpHeaders;
-    AudioFileTypeID audioFileTypeHint;
-}
+typedef NSURL*(^URLProvider)();
 
-@property (readwrite, retain) NSURL* url;
+@interface STKHttpDataSource : STKCoreFoundationDataSource
+
+@property (readonly, retain) NSURL* url;
 @property (readwrite) UInt32 httpStatusCode;
 
 +(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)fileExtension;
 -(id) initWithURL:(NSURL*)url;
+-(id) initWithURLProvider:(URLProvider)urlProvider;
 
 @end

@@ -23,6 +23,7 @@
 		A1115967188D6AEE00641365 /* AudioPlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = A1115966188D6AEE00641365 /* AudioPlayerView.m */; };
 		A111596C188D6C8100641365 /* sample.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A111596B188D6C8100641365 /* sample.m4a */; };
 		A111596F188D6DB100641365 /* SampleQueueId.m in Sources */ = {isa = PBXBuildFile; fileRef = A111596E188D6DB100641365 /* SampleQueueId.m */; };
+		A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 		A111596B188D6C8100641365 /* sample.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; name = sample.m4a; path = Resources/sample.m4a; sourceTree = "<group>"; };
 		A111596D188D6DB100641365 /* SampleQueueId.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SampleQueueId.h; sourceTree = "<group>"; };
 		A111596E188D6DB100641365 /* SampleQueueId.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SampleQueueId.m; sourceTree = "<group>"; };
+		A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +67,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */,
 				A1115964188D691500641365 /* libStreamingKit.a in Frameworks */,
 				A1115937188D686000641365 /* CoreGraphics.framework in Frameworks */,
 				A1115939188D686000641365 /* UIKit.framework in Frameworks */,
@@ -107,6 +110,7 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */,
 				A1115963188D691500641365 /* libStreamingKit.a */,
 				A1115934188D686000641365 /* Foundation.framework */,
 				A1115936188D686000641365 /* CoreGraphics.framework */,

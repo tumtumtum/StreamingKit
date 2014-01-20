@@ -35,8 +35,12 @@
 #import "STKLocalFileDataSource.h"
 
 @interface STKLocalFileDataSource()
+{
+    long long position;
+    long long length;
+    AudioFileTypeID audioFileTypeHint;
+}
 @property (readwrite, copy) NSString* filePath;
-
 -(void) open;
 @end
 

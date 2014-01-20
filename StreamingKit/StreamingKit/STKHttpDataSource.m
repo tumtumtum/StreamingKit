@@ -36,13 +36,29 @@
 #import "STKLocalFileDataSource.h"
 
 @interface STKHttpDataSource()
+{
+@private
+    int seekStart;
+    int relativePosition;
+    long long fileLength;
+    int discontinuous;
+    NSURL* currentUrl;
+    URLProvider urlProvider;
+    NSDictionary* httpHeaders;
+    AudioFileTypeID audioFileTypeHint;
+}
 -(void) open;
+
 @end
 
 @implementation STKHttpDataSource
-@synthesize url;
 
 -(id) initWithURL:(NSURL*)urlIn
+{
+    return [self initWithURLProvider:^NSURL* { return urlIn; }];
+}
+
+-(id) initWithURLProvider:(URLProvider)urlProviderIn
 {
     if (self = [super init])
     {
@@ -50,14 +66,24 @@
         relativePosition = 0;
         fileLength = -1;
         
-        self.url = urlIn;
+        self->urlProvider = urlProviderIn;
         
         [self open];
         
-        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:urlIn.pathExtension];
+        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:self->currentUrl.pathExtension];
     }
     
     return self;
+}
+
+-(void) dealloc
+{
+    NSLog(@"STKHttpDataSource dealloc");
+}
+
+-(NSURL*) url
+{
+    return self->currentUrl;
 }
 
 +(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)mimeType
@@ -192,6 +218,8 @@
 
 -(void) open
 {
+    self->currentUrl = urlProvider();
+    
     CFHTTPMessageRef message = CFHTTPMessageCreateRequest(NULL, (CFStringRef)@"GET", (__bridge CFURLRef)self.url, kCFHTTPVersion1_1);
     
     if (seekStart > 0)
@@ -225,7 +253,7 @@
     
     // SSL support
     
-    if ([url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
+    if ([self->currentUrl.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
     {
         NSDictionary* sslSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                      (NSString*)kCFStreamSocketSecurityLevelNegotiatedSSL, kCFStreamSSLLevel,

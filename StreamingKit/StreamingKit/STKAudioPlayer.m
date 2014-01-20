@@ -316,9 +316,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if ([self.delegate respondsToSelector:@selector(audioPlayer:internalStateChanged:)])
     {
         dispatch_async(dispatch_get_main_queue(), ^
-                       {
-                           [self.delegate audioPlayer:self internalStateChanged:internalState];
-                       });
+        {
+            [self.delegate audioPlayer:self internalStateChanged:internalState];
+        });
     }
     
     AudioPlayerState newState;
@@ -531,7 +531,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         while (bufferingQueue.count > 0)
         {
-            [array addObject:[[bufferingQueue dequeue] queueItemId]];
+            id queueItemId = [[bufferingQueue dequeue] queueItemId];
+            
+            if (queueItemId != nil)
+            {
+                [array addObject:queueItemId];
+            }
         }
         
         for (QueueEntry* entry in upcomingQueue)
@@ -542,12 +547,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [upcomingQueue removeAllObjects];
         
         dispatch_async(dispatch_get_main_queue(), ^
-                       {
-                           if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
-                           {
-                               [self.delegate audioPlayer:self didCancelQueuedItems:array];
-                           }
-                       });
+        {
+            if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
+            {
+                [self.delegate audioPlayer:self didCancelQueuedItems:array];
+            }
+        });
     }
     pthread_mutex_unlock(&playerMutex);
 }
