@@ -774,7 +774,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             }
             
             AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
-            memcpy((char*)bufferToFill->mAudioData + bytesFilled, (const char*)inputData + packetOffset, packetSize);
+            memcpy((char*)bufferToFill->mAudioData + bytesFilled, (const char*)inputData + packetOffset, (unsigned long)packetSize);
             
             packetDescs[packetsFilled] = packetDescriptionsIn[i];
             packetDescs[packetsFilled].mStartOffset = bytesFilled;
