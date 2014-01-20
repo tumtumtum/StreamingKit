@@ -66,25 +66,26 @@
     static NSDictionary* fileTypesByMimeType;
     
     dispatch_once(&onceToken, ^
-                  {
-                      fileTypesByMimeType =
-                      @{
-                        @"audio/mp3": @(kAudioFileMP3Type),
-                        @"audio/mpg": @(kAudioFileMP3Type),
-                        @"audio/mpeg": @(kAudioFileMP3Type),
-                        @"audio/wav": @(kAudioFileWAVEType),
-                        @"audio/aifc": @(kAudioFileAIFCType),
-                        @"audio/aiff": @(kAudioFileAIFFType),
-                        @"audio/x-m4a": @(kAudioFileM4AType),
-                        @"audio/x-mp4": @(kAudioFileMPEG4Type),
-                        @"audio/m4a": @(kAudioFileM4AType),
-                        @"audio/mp4": @(kAudioFileMPEG4Type),
-                        @"audio/caf": @(kAudioFileCAFType),
-                        @"audio/aac": @(kAudioFileAAC_ADTSType),
-                        @"audio/ac3": @(kAudioFileAC3Type),
-                        @"audio/3gp": @(kAudioFile3GPType)
-                        };
-                  });
+    {
+        fileTypesByMimeType =
+        @{
+            @"audio/mp3": @(kAudioFileMP3Type),
+            @"audio/mpg": @(kAudioFileMP3Type),
+            @"audio/mpeg": @(kAudioFileMP3Type),
+            @"audio/wav": @(kAudioFileWAVEType),
+            @"audio/aifc": @(kAudioFileAIFCType),
+            @"audio/aiff": @(kAudioFileAIFFType),
+            @"audio/x-m4a": @(kAudioFileM4AType),
+            @"audio/x-mp4": @(kAudioFileMPEG4Type),
+            @"audio/aacp": @(kAudioFileAAC_ADTSType),
+            @"audio/m4a": @(kAudioFileM4AType),
+            @"audio/mp4": @(kAudioFileMPEG4Type),
+            @"audio/caf": @(kAudioFileCAFType),
+            @"audio/aac": @(kAudioFileAAC_ADTSType),
+            @"audio/ac3": @(kAudioFileAC3Type),
+            @"audio/3gp": @(kAudioFile3GPType)
+        };
+    });
     
     NSNumber* number = [fileTypesByMimeType objectForKey:mimeType];
     
