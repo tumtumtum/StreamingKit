@@ -722,12 +722,22 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	if (audioQueue == nil)
     {
         [self createAudioQueue];
+        
+        if (audioQueue == nil)
+        {
+            return;
+        }
     }
     else if (memcmp(&currentAudioStreamBasicDescription, &currentlyReadingEntry->audioStreamBasicDescription, sizeof(currentAudioStreamBasicDescription)) != 0)
     {
         if (currentlyReadingEntry == currentlyPlayingEntry)
         {
             [self createAudioQueue];
+            
+            if (audioQueue == nil)
+            {
+                return;
+            }
         }
         else
         {
@@ -1145,6 +1155,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+        });
+        
         return;
     }
     
@@ -1152,6 +1167,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (error)
     {
+        [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+        
         return;
     }
     
@@ -1193,6 +1210,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         if (error)
         {
+            dispatch_async(dispatch_get_main_queue(), ^
+            {
+                [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+            });
+            
             return;
         }
     }
@@ -1209,6 +1231,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
 	if (error)
 	{
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+        });
+        
 		return;
 	}
     
@@ -1228,6 +1255,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	if (error)
 	{
         free(cookieData);
+        
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+        });
         
 		return;
 	}
@@ -1816,9 +1848,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self stopAudioQueueWithReason:@"from startAudioQueue"];
         [self createAudioQueue];
         
-        self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
-        
-        AudioQueueStart(audioQueue, NULL);
+        if (audioQueue != nil)
+        {
+            self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
+            
+            AudioQueueStart(audioQueue, NULL);
+        }
     }
 	
 	[self stopSystemBackgroundTask];

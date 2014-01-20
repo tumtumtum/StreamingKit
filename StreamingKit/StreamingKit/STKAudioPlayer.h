@@ -94,7 +94,8 @@ typedef enum
     AudioPlayerErrorQueuePauseFailed,
     AudioPlayerErrorUnknownBuffer,
     AudioPlayerErrorQueueStopFailed,
-    AudioPlayerErrorOther
+    AudioPlayerErrorQueueCreationFailed,
+    AudioPlayerErrorOther = -1
 }
 AudioPlayerErrorCode;
 
