@@ -1386,17 +1386,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     
     OSSpinLockLock(&currentlyPlayingLock);
-    
-    STKQueueEntry* entry = currentlyPlayingEntry;
-    
-    if (entry == nil)
-    {
-    	OSSpinLockUnlock(&currentlyPlayingLock);
-        
-        return 0;
+
+    double retval = 0;
+    if(audioQueue && currentlyPlayingEntry) {
+        AudioTimeStamp timeStamp;
+        OSStatus status = AudioQueueGetCurrentTime(audioQueue, NULL, &timeStamp, NULL);
+        if (!status) {
+            retval = timeStamp.mSampleTime / currentlyPlayingEntry->audioStreamBasicDescription.mSampleRate;
+        }
     }
-    
-    double retval = [entry progress];
     
     OSSpinLockUnlock(&currentlyPlayingLock);
     
