@@ -115,8 +115,6 @@
 
 -(void) open
 {
-    NSURL* url = [[NSURL alloc] initFileURLWithPath:self.filePath];
-    
     if (stream)
     {
         CFReadStreamClose(stream);
@@ -125,16 +123,13 @@
         stream = 0;
     }
     
+    NSURL* url = [[NSURL alloc] initFileURLWithPath:self.filePath];
+    
     stream = CFReadStreamCreateWithFile(NULL, (__bridge CFURLRef)url);
     
-    NSError *fileError;
-
-    NSFileManager *manager = [[NSFileManager alloc] init];
-
-    NSString *path = [NSString stringWithUTF8String:[url fileSystemRepresentation]];
-
-    NSDictionary *attributes = [manager attributesOfItemAtPath:path
-                                                         error:&fileError];
+    NSError* fileError;
+    NSFileManager* manager = [[NSFileManager alloc] init];
+    NSDictionary* attributes = [manager attributesOfItemAtPath:filePath error:&fileError];
 
     if (fileError)
     {
@@ -145,7 +140,6 @@
     }
 
     NSNumber* number = [attributes objectForKey:@"NSFileSize"];
-
     
     if (number)
     {
