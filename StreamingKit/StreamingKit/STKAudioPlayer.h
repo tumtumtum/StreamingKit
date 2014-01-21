@@ -114,7 +114,7 @@ AudioPlayerErrorCode;
 -(void) audioPlayer:    (STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 @end
 
-@class QueueEntry;
+@class STKQueueEntry;
 
 typedef struct
 {
@@ -124,68 +124,6 @@ typedef struct
 AudioQueueBufferRefLookupEntry;
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
-{
-@private
-    UInt8* readBuffer;
-    int readBufferSize;
-	
-    NSOperationQueue* fastApiQueue;
-    
-    QueueEntry* currentlyPlayingEntry;
-    QueueEntry* currentlyReadingEntry;
-    
-    NSMutableArray* upcomingQueue;
-    NSMutableArray* bufferingQueue;
-    
-    AudioQueueBufferRef* audioQueueBuffer;
-    AudioQueueBufferRefLookupEntry* audioQueueBufferLookup;
-    unsigned int audioQueueBufferRefLookupCount;
-    unsigned int audioQueueBufferCount;
-    AudioStreamPacketDescription* packetDescs;
-    bool* bufferUsed;
-    int numberOfBuffersUsed;
-    
-    AudioQueueRef audioQueue;
-    AudioStreamBasicDescription currentAudioStreamBasicDescription;
-    
-    NSThread* playbackThread;
-    NSRunLoop* playbackThreadRunLoop;
-    NSConditionLock* threadFinishedCondLock;
-    
-    AudioFileStreamID audioFileStream;
-    
-    BOOL discontinuous;
-    
-    int bytesFilled;
-	int packetsFilled;
-    
-    int fillBufferIndex;
-    
-#if TARGET_OS_IPHONE
-	UIBackgroundTaskIdentifier backgroundTaskId;
-#endif
-    
-    AudioPlayerErrorCode errorCode;
-    AudioPlayerStopReason stopReason;
-    
-    int currentlyPlayingLock;
-    pthread_mutex_t playerMutex;
-    pthread_mutex_t queueBuffersMutex;
-    pthread_cond_t queueBufferReadyCondition;
-    
-    volatile BOOL waiting;
-    volatile BOOL disposeWasRequested;
-    volatile BOOL seekToTimeWasRequested;
-    volatile BOOL newFileToPlay;
-    volatile double requestedSeekTime;
-    volatile BOOL audioQueueFlushing;
-    volatile SInt64 audioPacketsReadCount;
-    volatile SInt64 audioPacketsPlayedCount;
-    
-    BOOL meteringEnabled;
-    AudioQueueLevelMeterState* levelMeterState;
-    NSInteger numberOfChannels;
-}
 
 @property (readonly) double duration;
 @property (readonly) double progress;
