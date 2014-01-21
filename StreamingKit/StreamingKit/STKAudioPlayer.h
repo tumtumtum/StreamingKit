@@ -44,7 +44,7 @@
 #include "UIKit/UIApplication.h"
 #endif
 
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (2 * 1024)
+#define AudioPlayerDefaultNumberOfAudioQueueBuffers (10 * 1024)
 
 typedef enum
 {
@@ -135,7 +135,8 @@ AudioQueueBufferRefLookupEntry;
 -(id) init;
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
 -(STKDataSource*) dataSourceFromURL:(NSURL*)url;
--(void) play:(NSURL*)url;
+-(void) play:(NSString*)urlString;
+-(void) playWithURL:(NSURL*)url;
 -(void) playWithDataSource:(STKDataSource*)dataSource;
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;

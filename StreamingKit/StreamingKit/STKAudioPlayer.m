@@ -619,7 +619,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     pthread_mutex_unlock(&playerMutex);
 }
 
--(void) play:(NSURL*)url
+-(void) play:(NSString*)urlString
+{
+    NSURL* url = [NSURL URLWithString:urlString];
+    
+	[self setDataSource:[self dataSourceFromURL:url] withQueueItemId:urlString];
+}
+
+
+-(void) playWithURL:(NSURL*)url
 {
 	[self setDataSource:[self dataSourceFromURL:url] withQueueItemId:url];
 }
