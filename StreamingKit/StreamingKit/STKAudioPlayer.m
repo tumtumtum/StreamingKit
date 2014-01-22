@@ -2249,6 +2249,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
     });
     
+    [fastApiQueue waitUntilAllOperationsAreFinished];
+    
     pthread_mutex_lock(&playerMutex);
     {
         BOOL stopping = NO;
