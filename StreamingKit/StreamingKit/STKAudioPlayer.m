@@ -42,10 +42,10 @@
 #import "libkern/OSAtomic.h"
 
 #define BitRateEstimationMinPackets (64)
-#define AudioPlayerBuffersNeededToStart (16)
-#define AudioPlayerDefaultReadBufferSize (16 * 1024)
-#define AudioPlayerDefaultPacketBufferSize (2048)
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (10 * 1024)
+#define AudioPlayerBuffersNeededToStart (8)
+#define AudioPlayerDefaultReadBufferSize (2 * 1024)
+#define AudioPlayerDefaultPacketBufferSize (4096)
+#define AudioPlayerDefaultNumberOfAudioQueueBuffers (1536)
 
 #define OSSTATUS_PARAM_ERROR (-50)
 
@@ -303,7 +303,7 @@ AudioQueueBufferRefLookupEntry;
     int framesFilled;
     
     int fillBufferIndex;
-
+    
     Float64 framesQueued;
     Float64 timelineAdjust;
     
@@ -404,9 +404,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if ([self.delegate respondsToSelector:@selector(audioPlayer:internalStateChanged:)])
     {
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self.delegate audioPlayer:self internalStateChanged:internalState];
-        });
+                       {
+                           [self.delegate audioPlayer:self internalStateChanged:internalState];
+                       });
     }
     
     AudioPlayerState newState;
@@ -445,9 +445,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         self.state = newState;
         
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self.delegate audioPlayer:self stateChanged:self.state];
-        });
+                       {
+                           [self.delegate audioPlayer:self stateChanged:self.state];
+                       });
     }
 }
 
@@ -565,9 +565,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		}
 		
 		backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
-        {
-            [self stopSystemBackgroundTask];
-        }];
+                            {
+                                [self stopSystemBackgroundTask];
+                            }];
 	}
     pthread_mutex_unlock(&playerMutex);
 #endif
@@ -636,12 +636,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [upcomingQueue removeAllObjects];
         
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
-            {
-                [self.delegate audioPlayer:self didCancelQueuedItems:array];
-            }
-        });
+                       {
+                           if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
+                           {
+                               [self.delegate audioPlayer:self didCancelQueuedItems:array];
+                           }
+                       });
     }
     pthread_mutex_unlock(&playerMutex);
 }
@@ -752,6 +752,14 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 {
                     currentlyReadingEntry->packetBufferSize = AudioPlayerDefaultPacketBufferSize;
                 }
+                else
+                {
+                    currentlyReadingEntry->packetBufferSize = packetBufferSize;
+                }
+            }
+            else
+            {
+                currentlyReadingEntry->packetBufferSize = packetBufferSize;
             }
             
             [currentlyReadingEntry updateAudioDataSource];
@@ -937,7 +945,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
 		while (numberBytes)
 		{
-			int bytesLeft = AudioPlayerDefaultPacketBufferSize - bytesFilled;
+			int bytesLeft = currentlyReadingEntry->packetBufferSize - bytesFilled;
             
 			if (bytesLeft < numberBytes)
 			{
@@ -952,7 +960,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 			pthread_mutex_lock(&playerMutex);
 			{
 				int copySize;
-				bytesLeft = AudioPlayerDefaultPacketBufferSize - bytesFilled;
+				bytesLeft = currentlyReadingEntry->packetBufferSize - bytesFilled;
                 
 				if (bytesLeft < numberBytes)
 				{
@@ -992,9 +1000,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (playbackThread)
     {
         CFRunLoopPerformBlock([playbackThreadRunLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-        {
-            [self audioQueueFinishedPlaying:entry];
-        });
+                              {
+                                  [self audioQueueFinishedPlaying:entry];
+                              });
         
         CFRunLoopWakeUp([playbackThreadRunLoop getCFRunLoop]);
         
@@ -1199,20 +1207,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             if (runLoop)
             {
                 CFRunLoopPerformBlock([runLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-                {
-                    if (audioQueue)
-                    {
-                        [self stopAudioQueueWithReason:@"handlePropertyChangeForQueue`2"];
-                    }
-                    
-                    if (currentlyPlayingEntry)
-                    {
-                        self->stopReason = AudioPlayerStopReasonEof;
-                        self.internalState = AudioPlayerInternalStateStopped;
-                        
-                        [self processFinishedPlaying:currentlyPlayingEntry];
-                    }
-                });
+                                      {
+                                          if (audioQueue)
+                                          {
+                                              [self stopAudioQueueWithReason:@"handlePropertyChangeForQueue`2"];
+                                          }
+                                          
+                                          if (currentlyPlayingEntry)
+                                          {
+                                              self->stopReason = AudioPlayerStopReasonEof;
+                                              self.internalState = AudioPlayerInternalStateStopped;
+                                              
+                                              [self processFinishedPlaying:currentlyPlayingEntry];
+                                          }
+                                      });
                 
                 CFRunLoopWakeUp([runLoop getCFRunLoop]);
             }
@@ -1334,9 +1342,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     self.internalState = AudioPlayerInternalStateError;
     
     dispatch_async(dispatch_get_main_queue(), ^
-    {
-        [self.delegate audioPlayer:self didEncounterError:errorCode];
-    });
+                   {
+                       [self.delegate audioPlayer:self didEncounterError:errorCode];
+                   });
 }
 
 -(void) createAudioQueue
@@ -1344,7 +1352,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	OSStatus error;
 	
     NSLog(@"CreateAudioQueue");
-          
+    
 	[self startSystemBackgroundTask];
 	
     if (audioQueue)
@@ -1364,9 +1372,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (error)
     {
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
-        });
+                       {
+                           [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+                       });
         
         return;
     }
@@ -1419,9 +1427,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (error)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-            {
-                [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
-            });
+                           {
+                               [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+                           });
             
             return;
         }
@@ -1442,9 +1450,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	if (error)
 	{
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
-        });
+                       {
+                           [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+                       });
         
 		return;
 	}
@@ -1467,9 +1475,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         free(cookieData);
         
         dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
-        });
+                       {
+                           [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
+                       });
         
 		return;
 	}
@@ -1547,9 +1555,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (runLoop)
     {
         CFRunLoopPerformBlock([runLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-        {
-            [self processRunloop];
-        });
+                              {
+                                  [self processRunloop];
+                              });
         
         CFRunLoopWakeUp([runLoop getCFRunLoop]);
     }
@@ -1715,17 +1723,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (nextIsDifferent && entry)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-            {
-                [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
-            });
+                           {
+                               [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
+                           });
         }
         
         if (nextIsDifferent)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-            {
-                [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
-            });
+                           {
+                               [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
+                           });
         }
     }
     else
@@ -1746,9 +1754,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (nextIsDifferent && entry)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-            {
-                [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
-            });
+                           {
+                               [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
+                           });
         }
     }
 }
@@ -2155,15 +2163,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             Boolean outTimelineDiscontinuity;
             
             AudioQueueGetCurrentTime(audioQueue, NULL, &timeStamp, &outTimelineDiscontinuity);
-
+            
             timelineAdjust = timeStamp.mSampleTime;
             
             if (error)
             {
                 dispatch_async(dispatch_get_main_queue(), ^
-                {
-                    [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
-                });
+                               {
+                                   [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
+                               });
             }
         }
     }
@@ -2288,9 +2296,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     NSObject* queueItemId = currentlyReadingEntry.queueItemId;
     
     dispatch_async(dispatch_get_main_queue(), ^
-    {
-        [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
-    });
+                   {
+                       [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
+                   });
     
     pthread_mutex_lock(&playerMutex);
     {
