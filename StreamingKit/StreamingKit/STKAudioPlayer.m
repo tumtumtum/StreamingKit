@@ -246,6 +246,19 @@ AudioQueueBufferRefLookupEntry;
     }
 }
 
+-(BOOL) couldBeIncompatible:(AudioStreamBasicDescription*)basicDescription
+{
+    if (self->audioStreamBasicDescription.mSampleRate != 0)
+    {
+        if (memcmp(&(self->audioStreamBasicDescription), basicDescription, sizeof(*basicDescription)) != 0)
+        {
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+
 -(NSString*) description
 {
     return [[self queueItemId] description];
@@ -1090,7 +1103,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                     }
                 }
                 
-                if ([upcomingQueue peek] == nil && everythingInBufferingQueueBuffered)
+                BOOL upcomingExistsAndIsIncompatible = NO;
+                STKQueueEntry* upcoming = [upcomingQueue peek];
+                
+                if (upcoming != nil)
+                {
+                    upcomingExistsAndIsIncompatible = [upcoming couldBeIncompatible:&currentAudioStreamBasicDescription];
+                }
+                
+                if ((upcoming == nil || upcomingExistsAndIsIncompatible) && everythingInBufferingQueueBuffered)
                 {
                     if (self.internalState != AudioPlayerInternalStateFlushingAndStoppingButStillPlaying)
                     {
@@ -1834,12 +1855,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 
                 if (next)
                 {
-                    if (next->audioStreamBasicDescription.mSampleRate != 0)
+                    if ([next couldBeIncompatible:&currentAudioStreamBasicDescription])
                     {
-                        if (memcmp(&next->audioStreamBasicDescription, &currentAudioStreamBasicDescription, sizeof(currentAudioStreamBasicDescription)) != 0)
-                        {
-                            nextIsIncompatible = YES;
-                        }
+                        nextIsIncompatible = YES;
                     }
                 }
             }
