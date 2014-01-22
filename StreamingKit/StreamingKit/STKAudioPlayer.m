@@ -45,6 +45,7 @@
 #define AudioPlayerBuffersNeededToStart (16)
 #define AudioPlayerDefaultReadBufferSize (16 * 1024)
 #define AudioPlayerDefaultPacketBufferSize (2048)
+#define AudioPlayerDefaultNumberOfAudioQueueBuffers (10 * 1024)
 
 #define OSSTATUS_PARAM_ERROR (-50)
 

@@ -44,8 +44,6 @@
 #include "UIKit/UIApplication.h"
 #endif
 
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (10 * 1024)
-
 typedef enum
 {
 	AudioPlayerInternalStateInitialised = 0,
