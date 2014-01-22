@@ -1334,9 +1334,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     self.internalState = AudioPlayerInternalStateError;
     
     dispatch_async(dispatch_get_main_queue(), ^
-                   {
-                       [self.delegate audioPlayer:self didEncounterError:errorCode];
-                   });
+    {
+        [self.delegate audioPlayer:self didEncounterError:errorCode];
+    });
 }
 
 -(void) createAudioQueue
@@ -1715,17 +1715,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (nextIsDifferent && entry)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
-                           });
+            {
+                [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
+            });
         }
         
         if (nextIsDifferent)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
-                           });
+            {
+                [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
+            });
         }
     }
     else
@@ -1746,9 +1746,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         if (nextIsDifferent && entry)
         {
             dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
-                           });
+            {
+                [self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
+            });
         }
     }
 }
@@ -2161,9 +2161,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             if (error)
             {
                 dispatch_async(dispatch_get_main_queue(), ^
-                               {
-                                   [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
-                               });
+                {
+                    [self didEncounterError:AudioPlayerErrorQueueStopFailed];;
+                });
             }
         }
     }
