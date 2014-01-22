@@ -66,7 +66,7 @@
         relativePosition = 0;
         fileLength = -1;
         
-        self->urlProvider = urlProviderIn;
+        self->urlProvider = [urlProviderIn copy];
         
         [self open];
         
