@@ -366,7 +366,7 @@
 		A1E7C4EC188D57F60010896F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/StreamingKit.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -383,7 +383,7 @@
 		A1E7C4ED188D57F60010896F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/StreamingKit.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

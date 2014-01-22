@@ -48,6 +48,13 @@
 
 #define OSSTATUS_PARAM_ERROR (-50)
 
+typedef struct
+{
+    AudioQueueBufferRef ref;
+    int bufferIndex;
+}
+AudioQueueBufferRefLookupEntry;
+
 @interface NSMutableArray(AudioPlayerExtensions)
 -(void) enqueue:(id)obj;
 -(id) dequeue;

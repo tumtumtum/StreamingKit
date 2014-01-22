@@ -99,10 +99,10 @@ typedef enum
 }
 AudioPlayerErrorCode;
 
-@class STKDataSource;
 @class STKAudioPlayer;
 
 @protocol STKAudioPlayerDelegate <NSObject>
+
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(AudioPlayerState)state;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(AudioPlayerErrorCode)errorCode;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didStartPlayingQueueItemId:(NSObject*)queueItemId;
@@ -111,17 +111,9 @@ AudioPlayerErrorCode;
 @optional
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer logInfo:(NSString*)line;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer internalStateChanged:(AudioPlayerInternalState)state;
--(void) audioPlayer:    (STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
+
 @end
-
-@class STKQueueEntry;
-
-typedef struct
-{
-    AudioQueueBufferRef ref;
-    int bufferIndex;
-}
-AudioQueueBufferRefLookupEntry;
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 
