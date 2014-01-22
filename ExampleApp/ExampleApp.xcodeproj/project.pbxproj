@@ -23,6 +23,7 @@
 		A1115967188D6AEE00641365 /* AudioPlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = A1115966188D6AEE00641365 /* AudioPlayerView.m */; };
 		A111596C188D6C8100641365 /* sample.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A111596B188D6C8100641365 /* sample.m4a */; };
 		A111596F188D6DB100641365 /* SampleQueueId.m in Sources */ = {isa = PBXBuildFile; fileRef = A111596E188D6DB100641365 /* SampleQueueId.m */; };
+		A142571D189079BE005F0129 /* airplane.aac in Resources */ = {isa = PBXBuildFile; fileRef = A142571C18907861005F0129 /* airplane.aac */; };
 		A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +60,7 @@
 		A111596B188D6C8100641365 /* sample.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; name = sample.m4a; path = Resources/sample.m4a; sourceTree = "<group>"; };
 		A111596D188D6DB100641365 /* SampleQueueId.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SampleQueueId.h; sourceTree = "<group>"; };
 		A111596E188D6DB100641365 /* SampleQueueId.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SampleQueueId.m; sourceTree = "<group>"; };
+		A142571C18907861005F0129 /* airplane.aac */ = {isa = PBXFileReference; lastKnownFileType = file; path = airplane.aac; sourceTree = "<group>"; };
 		A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -168,6 +170,7 @@
 		A111596A188D6C4B00641365 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A142571C18907861005F0129 /* airplane.aac */,
 				A111596B188D6C8100641365 /* sample.m4a */,
 			);
 			name = Resources;
@@ -251,6 +254,7 @@
 				A111593F188D686000641365 /* InfoPlist.strings in Resources */,
 				A111596C188D6C8100641365 /* sample.m4a in Resources */,
 				A1115947188D686000641365 /* Images.xcassets in Resources */,
+				A142571D189079BE005F0129 /* airplane.aac in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

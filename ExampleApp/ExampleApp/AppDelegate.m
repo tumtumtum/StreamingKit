@@ -54,18 +54,17 @@
 	[audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }
 
--(void) audioPlayerViewQueueFromHTTPSelected:(AudioPlayerView*)audioPlayerView
+-(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView
 {
-	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"airplane" ofType:@"aac"];
+	NSURL* url = [NSURL fileURLWithPath:path];
     
-    STKAutoRecoveringHttpDataSource* dataSource = [[STKAutoRecoveringHttpDataSource alloc] initWithHttpDataSource:(STKHttpDataSource*)[audioPlayer dataSourceFromURL:url]];
-    
-	[audioPlayer queueDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
+	[audioPlayer queueDataSource:[audioPlayer dataSourceFromURL:url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }
 
 -(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView*)audioPlayerView
 {
-	NSString * path = [[NSBundle mainBundle] pathForResource:@"sample" ofType:@"m4a"];
+	NSString* path = [[NSBundle mainBundle] pathForResource:@"sample" ofType:@"m4a"];
 	NSURL* url = [NSURL fileURLWithPath:path];
 	
 	[audioPlayer setDataSource:[audioPlayer dataSourceFromURL:url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];

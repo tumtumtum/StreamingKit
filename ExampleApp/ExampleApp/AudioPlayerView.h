@@ -39,7 +39,7 @@
 
 @protocol AudioPlayerViewDelegate<NSObject>
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView;
--(void) audioPlayerViewQueueFromHTTPSelected:(AudioPlayerView*)audioPlayerView;
+-(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView*)audioPlayerView;
 @end
 
@@ -48,9 +48,10 @@
 @private
 	NSTimer* timer;
 	UISlider* slider;
+    UISwitch* repeatSwitch;
 	UIButton* playButton;
 	UIButton* playFromHTTPButton;
-    UIButton* queueFromHttpButton;
+    UIButton* queueShortFileButton;
 	UIButton* playFromLocalFileButton;
 }
 

@@ -65,24 +65,29 @@
 		[playFromLocalFileButton addTarget:self action:@selector(playFromLocalFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[playFromLocalFileButton setTitle:@"Play from Local File" forState:UIControlStateNormal];
         
-        queueFromHttpButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		queueFromHttpButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 100, size.width, size.height);
-		[queueFromHttpButton addTarget:self action:@selector(queueFromHTTPButtonTouched) forControlEvents:UIControlEventTouchUpInside];
-		[queueFromHttpButton setTitle:@"Queue from HTTP" forState:UIControlStateNormal];
+        queueShortFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+		queueShortFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 100, size.width, size.height);
+		[queueShortFileButton addTarget:self action:@selector(queueShortFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
         
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playButton.frame = CGRectMake((320 - size.width) / 2, 350, size.width, size.height);
+		playButton.frame = CGRectMake((320 - size.width) / 2, 370, size.width, size.height);
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		
-		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 290, 280, 20)];
+		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, 280, 20)];
 		slider.continuous = YES;
 		[slider addTarget:self action:@selector(sliderChanged) forControlEvents:UIControlEventValueChanged];
+        
+        size = CGSizeMake(80, 50);
+        
+        repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 170, size.width, size.height)];
 		
 		[self addSubview:slider];
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];
 		[self addSubview:playFromLocalFileButton];
-        [self addSubview:queueFromHttpButton];
+        [self addSubview:queueShortFileButton];
+        [self addSubview:repeatSwitch];
 		
 		[self setupTimer];
 		[self updateControls];
@@ -105,7 +110,7 @@
 
 -(void) setupTimer
 {
-	timer = [NSTimer timerWithTimeInterval:0.25 target:self selector:@selector(tick) userInfo:nil repeats:YES];
+	timer = [NSTimer timerWithTimeInterval:0.05 target:self selector:@selector(tick) userInfo:nil repeats:YES];
 	
 	[[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
 }
@@ -135,11 +140,10 @@
 	[self.delegate audioPlayerViewPlayFromLocalFileSelected:self];
 }
 
--(void) queueFromHTTPButtonTouched
+-(void) queueShortFileButtonTouched
 {
-	[self.delegate audioPlayerViewQueueFromHTTPSelected:self];
+	[self.delegate audioPlayerViewQueueShortFileSelected:self];
 }
-
 
 -(void) playButtonPressed
 {
@@ -162,7 +166,7 @@
 {
 	if (audioPlayer == nil)
 	{
-		[playButton setTitle:@"Play" forState:UIControlStateNormal];
+		[playButton setTitle:@"" forState:UIControlStateNormal];
 	}
 	else if (audioPlayer.state == AudioPlayerStatePaused)
 	{
@@ -174,7 +178,7 @@
 	}
 	else
 	{
-		[playButton setTitle:@"Play" forState:UIControlStateNormal];
+		[playButton setTitle:@"" forState:UIControlStateNormal];
 	}
 }
 
@@ -221,11 +225,14 @@
     
     // This queues on the currently playing track to be buffered and played immediately after (gapless)
     
-    SampleQueueId* queueId = (SampleQueueId*)queueItemId;
+    if (repeatSwitch.on)
+    {
+        SampleQueueId* queueId = (SampleQueueId*)queueItemId;
 
-    NSLog(@"Requeuing: %@", [queueId.url description]);
+        NSLog(@"Requeuing: %@", [queueId.url description]);
 
-    [self->audioPlayer queueDataSource:[self->audioPlayer dataSourceFromURL:queueId.url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:queueId.url andCount:queueId.count + 1]];
+        [self->audioPlayer queueDataSource:[self->audioPlayer dataSourceFromURL:queueId.url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:queueId.url andCount:queueId.count + 1]];
+    }
 }
 
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(AudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration
@@ -235,6 +242,11 @@
     SampleQueueId* queueId = (SampleQueueId*)queueItemId;
     
     NSLog(@"Finished: %@", [queueId.url description]);
+}
+
+-(void) audioPlayer:(STKAudioPlayer *)audioPlayer logInfo:(NSString *)line
+{
+    NSLog(@"%@", line);
 }
 
 @end

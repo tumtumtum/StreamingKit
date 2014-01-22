@@ -54,11 +54,11 @@ typedef enum
     AudioPlayerInternalStateWaitingForQueueToStart = (1 << 4) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStatePaused = (1 << 5) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStateRebuffering = (1 << 6) | AudioPlayerInternalStateRunning,
-    AudioPlayerInternalStateStopping = (1 << 7),
-    AudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 9),
-    AudioPlayerInternalStateStopped = (1 << 10),
-    AudioPlayerInternalStateDisposed = (1 << 11),
-    AudioPlayerInternalStateError = (1 << 12)
+    AudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 7) | AudioPlayerInternalStateRunning,
+    AudioPlayerInternalStateStopping = (1 << 8),
+    AudioPlayerInternalStateStopped = (1 << 9),
+    AudioPlayerInternalStateDisposed = (1 << 10),
+    AudioPlayerInternalStateError = (1 << 31)
 }
 AudioPlayerInternalState;
 

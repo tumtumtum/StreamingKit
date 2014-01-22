@@ -36,4 +36,9 @@
     return [((SampleQueueId*)object).url isEqual: self.url] && ((SampleQueueId*)object).count == self.count;
 }
 
+-(NSString*) description
+{
+    return [self.url description];
+}
+
 @end

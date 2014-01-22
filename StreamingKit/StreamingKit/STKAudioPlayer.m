@@ -115,7 +115,6 @@ AudioQueueBufferRefLookupEntry;
     UInt64 audioDataOffset;
     UInt64 audioDataByteCount;
     UInt32 packetBufferSize;
-    volatile int bytesBuffered;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
@@ -123,8 +122,10 @@ AudioQueueBufferRefLookupEntry;
 @property (readwrite, retain) NSObject* queueItemId;
 @property (readwrite, retain) STKDataSource* dataSource;
 @property (readwrite) Float64 seekTime;
-@property (readwrite) Float64 firstFrameIndex;
+@property (readwrite) int bytesBuffered;
+@property (readwrite) int lastByteIndex;
 @property (readwrite) Float64 lastFrameIndex;
+@property (readwrite) Float64 firstFrameIndex;
 @property (readonly) UInt64 audioDataLengthInBytes;
 
 -(double) duration;
@@ -143,6 +144,7 @@ AudioQueueBufferRefLookupEntry;
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
         self.lastFrameIndex = -1;
+        self.lastByteIndex = -1;
     }
     
     return self;
@@ -256,7 +258,7 @@ AudioQueueBufferRefLookupEntry;
     UInt8* readBuffer;
     int readBufferSize;
 	
-    NSOperationQueue* fastApiQueue;
+    NSOperationQueue* asyncApiRequestQueue;
     
     STKQueueEntry* currentlyPlayingEntry;
     STKQueueEntry* currentlyReadingEntry;
@@ -319,6 +321,7 @@ AudioQueueBufferRefLookupEntry;
 }
 
 @property (readwrite) AudioPlayerInternalState internalState;
+@property (readwrite) AudioPlayerInternalState stateBeforePaused;
 
 -(void) logInfo:(NSString*)line;
 -(void) processQueue:(BOOL)skipCurrent;
@@ -327,7 +330,6 @@ AudioQueueBufferRefLookupEntry;
 -(void) resetAudioQueueWithReason:(NSString*)reason;
 -(BOOL) startAudioQueue;
 -(void) stopAudioQueueWithReason:(NSString*)reason;
--(void) stopAudioQueueWithReason:(NSString*)reason immediately:(BOOL)immediately;
 -(BOOL) processRunloop;
 -(void) wakeupPlaybackThread;
 -(void) audioQueueFinishedPlaying:(STKQueueEntry*)entry;
@@ -468,8 +470,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     if (self = [super init])
     {
-        fastApiQueue = [[NSOperationQueue alloc] init];
-        [fastApiQueue setMaxConcurrentOperationCount:1];
+        asyncApiRequestQueue = [[NSOperationQueue alloc] init];
+        [asyncApiRequestQueue setMaxConcurrentOperationCount:1];
         
         readBufferSize = readBufferSizeIn;
         readBuffer = calloc(sizeof(UInt8), readBufferSize);
@@ -651,9 +653,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
 {
-    [fastApiQueue cancelAllOperations];
+    [asyncApiRequestQueue cancelAllOperations];
     
-	[fastApiQueue addOperationWithBlock:^
+	[asyncApiRequestQueue addOperationWithBlock:^
      {
          pthread_mutex_lock(&playerMutex);
          {
@@ -672,7 +674,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) queueDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
 {
-	[fastApiQueue addOperationWithBlock:^
+	[asyncApiRequestQueue addOperationWithBlock:^
      {
          pthread_mutex_lock(&playerMutex);
          {
@@ -709,7 +711,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 			UInt32 fileFormatSize = sizeof(fileFormat);
             
 			AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_FileFormat, &fileFormatSize, &fileFormat);
-            NSLog(@"");
         }
             break;
         case kAudioFileStreamProperty_DataFormat:
@@ -971,16 +972,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(BOOL) processFinishedPlaying:(STKQueueEntry*)entry
 {
-    NSLog(@"Finished playing");
+    [self logInfo:[NSString stringWithFormat:@"Finished playing: %@", entry.queueItemId]];
     
     entry.lastFrameIndex = -1;
     
     if (playbackThread)
     {
         CFRunLoopPerformBlock([playbackThreadRunLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-                              {
-                                  [self audioQueueFinishedPlaying:entry];
-                              });
+        {
+            [self audioQueueFinishedPlaying:entry];
+        });
         
         CFRunLoopWakeUp([playbackThreadRunLoop getCFRunLoop]);
         
@@ -1008,6 +1009,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             if (currentlyPlayingEntry)
             {
                 entry = currentlyPlayingEntry;
+                
+                if (!audioQueueFlushing)
+                {
+                    entry.bytesBuffered += bufferIn->mAudioDataByteSize;
+                }
             }
         }
         OSSpinLockUnlock(&currentlyPlayingLock);
@@ -1070,6 +1076,33 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 if ([self processFinishedPlaying:entry])
                 {
                     signal = YES;
+                }
+            }
+            else if (entry.lastByteIndex == audioPacketsPlayedCount && entry.lastByteIndex != -1)
+            {
+                BOOL everythingInBufferingQueueBuffered = YES;
+                
+                for (int i = 0; i < bufferingQueue.count; i++)
+                {
+                    if ([[bufferingQueue objectAtIndex:i] lastFrameIndex] == -1 && [bufferingQueue objectAtIndex:i] != currentlyReadingEntry)
+                    {
+                        everythingInBufferingQueueBuffered = NO;
+                    }
+                }
+                
+                if ([upcomingQueue peek] == nil && everythingInBufferingQueueBuffered)
+                {
+                    if (self.internalState != AudioPlayerInternalStateFlushingAndStoppingButStillPlaying)
+                    {
+                        if (audioQueue)
+                        {
+                            self.internalState = AudioPlayerInternalStateFlushingAndStoppingButStillPlaying;
+                            
+                            [self logInfo:@"Stopping AudioQueue asynchronously to get notification of playback end (last item on queue)"];
+                            
+                            AudioQueueStop(audioQueue, NO);
+                        }
+                    }
                 }
             }
         }
@@ -1493,9 +1526,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (runLoop)
     {
         CFRunLoopPerformBlock([runLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-                              {
-                                  [self processRunloop];
-                              });
+        {
+            [self processRunloop];
+        });
         
         CFRunLoopWakeUp([runLoop getCFRunLoop]);
     }
@@ -1653,6 +1686,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         OSSpinLockLock(&currentlyPlayingLock);
         currentlyPlayingEntry = next;
+        currentlyPlayingEntry.bytesBuffered = 0;
         currentlyPlayingEntry.firstFrameIndex = [self currentTimeInFrames];
         NSObject* playingQueueItemId = playingQueueItemId = currentlyPlayingEntry.queueItemId;
         OSSpinLockUnlock(&currentlyPlayingLock);
@@ -1725,6 +1759,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         else if (seekToTimeWasRequested && currentlyPlayingEntry && currentlyPlayingEntry != currentlyReadingEntry)
         {
             currentlyPlayingEntry.lastFrameIndex = -1;
+            currentlyPlayingEntry.lastByteIndex = -1;
             
             [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES];
             
@@ -1991,6 +2026,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self resetAudioQueueWithReason:@"from seekToTime"];
     }
     
+    currentEntry.bytesBuffered = 0;
     currentEntry.firstFrameIndex = [self currentTimeInFrames];
 }
 
@@ -2031,11 +2067,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) stopAudioQueueWithReason:(NSString*)reason
 {
-	[self stopAudioQueueWithReason:reason immediately:YES];
-}
-
--(void) stopAudioQueueWithReason:(NSString*)reason immediately:(BOOL)immediately
-{
 	OSStatus error;
 	
 	if (!audioQueue)
@@ -2052,12 +2083,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         audioQueueFlushing = YES;
         
-        error = AudioQueueStop(audioQueue, immediately);
-        
-        if (immediately)
-        {
-            error = error | AudioQueueDispose(audioQueue, YES);
-        }
+        error = AudioQueueStop(audioQueue, YES);
+        error = error | AudioQueueDispose(audioQueue, YES);
         
         audioQueue = nil;
     }
@@ -2238,63 +2265,23 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         [self enqueueBuffer];
     }
     
-    NSLog(@"dataSourceEof");
-    
     [self logInfo:[NSString stringWithFormat:@"dataSourceEof for dataSource: %@", dataSourceIn]];
     
     NSObject* queueItemId = currentlyReadingEntry.queueItemId;
     
-    dispatch_sync(dispatch_get_main_queue(), ^
+    dispatch_async(dispatch_get_main_queue(), ^
     {
         [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
     });
     
-    [fastApiQueue waitUntilAllOperationsAreFinished];
-    
     pthread_mutex_lock(&playerMutex);
     {
-        BOOL stopping = NO;
-        BOOL everythingInBufferingQueueBuffered = YES;
-        
-        for (int i = 0; i < bufferingQueue.count; i++)
-        {
-            if ([[bufferingQueue objectAtIndex:i] lastFrameIndex] == -1 && [bufferingQueue objectAtIndex:i] != currentlyReadingEntry)
-            {
-                everythingInBufferingQueueBuffered = NO;
-            }
-        }
-        
-        if ([upcomingQueue peek] == nil && everythingInBufferingQueueBuffered)
-        {
-            self.internalState = AudioPlayerInternalStateFlushingAndStoppingButStillPlaying;
-            
-            if (audioQueue)
-            {
-                NSLog(@"stopping audio queue asynchronously in dataSourceEof");
-                
-                AudioQueueStop(audioQueue, NO);
-                
-                stopping  = YES;
-            }
-        }
-        
         if (audioQueue)
         {
             currentlyReadingEntry.lastFrameIndex = self->framesQueued;
-            currentlyReadingEntry = nil;
+            currentlyReadingEntry.lastByteIndex = audioPacketsReadCount;
             
-            if (self.internalState | AudioPlayerInternalStateRunning)
-            {
-                if (audioQueue)
-                {
-                    if (![self audioQueueIsRunning] && !stopping)
-                    {
-                        [self logInfo:@"startAudioQueue from dataSourceEof"];
-                        
-                        [self startAudioQueue];
-                    }
-                }
-            }
+            currentlyReadingEntry = nil;
         }
         else
         {
@@ -2311,8 +2298,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
 		OSStatus error;
         
-        if (self.internalState != AudioPlayerInternalStatePaused)
+        if (self.internalState != AudioPlayerInternalStatePaused && (self.internalState & AudioPlayerInternalStateRunning))
         {
+            self.stateBeforePaused = self.internalState;
             self.internalState = AudioPlayerInternalStatePaused;
             
             if (audioQueue)
@@ -2343,7 +2331,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		
         if (self.internalState == AudioPlayerInternalStatePaused)
         {
-            self.internalState = AudioPlayerInternalStatePlaying;
+            self.internalState = self.stateBeforePaused;
             
             if (seekToTimeWasRequested)
             {
