@@ -55,9 +55,10 @@ typedef enum
     AudioPlayerInternalStatePaused = (1 << 5) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStateRebuffering = (1 << 6) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStateStopping = (1 << 7),
-    AudioPlayerInternalStateStopped = (1 << 8),
-    AudioPlayerInternalStateDisposed = (1 << 9),
-    AudioPlayerInternalStateError = (1 << 10)
+    AudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 9),
+    AudioPlayerInternalStateStopped = (1 << 10),
+    AudioPlayerInternalStateDisposed = (1 << 11),
+    AudioPlayerInternalStateError = (1 << 12)
 }
 AudioPlayerInternalState;
 
