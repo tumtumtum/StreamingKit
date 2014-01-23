@@ -81,13 +81,18 @@
         size = CGSizeMake(80, 50);
         
         repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 170, size.width, size.height)];
+
+        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height, frame.size.width, 50)];
 		
+        label.textAlignment = NSTextAlignmentCenter;
+        
 		[self addSubview:slider];
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];
 		[self addSubview:playFromLocalFileButton];
         [self addSubview:queueShortFileButton];
         [self addSubview:repeatSwitch];
+        [self addSubview:label];
 		
 		[self setupTimer];
 		[self updateControls];
@@ -120,6 +125,7 @@
 	if (!audioPlayer || audioPlayer.duration == 0)
 	{
 		slider.value = 0;
+        label.text = @"";
 		
 		return;
 	}
@@ -128,6 +134,8 @@
 	slider.maximumValue = audioPlayer.duration;
 	
 	slider.value = audioPlayer.progress;
+    
+    label.text = [NSString stringWithFormat:@"%@ - %@", [self formatTimeFromSeconds:audioPlayer.progress], [self formatTimeFromSeconds:audioPlayer.duration]];
 }
 
 -(void) playFromHTTPButtonTouched
@@ -160,6 +168,16 @@
 	{
 		[audioPlayer pause];
 	}
+}
+
+-(NSString*) formatTimeFromSeconds:(int)totalSeconds
+{
+    
+    int seconds = totalSeconds % 60;
+    int minutes = (totalSeconds / 60) % 60;
+    int hours = totalSeconds / 3600;
+    
+    return [NSString stringWithFormat:@"%02d:%02d:%02d", hours, minutes, seconds];
 }
 
 -(void) updateControls

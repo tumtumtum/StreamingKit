@@ -47,6 +47,7 @@
 {
 @private
 	NSTimer* timer;
+    UILabel* label;
 	UISlider* slider;
     UISwitch* repeatSwitch;
 	UIButton* playButton;

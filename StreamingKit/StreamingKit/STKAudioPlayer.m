@@ -1101,6 +1101,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             }
             else if (entry.lastByteIndex == audioPacketsPlayedCount && entry.lastByteIndex != -1)
             {
+                [self logInfo:@"handleAudioQueueOutput:lastByteIndex"];
+                
                 BOOL everythingInBufferingQueueBuffered = YES;
                 
                 for (int i = 0; i < bufferingQueue.count; i++)
@@ -2063,6 +2065,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     [currentEntry updateAudioDataSource];
     [currentEntry.dataSource seekToOffset:seekByteOffset];
     
+    if (self.internalState == AudioPlayerInternalStateFlushingAndStoppingButStillPlaying)
+    {
+        self.internalState = AudioPlayerInternalStatePlaying;
+    }
+    
     if (seekByteOffset > 0)
     {
         discontinuous = YES;
@@ -2327,6 +2334,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             currentlyReadingEntry.lastFrameIndex = self->framesQueued;
             currentlyReadingEntry.lastByteIndex = audioPacketsReadCount;
+            
+            [self logInfo:[NSString stringWithFormat:@"dataSourceEofLastByteIndex: %lld, %lld", audioPacketsReadCount, audioPacketsPlayedCount]];
+            
+            if (audioPacketsReadCount == 0 && audioPacketsPlayedCount == audioPacketsReadCount)
+            {
+                [self logInfo:@"dataSourceEof shutting down audio queue"];
+                
+                if (audioQueue)
+                {
+                    self.internalState = AudioPlayerInternalStateFlushingAndStoppingButStillPlaying;
+                    
+                    AudioQueueStop(audioQueue, NO);
+                }
+            }
             
             currentlyReadingEntry = nil;
         }
