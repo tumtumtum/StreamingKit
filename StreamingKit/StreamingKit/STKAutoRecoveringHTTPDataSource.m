@@ -40,12 +40,12 @@
 #import <netdb.h>
 #import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
-#import "STKAutoRecoveringHttpDataSource.h"
+#import "STKAutoRecoveringHTTPDataSource.h"
 
 #define MAX_IMMEDIATE_RECONNECT_ATTEMPTS (8)
 #define MAX_ATTEMPTS_WITH_SERVER_ERROR (MAX_IMMEDIATE_RECONNECT_ATTEMPTS + 2)
 
-@interface STKAutoRecoveringHttpDataSource()
+@interface STKAutoRecoveringHTTPDataSource()
 {
 	int reconnectAttempts;
     BOOL waitingForNetwork;
@@ -60,25 +60,25 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
     @autoreleasepool
     {
-        STKAutoRecoveringHttpDataSource* dataSource = (__bridge STKAutoRecoveringHttpDataSource*)info;
+        STKAutoRecoveringHTTPDataSource* dataSource = (__bridge STKAutoRecoveringHTTPDataSource*)info;
         
         [dataSource reachabilityChanged];
     }
 }
 
-@implementation STKAutoRecoveringHttpDataSource
+@implementation STKAutoRecoveringHTTPDataSource
 
--(STKHttpDataSource*) innerHttpDataSource
+-(STKHTTPDataSource*) innerHTTPDataSource
 {
-    return (STKHttpDataSource*)self.innerDataSource;
+    return (STKHTTPDataSource*)self.innerDataSource;
 }
 
 -(id) initWithDataSource:(STKDataSource *)innerDataSource
 {
-    return [self initWithHttpDataSource:(STKHttpDataSource*)innerDataSource];
+    return [self initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource];
 }
 
--(id) initWithHttpDataSource:(STKHttpDataSource*)innerDataSourceIn
+-(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn
 {
     if (self = [super initWithDataSource:innerDataSourceIn])
     {
@@ -148,7 +148,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) dealloc
 {
-    NSLog(@"STKAutoRecoveringHttpDataSource dealloc");
+    NSLog(@"STKAutoRecoveringHTTPDataSource dealloc");
     
     self.innerDataSource.delegate = nil;
     

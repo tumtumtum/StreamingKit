@@ -60,6 +60,11 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 
 @implementation STKCoreFoundationDataSource
 
+-(BOOL) isInErrorState
+{
+    return self->isInErrorState;
+}
+
 -(void) dataAvailable
 {
     [self.delegate dataSourceDataAvailable:self];
@@ -72,6 +77,8 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 
 -(void) errorOccured
 {
+    self->isInErrorState = YES;
+    
     [self.delegate dataSourceErrorOccured:self];
 }
 

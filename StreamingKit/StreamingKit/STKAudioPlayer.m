@@ -37,7 +37,7 @@
 
 #import "STKAudioPlayer.h"
 #import "AudioToolbox/AudioToolbox.h"
-#import "STKHttpDataSource.h"
+#import "STKHTTPDataSource.h"
 #import "STKLocalFileDataSource.h"
 #import "libkern/OSAtomic.h"
 
@@ -445,9 +445,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         self.state = newState;
         
         dispatch_async(dispatch_get_main_queue(), ^
-                       {
-                           [self.delegate audioPlayer:self stateChanged:self.state];
-                       });
+        {
+            [self.delegate audioPlayer:self stateChanged:self.state];
+        });
     }
 }
 
@@ -599,7 +599,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     else
     {
-        retval = [[STKHttpDataSource alloc] initWithURL:url];
+        retval = [[STKHTTPDataSource alloc] initWithURL:url];
     }
     
     return retval;
@@ -635,13 +635,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         [upcomingQueue removeAllObjects];
         
-        dispatch_async(dispatch_get_main_queue(), ^
+        if (array.count > 0)
         {
-            if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
+            dispatch_async(dispatch_get_main_queue(), ^
             {
-                [self.delegate audioPlayer:self didCancelQueuedItems:array];
-            }
-        });
+                if ([self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
+                {
+                    [self.delegate audioPlayer:self didCancelQueuedItems:array];
+                }
+            });
+        }
     }
     pthread_mutex_unlock(&playerMutex);
 }
@@ -1209,24 +1212,24 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             if (runLoop)
             {
                 CFRunLoopPerformBlock([runLoop getCFRunLoop], NSDefaultRunLoopMode, ^
-                {
-                    pthread_mutex_lock(&playerMutex);
-
-                    if (audioQueue)
-                    {
-                        [self stopAudioQueueWithReason:@"handlePropertyChangeForQueue`2"];
-                    }
-
-                    if (currentlyPlayingEntry)
-                    {
-                        self->stopReason = AudioPlayerStopReasonEof;
-                        self.internalState = AudioPlayerInternalStateStopped;
-
-                        [self processFinishedPlaying:currentlyPlayingEntry];
-                    }
-
-                    pthread_mutex_unlock(&playerMutex);
-                });
+                                      {
+                                          pthread_mutex_lock(&playerMutex);
+                                          
+                                          if (audioQueue)
+                                          {
+                                              [self stopAudioQueueWithReason:@"handlePropertyChangeForQueue`2"];
+                                          }
+                                          
+                                          if (currentlyPlayingEntry)
+                                          {
+                                              self->stopReason = AudioPlayerStopReasonEof;
+                                              self.internalState = AudioPlayerInternalStateStopped;
+                                              
+                                              [self processFinishedPlaying:currentlyPlayingEntry];
+                                          }
+                                          
+                                          pthread_mutex_unlock(&playerMutex);
+                                      });
                 
                 CFRunLoopWakeUp([runLoop getCFRunLoop]);
             }
@@ -1371,6 +1374,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         audioQueue = nil;
     }
     
+    if (currentlyPlayingEntry == nil)
+    {
+	    pthread_mutex_unlock(&playerMutex);
+        
+        return;
+    }
+    
     currentAudioStreamBasicDescription = currentlyPlayingEntry->audioStreamBasicDescription;
     
     error = AudioQueueNewOutput(&currentAudioStreamBasicDescription, AudioQueueOutputCallbackProc, (__bridge void*)self, NULL, NULL, 0, &audioQueue);
@@ -1381,9 +1391,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
         });
-        
-        pthread_mutex_unlock(&playerMutex);
 
+        pthread_mutex_unlock(&playerMutex);
+        
         return;
     }
     
@@ -1397,7 +1407,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         });
         
         pthread_mutex_unlock(&playerMutex);
-
+        
         return;
     }
     
@@ -1497,7 +1507,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             [self.delegate audioPlayer:self didEncounterError:AudioPlayerErrorQueueCreationFailed];
         });
-
+        
         pthread_mutex_unlock(&playerMutex);
         
 		return;
@@ -1755,7 +1765,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             dispatch_async(dispatch_get_main_queue(), ^
             {
-                [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
+               [self.delegate audioPlayer:self didStartPlayingQueueItemId:playingQueueItemId];
             });
         }
     }
@@ -2082,6 +2092,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     currentEntry.bytesBuffered = 0;
     currentEntry.firstFrameIndex = [self currentTimeInFrames];
+    
+    [self clearQueue];
 }
 
 -(BOOL) startAudioQueue
@@ -2337,15 +2349,37 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             [self logInfo:[NSString stringWithFormat:@"dataSourceEofLastByteIndex: %lld, %lld", audioPacketsReadCount, audioPacketsPlayedCount]];
             
-            if (audioPacketsReadCount == 0 && audioPacketsPlayedCount == audioPacketsReadCount)
+            if (audioPacketsReadCount == 0 && audioPacketsPlayedCount == audioPacketsReadCount && currentlyReadingEntry == currentlyPlayingEntry)
             {
-                [self logInfo:@"dataSourceEof shutting down audio queue"];
+                [self logInfo:@"dataSourceEof seeked to end"];
                 
                 if (audioQueue)
                 {
                     self.internalState = AudioPlayerInternalStateFlushingAndStoppingButStillPlaying;
                     
-                    AudioQueueStop(audioQueue, NO);
+                    if ([self audioQueueIsRunning])
+                    {
+                        [self logInfo:@"dataSourceEof stopping audio queue asynchronously"];
+                        
+	                    AudioQueueStop(audioQueue, NO);
+                    }
+                    else
+                    {
+                        [self logInfo:@"dataSourceEof finished playing"];
+                        
+                        if (audioQueue)
+                        {
+                            [self stopAudioQueueWithReason:@"dataSourceEof finished playing"];
+                        }
+                        
+                        if (currentlyPlayingEntry)
+                        {
+                            self->stopReason = AudioPlayerStopReasonEof;
+                            self.internalState = AudioPlayerInternalStateStopped;
+                            
+                            [self processFinishedPlaying:currentlyPlayingEntry];
+                        }
+                    }
                 }
             }
             

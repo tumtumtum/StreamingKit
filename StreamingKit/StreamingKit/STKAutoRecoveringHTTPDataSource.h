@@ -33,13 +33,13 @@
  **********************************************************************************/
 
 #import "STKDataSource.h"
-#import "STKHttpDataSource.h"
+#import "STKHTTPDataSource.h"
 #import "STKDataSourceWrapper.h"
 
-@interface STKAutoRecoveringHttpDataSource : STKDataSourceWrapper
+@interface STKAutoRecoveringHTTPDataSource : STKDataSourceWrapper
 
--(id) initWithHttpDataSource:(STKHttpDataSource*)innerDataSource;
+-(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;
 
-@property (readonly) STKHttpDataSource* innerDataSource;
+@property (readonly) STKHTTPDataSource* innerDataSource;
 
 @end

@@ -34,15 +34,20 @@
 
 #import "STKCoreFoundationDataSource.h"
 
-typedef NSURL*(^URLProvider)();
+@class STKHTTPDataSource;
 
-@interface STKHttpDataSource : STKCoreFoundationDataSource
+typedef void(^STKURLBlock)(NSURL* url);
+typedef NSURL*(^STKURLProvider)();
+typedef void(^STKAsyncURLProvider)(STKHTTPDataSource* dataSource, BOOL forSeek, STKURLBlock callback);
+
+@interface STKHTTPDataSource : STKCoreFoundationDataSource
 
 @property (readonly, retain) NSURL* url;
 @property (readwrite) UInt32 httpStatusCode;
 
 +(AudioFileTypeID) audioFileTypeHintFromMimeType:(NSString*)fileExtension;
 -(id) initWithURL:(NSURL*)url;
--(id) initWithURLProvider:(URLProvider)urlProvider;
+-(id) initWithURLProvider:(STKURLProvider)urlProvider;
+-(id) initWithAsyncURLProvider:(STKAsyncURLProvider)asyncUrlProvider;
 
 @end

@@ -9,7 +9,7 @@
 #import "AppDelegate.h"
 #import "STKAudioPlayer.h"
 #import "AudioPlayerView.h"
-#import "STKAutoRecoveringHttpDataSource.h"
+#import "STKAutoRecoveringHTTPDataSource.h"
 #import "SampleQueueId.h"
 #import <AVFoundation/AVFoundation.h>
 
@@ -49,7 +49,7 @@
 {
 	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
     
-    STKAutoRecoveringHttpDataSource* dataSource = [[STKAutoRecoveringHttpDataSource alloc] initWithHttpDataSource:(STKHttpDataSource*)[audioPlayer dataSourceFromURL:url]];
+    STKAutoRecoveringHTTPDataSource* dataSource = [[STKAutoRecoveringHTTPDataSource alloc] initWithHTTPDataSource:(STKHTTPDataSource*)[audioPlayer dataSourceFromURL:url]];
     
 	[audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }

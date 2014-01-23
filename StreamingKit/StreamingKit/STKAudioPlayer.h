@@ -132,6 +132,7 @@ AudioPlayerErrorCode;
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
 -(void) seekToTime:(double)value;
+-(void) clearQueue;
 -(void) pause;
 -(void) resume;
 -(void) stop;
