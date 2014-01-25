@@ -106,6 +106,7 @@
     if (stream)
     {
         [self unregisterForEvents];
+
         CFReadStreamClose(stream);
         
         stream = 0;
@@ -148,7 +149,7 @@
     }
     
     [self reregisterForEvents];
-    
+
     CFReadStreamOpen(stream);
 }
 
@@ -197,7 +198,6 @@
         
         [self close];        
         [self open];
-        [self reregisterForEvents];
     }
     
     if (CFReadStreamSetProperty(stream, kCFStreamPropertyFileCurrentOffset, (__bridge CFTypeRef)[NSNumber numberWithLongLong:offset]) != TRUE)

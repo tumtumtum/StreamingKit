@@ -71,7 +71,7 @@
 		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
         
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playButton.frame = CGRectMake((320 - size.width) / 2, 370, size.width, size.height);
+		playButton.frame = CGRectMake((320 - size.width) / 2, 400, size.width, size.height);
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		
 		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, 280, 20)];

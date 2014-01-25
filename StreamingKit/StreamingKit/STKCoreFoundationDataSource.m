@@ -144,19 +144,21 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 -(BOOL) registerForEvents:(NSRunLoop*)runLoop
 {
     eventsRunLoop = runLoop;
- 
-    if (stream)
-    {
-        CFStreamClientContext context = {0, (__bridge void*)self, NULL, NULL, NULL};
-        
-        CFReadStreamSetClient(stream, kCFStreamEventHasBytesAvailable | kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered, ReadStreamCallbackProc, &context);
-        
-        CFReadStreamScheduleWithRunLoop(stream, [eventsRunLoop getCFRunLoop], kCFRunLoopCommonModes);
     
+    if (!stream)
+    {
+        [self open];
+        
         return YES;
     }
+ 
+    CFStreamClientContext context = {0, (__bridge void*)self, NULL, NULL, NULL};
     
-    return NO;
+    CFReadStreamSetClient(stream, kCFStreamEventHasBytesAvailable | kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered, ReadStreamCallbackProc, &context);
+    
+    CFReadStreamScheduleWithRunLoop(stream, [eventsRunLoop getCFRunLoop], kCFRunLoopCommonModes);
+
+    return YES;
 }
 
 -(BOOL) hasBytesAvailable
@@ -167,6 +169,16 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     }
     
     return CFReadStreamHasBytesAvailable(stream);
+}
+
+-(CFStreamStatus) status
+{
+    if (stream)
+    {
+        return CFReadStreamGetStatus(stream);
+    }
+    
+    return 0;
 }
 
 @end

@@ -130,7 +130,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     if (reachabilityRef != NULL)
     {
         SCNetworkReachabilitySetCallback(reachabilityRef, NULL, NULL);
-        SCNetworkReachabilityUnscheduleFromRunLoop(reachabilityRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+        SCNetworkReachabilityUnscheduleFromRunLoop(reachabilityRef, [self.innerDataSource.eventsRunLoop getCFRunLoop], kCFRunLoopDefaultMode);
     }
 }
 
@@ -183,6 +183,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
     reconnectAttempts++;
     
+    NSLog(@"attemptReconnect %lld/%lld", self.position, self.length);
+    
     [self seekToOffset:self.position];
 }
 
@@ -201,7 +203,18 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     }
     else if (reconnectAttempts > MAX_IMMEDIATE_RECONNECT_ATTEMPTS)
     {
-        [self performSelector:@selector(attemptReconnect) withObject:nil afterDelay:5];
+        NSRunLoop* runLoop = self.innerDataSource.eventsRunLoop;
+        
+        if (runLoop == nil)
+        {
+            [self performSelector:@selector(attemptReconnect) withObject:nil afterDelay:5];
+        }
+        else
+        {
+            NSTimer* timer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(attemptReconnect) userInfo:nil repeats:NO];
+            
+            [runLoop addTimer:timer forMode:NSRunLoopCommonModes];
+        }
     }
     else
     {
@@ -223,6 +236,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) dataSourceErrorOccured:(STKDataSource*)dataSource
 {
+    NSLog(@"dataSourceErrorOccured");
+    
     if (self.innerDataSource.httpStatusCode == 416 /* Range out of bounds */)
     {
         [super dataSourceEof:dataSource];

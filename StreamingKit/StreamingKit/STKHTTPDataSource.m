@@ -38,8 +38,8 @@
 @interface STKHTTPDataSource()
 {
 @private
-    int seekStart;
-    int relativePosition;
+    long long seekStart;
+    long long relativePosition;
     long long fileLength;
     int discontinuous;
     NSURL* currentUrl;
@@ -77,8 +77,6 @@
         fileLength = -1;
         
         self->asyncUrlProvider = [asyncUrlProviderIn copy];
-        
-        [self open];
         
         audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:self->currentUrl.pathExtension];
     }
@@ -140,6 +138,8 @@
 
 -(void) dataAvailable
 {
+    NSLog(@"dataAvailable");
+    
     if (fileLength < 0)
     {
         CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
@@ -199,9 +199,11 @@
         CFRelease(stream);
     }
     
+    NSAssert(!(eventsRunLoop != nil && [NSRunLoop currentRunLoop] != eventsRunLoop), @"Seek called on wrong thread");
+    
     stream = 0;
     relativePosition = 0;
-    seekStart = (int)offset;
+    seekStart = offset;
     
     self->isInErrorState = NO;
     
@@ -223,6 +225,8 @@
     }
     
     relativePosition += read;
+    
+    NSLog(@"relative position: %lld, read: %d, position: %lld, length: %lld", relativePosition, read, self.position, self.length);
     
     return read;
 }
@@ -247,7 +251,7 @@
 
         if (seekStart > 0)
         {
-            CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Range"), (__bridge CFStringRef)[NSString stringWithFormat:@"bytes=%d-", seekStart]);
+            CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Range"), (__bridge CFStringRef)[NSString stringWithFormat:@"bytes=%lld-", seekStart]);
 
             discontinuous = YES;
         }
@@ -312,6 +316,11 @@
         
         CFRelease(message);
     });
+}
+
+-(NSRunLoop*) eventsRunLoop
+{
+    return self->eventsRunLoop;
 }
 
 -(NSString*) description

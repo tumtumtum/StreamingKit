@@ -53,9 +53,10 @@
 
 -(BOOL) reregisterForEvents;
 
+-(void) open;
 -(void) dataAvailable;
 -(void) eof;
 -(void) errorOccured;
--(void) open;
+-(CFStreamStatus) status;
 
 @end
