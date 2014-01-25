@@ -1792,14 +1792,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             next = [bufferingQueue peek];
         }
         
-        if (next && next->audioStreamBasicDescription.mSampleRate == 0)
-        {
-            next = nil;
-        }
-        else
-        {
-            next = [bufferingQueue dequeue];
-        }
+        next = [bufferingQueue dequeue];
         
         [self processFinishPlayingIfAnyAndPlayingNext:entry withNext:next];
 
