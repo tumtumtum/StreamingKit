@@ -42,12 +42,12 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "STKAutoRecoveringHTTPDataSource.h"
 
-#define MAX_IMMEDIATE_RECONNECT_ATTEMPTS (8)
-#define MAX_ATTEMPTS_WITH_SERVER_ERROR (MAX_IMMEDIATE_RECONNECT_ATTEMPTS + 2)
+#define MAX_IMMEDIATE_RECONNECT_ATTEMPTS (2)
 
 @interface STKAutoRecoveringHTTPDataSource()
 {
-	int reconnectAttempts;
+    int serial;
+	int waitSeconds;
     BOOL waitingForNetwork;
     SCNetworkReachabilityRef reachabilityRef;
 }
@@ -168,24 +168,33 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     {
         waitingForNetwork = NO;
         
-        [self attemptReconnect];
+        [self attemptReconnectWithSerial:@(serial)];
     }
 }
 
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSource
 {
-    reconnectAttempts = 0;
-    
+    serial++;
+    waitSeconds = 1;
+
     [super dataSourceDataAvailable:dataSource];
 }
 
--(void) attemptReconnect
+-(void) attemptReconnectWithSerial:(NSNumber*)serialIn
 {
-    reconnectAttempts++;
+    if (serialIn.intValue != self->serial)
+    {
+        return;
+    }
     
     NSLog(@"attemptReconnect %lld/%lld", self.position, self.length);
     
     [self seekToOffset:self.position];
+}
+
+-(void) attemptReconnectWithTimer:(NSTimer*)timer
+{
+    [self attemptReconnectWithSerial:(NSNumber*)timer.userInfo];
 }
 
 -(void) processRetryOnError
@@ -197,29 +206,20 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         return;
     }
     
-    if (!(self.innerDataSource.httpStatusCode >= 200 && self.innerDataSource.httpStatusCode <= 299) && reconnectAttempts >= MAX_ATTEMPTS_WITH_SERVER_ERROR)
+    NSRunLoop* runLoop = self.innerDataSource.eventsRunLoop;
+    
+    if (runLoop == nil)
     {
-        [super dataSourceErrorOccured:self];
-    }
-    else if (reconnectAttempts > MAX_IMMEDIATE_RECONNECT_ATTEMPTS)
-    {
-        NSRunLoop* runLoop = self.innerDataSource.eventsRunLoop;
-        
-        if (runLoop == nil)
-        {
-            [self performSelector:@selector(attemptReconnect) withObject:nil afterDelay:5];
-        }
-        else
-        {
-            NSTimer* timer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(attemptReconnect) userInfo:nil repeats:NO];
-            
-            [runLoop addTimer:timer forMode:NSRunLoopCommonModes];
-        }
+        [self performSelector:@selector(attemptReconnectWithSerial:) withObject:@(serial) afterDelay:waitSeconds];
     }
     else
     {
-        [self attemptReconnect];
+        NSTimer* timer = [NSTimer timerWithTimeInterval:waitSeconds target:self selector:@selector(attemptReconnectWithTimer:) userInfo:@(serial) repeats:NO];
+        
+        [runLoop addTimer:timer forMode:NSRunLoopCommonModes];
     }
+    
+    waitSeconds = MIN(waitSeconds + 1, 5);
 }
 
 -(void) dataSourceEof:(STKDataSource*)dataSource
@@ -246,7 +246,6 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     {
         [self processRetryOnError];
     }
-    
 }
 
 -(NSString*) description
