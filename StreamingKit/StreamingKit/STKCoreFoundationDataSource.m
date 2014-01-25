@@ -105,6 +105,10 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     }
 }
 
+-(void) open
+{
+}
+
 -(void) seekToOffset:(long long)offset
 {
 }

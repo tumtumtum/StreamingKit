@@ -56,5 +56,6 @@
 -(void) dataAvailable;
 -(void) eof;
 -(void) errorOccured;
+-(void) open;
 
 @end

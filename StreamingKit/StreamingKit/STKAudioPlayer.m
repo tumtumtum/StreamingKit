@@ -42,10 +42,10 @@
 #import "libkern/OSAtomic.h"
 
 #define BitRateEstimationMinPackets (64)
-#define AudioPlayerBuffersNeededToStart (8)
+#define AudioPlayerBuffersNeededToStart (16)
 #define AudioPlayerDefaultReadBufferSize (2 * 1024)
 #define AudioPlayerDefaultPacketBufferSize (4096)
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (500)
+#define AudioPlayerDefaultNumberOfAudioQueueBuffers (1024)
 
 #define OSSTATUS_PARAM_ERROR (-50)
 
@@ -421,7 +421,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         case AudioPlayerInternalStateRunning:
         case AudioPlayerInternalStateStartingThread:
         case AudioPlayerInternalStateWaitingForData:
-        case AudioPlayerInternalStateWaitingForQueueToStart:
         case AudioPlayerInternalStatePlaying:
         case AudioPlayerInternalStateRebuffering:
         case AudioPlayerInternalStateFlushingAndStoppingButStillPlaying:
@@ -1211,14 +1210,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (self.internalState == AudioPlayerInternalStateStopped
         || self.internalState == AudioPlayerInternalStateStopping
         || self.internalState == AudioPlayerInternalStateDisposed
-        || self.internalState == AudioPlayerInternalStateError
-        || self.internalState == AudioPlayerInternalStateWaitingForQueueToStart)
+        || self.internalState == AudioPlayerInternalStateError)
     {
-        signal = waiting || numberOfBuffersUsed < 8;
+        signal = waiting || numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2);
     }
     else if (audioQueueFlushing)
     {
-        signal = signal || (audioQueueFlushing && numberOfBuffersUsed < 8);
+        signal = signal || (audioQueueFlushing && numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2));
     }
     else
     {
@@ -1228,7 +1226,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else
         {
-            if ((waiting && numberOfBuffersUsed < audioQueueBufferCount / 2) || (numberOfBuffersUsed < 8))
+            if ((waiting && numberOfBuffersUsed < audioQueueBufferCount / 2) || (numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2)))
             {
                 signal = YES;
             }
@@ -1308,10 +1306,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             }
             
             pthread_mutex_unlock(&queueBuffersMutex);
-        }
-        else if (self.internalState == AudioPlayerInternalStateWaitingForQueueToStart)
-        {
-            self.internalState = AudioPlayerInternalStatePlaying;
         }
     }
 }
@@ -1770,12 +1764,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     currentlyReadingEntry = entry;
     currentlyReadingEntry.dataSource.delegate = self;
     
-    if (currentlyReadingEntry.dataSource.position != 0)
-    {
-        [currentlyReadingEntry.dataSource seekToOffset:0];
-    }
-    
     [currentlyReadingEntry.dataSource registerForEvents:[NSRunLoop currentRunLoop]];
+    [currentlyReadingEntry.dataSource seekToOffset:0];
     
     if (startPlaying)
     {
@@ -2169,8 +2159,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
 	OSStatus error;
     
-    self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
-    
     AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
     
     error = AudioQueueStart(audioQueue, NULL);
@@ -2189,13 +2177,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         if (audioQueue != nil)
         {
-            self.internalState = AudioPlayerInternalStateWaitingForQueueToStart;
-            
             AudioQueueStart(audioQueue, NULL);
         }
     }
 	
 	[self stopSystemBackgroundTask];
+    
+    self.internalState = AudioPlayerInternalStatePlaying;
     
     return YES;
 }

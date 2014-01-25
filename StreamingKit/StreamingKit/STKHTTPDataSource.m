@@ -294,6 +294,8 @@
             CFReadStreamSetProperty(stream, kCFStreamPropertySSLSettings, (__bridge CFTypeRef)sslSettings);
         }
 
+        [self reregisterForEvents];
+        
         // Open
 
         if (!CFReadStreamOpen(stream))
@@ -307,11 +309,6 @@
         }
         
         self->isInErrorState = NO;
-        
-        if (self->eventsRunLoop)
-        {
-            [self reregisterForEvents];
-        }
         
         CFRelease(message);
     });
