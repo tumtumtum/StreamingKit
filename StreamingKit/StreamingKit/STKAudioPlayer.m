@@ -346,7 +346,6 @@ AudioQueueBufferRefLookupEntry;
 @property (readwrite) AudioPlayerInternalState stateBeforePaused;
 
 -(void) logInfo:(NSString*)line;
--(void) processQueue:(BOOL)skipCurrent;
 -(void) createAudioQueue;
 -(void) enqueueBuffer;
 -(void) resetAudioQueueWithReason:(NSString*)reason;
@@ -721,12 +720,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             [self startSystemBackgroundTask];
 
+            [self resetAudioQueueWithReason:@"from skipCurrent"];
             [self clearQueue];
-
+            
             [upcomingQueue enqueue:[[STKQueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
             
             self.internalState = AudioPlayerInternalStateRunning;
-            [self processQueue:YES];
+            
+            newFileToPlay = YES;
+
+            [self createOrWakeupPlaybackThread];
         }
         pthread_mutex_unlock(&playerMutex);
     }];
@@ -742,7 +745,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
             LOGINFO(([NSString stringWithFormat:@"Queueing: %@ (buffering.count=%d, upcoming.count=%d)", [queueItemId description], bufferingQueue.count, upcomingQueue.count]));
 
-            [self processQueue:NO];
+            [self createOrWakeupPlaybackThread];
         }
         pthread_mutex_unlock(&playerMutex);
     }];
@@ -1904,7 +1907,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     pthread_mutex_unlock(&playerMutex);
 }
 
--(void) processQueue:(BOOL)skipCurrent
+-(void) createOrWakeupPlaybackThread
 {
 	if (playbackThread == nil)
 	{
@@ -1918,13 +1921,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 	}
 	else
 	{
-		if (skipCurrent)
-		{
-			newFileToPlay = YES;
-			
-			[self resetAudioQueueWithReason:@"from skipCurrent"];
-		}
-		
 		[self wakeupPlaybackThread];
 	}
 }
