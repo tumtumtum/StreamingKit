@@ -1670,6 +1670,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return;
     }
     
+    AudioQueuePause(audioQueue);
+    
     error = AudioQueueAddPropertyListener(audioQueue, kAudioQueueProperty_IsRunning, AudioQueueIsRunningCallbackProc, (__bridge void*)self);
     
     if (error)
@@ -2405,6 +2407,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(BOOL) startAudioQueue
 {
 	OSStatus error;
+    
+    LOGINFO(@"Called");
     
     AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, 1);
     
