@@ -48,6 +48,7 @@
 @private
 	NSTimer* timer;
     UILabel* label;
+    UILabel* statusLabel;
 	UISlider* slider;
     UISwitch* repeatSwitch;
 	UIButton* playButton;

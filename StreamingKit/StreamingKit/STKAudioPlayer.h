@@ -49,8 +49,9 @@ typedef enum
 	AudioPlayerInternalStateInitialised = 0,
     AudioPlayerInternalStateRunning = 1,
     AudioPlayerInternalStatePlaying = (1 << 1) | AudioPlayerInternalStateRunning,
-	AudioPlayerInternalStateStartingThread = (1 << 2) | AudioPlayerInternalStateRunning,
-	AudioPlayerInternalStateWaitingForData = (1 << 3) | AudioPlayerInternalStateRunning,
+    AudioPlayerInternalStateRebuffering = (1 << 2) | AudioPlayerInternalStateRunning,
+	AudioPlayerInternalStateStartingThread = (1 << 3) | AudioPlayerInternalStateRunning,
+	AudioPlayerInternalStateWaitingForData = (1 << 4) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStatePaused = (1 << 5) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 7) | AudioPlayerInternalStateRunning,
     AudioPlayerInternalStateStopping = (1 << 8),
@@ -65,10 +66,11 @@ typedef enum
     AudioPlayerStateReady,
     AudioPlayerStateRunning = 1,
     AudioPlayerStatePlaying = (1 << 1) | AudioPlayerStateRunning,
-    AudioPlayerStatePaused = (1 << 2) | AudioPlayerStateRunning,
-    AudioPlayerStateStopped = (1 << 3),
-    AudioPlayerStateError = (1 << 4),
-    AudioPlayerStateDisposed = (1 << 5)
+    AudioPlayerStateBuffering = (1 << 2) | AudioPlayerStatePlaying,
+    AudioPlayerStatePaused = (1 << 3) | AudioPlayerStateRunning,
+    AudioPlayerStateStopped = (1 << 4),
+    AudioPlayerStateError = (1 << 5),
+    AudioPlayerStateDisposed = (1 << 6)
 }
 AudioPlayerState;
 

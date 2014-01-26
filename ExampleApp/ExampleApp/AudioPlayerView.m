@@ -71,7 +71,7 @@
 		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
         
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playButton.frame = CGRectMake((320 - size.width) / 2, 400, size.width, size.height);
+		playButton.frame = CGRectMake((320 - size.width) / 2, 380, size.width, size.height);
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		
 		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, 280, 20)];
@@ -86,6 +86,10 @@
 		
         label.textAlignment = NSTextAlignmentCenter;
         
+        statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 8, frame.size.width, 50)];
+		
+        statusLabel.textAlignment = NSTextAlignmentCenter;
+        
 		[self addSubview:slider];
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];
@@ -93,7 +97,8 @@
         [self addSubview:queueShortFileButton];
         [self addSubview:repeatSwitch];
         [self addSubview:label];
-		
+        [self addSubview:statusLabel];
+        
 		[self setupTimer];
 		[self updateControls];
     }
@@ -122,20 +127,33 @@
 
 -(void) tick
 {
-	if (!audioPlayer || audioPlayer.duration == 0)
+	if (!audioPlayer)
 	{
 		slider.value = 0;
         label.text = @"";
+        statusLabel.text = @"";
 		
 		return;
 	}
 	
-	slider.minimumValue = 0;
-	slider.maximumValue = audioPlayer.duration;
-	
-	slider.value = audioPlayer.progress;
+    if (audioPlayer.duration != 0)
+    {
+        slider.minimumValue = 0;
+        slider.maximumValue = audioPlayer.duration;
+        slider.value = audioPlayer.progress;
+        
+        label.text = [NSString stringWithFormat:@"%@ - %@", [self formatTimeFromSeconds:audioPlayer.progress], [self formatTimeFromSeconds:audioPlayer.duration]];
+    }
+    else
+    {
+        slider.value = 0;
+        slider.minimumValue = 0;
+        slider.maximumValue = 0;
+        
+        label.text =  @"";
+    }
     
-    label.text = [NSString stringWithFormat:@"%@ - %@", [self formatTimeFromSeconds:audioPlayer.progress], [self formatTimeFromSeconds:audioPlayer.duration]];
+    statusLabel.text = audioPlayer.state == AudioPlayerStateBuffering ? @"buffering" : @"";
 }
 
 -(void) playFromHTTPButtonTouched
@@ -190,7 +208,7 @@
 	{
 		[playButton setTitle:@"Resume" forState:UIControlStateNormal];
 	}
-	else if (audioPlayer.state == AudioPlayerStatePlaying)
+	else if (audioPlayer.state & AudioPlayerStatePlaying)
 	{
 		[playButton setTitle:@"Pause" forState:UIControlStateNormal];
 	}
@@ -198,6 +216,8 @@
 	{
 		[playButton setTitle:@"" forState:UIControlStateNormal];
 	}
+    
+    [self tick];
 }
 
 -(void) setAudioPlayer:(STKAudioPlayer*)value
