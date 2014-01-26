@@ -138,8 +138,6 @@
 
 -(void) dataAvailable
 {
-    NSLog(@"dataAvailable");
-    
     if (fileLength < 0)
     {
         CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
@@ -225,8 +223,6 @@
     }
     
     relativePosition += read;
-    
-    NSLog(@"relative position: %lld, read: %d, position: %lld, length: %lld", relativePosition, read, self.position, self.length);
     
     return read;
 }

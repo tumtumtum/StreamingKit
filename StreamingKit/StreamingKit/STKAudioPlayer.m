@@ -41,11 +41,13 @@
 #import "STKLocalFileDataSource.h"
 #import "libkern/OSAtomic.h"
 
-#define BitRateEstimationMinPackets (64)
-#define AudioPlayerBuffersNeededToStart (16)
-#define AudioPlayerDefaultReadBufferSize (2 * 1024)
-#define AudioPlayerDefaultPacketBufferSize (4096)
-#define AudioPlayerDefaultNumberOfAudioQueueBuffers (1024)
+#define STK_BIT_RATE_ESTIMATION_MIN_PACKETS (64)
+#define STK_BUFFERS_NEEDED_TO_START (16)
+#define STK_BUFFERS_NEEDED_WHEN_UNDERUNNING (64)
+#define STK_DEFAULT_READ_BUFFER_SIZE (2 * 1024)
+#define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
+#define STK_FRAMES_MISSED_BEFORE_CONSIDERED_UNDERUN (1024)
+#define STK_DEFAULT_NUMBER_OF_AUDIOQUEUE_BUFFERS (1024)
 
 #define OSSTATUS_PARAM_ERROR (-50)
 
@@ -156,7 +158,7 @@ AudioQueueBufferRefLookupEntry;
 {
     double retval;
     
-    if (packetDuration && processedPacketsCount > BitRateEstimationMinPackets)
+    if (packetDuration && processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS)
 	{
 		double averagePacketByteSize = processedPacketsSizeTotal / processedPacketsCount;
         
@@ -303,11 +305,11 @@ AudioQueueBufferRefLookupEntry;
     int bytesFilled;
 	int packetsFilled;
     int framesFilled;
-    
     int fillBufferIndex;
     
-    Float64 framesQueued;
-    Float64 timelineAdjust;
+    volatile Float64 framesQueued;
+    volatile Float64 timelineAdjust;
+    volatile Float64 rebufferingStartFrames;
     
 #if TARGET_OS_IPHONE
 	UIBackgroundTaskIdentifier backgroundTaskId;
@@ -422,7 +424,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         case AudioPlayerInternalStateStartingThread:
         case AudioPlayerInternalStateWaitingForData:
         case AudioPlayerInternalStatePlaying:
-        case AudioPlayerInternalStateRebuffering:
         case AudioPlayerInternalStateFlushingAndStoppingButStillPlaying:
             newState = AudioPlayerStatePlaying;
             break;
@@ -478,19 +479,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
     else
     {
-        dispatch_async(dispatch_get_main_queue(), ^
+        if ([self->delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
         {
-            if ([self->delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
-            {
-                [self->delegate audioPlayer:self logInfo:line];
-            }
-        });
+            [self->delegate audioPlayer:self logInfo:line];
+        }
     }
 }
 
 -(id) init
 {
-    return [self initWithNumberOfAudioQueueBuffers:AudioPlayerDefaultNumberOfAudioQueueBuffers andReadBufferSize:AudioPlayerDefaultReadBufferSize];
+    return [self initWithNumberOfAudioQueueBuffers:STK_DEFAULT_NUMBER_OF_AUDIOQUEUE_BUFFERS andReadBufferSize:STK_DEFAULT_READ_BUFFER_SIZE];
 }
 
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn
@@ -579,9 +577,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 		}
 		
 		backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
-                            {
-                                [self stopSystemBackgroundTask];
-                            }];
+        {
+            [self stopSystemBackgroundTask];
+        }];
 	}
     pthread_mutex_unlock(&playerMutex);
 #endif
@@ -749,16 +747,18 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry->audioDataOffset = offset;
             
             [currentlyReadingEntry updateAudioDataSource];
-        }
+            
             break;
+        }
         case kAudioFileStreamProperty_FileFormat:
         {
             char fileFormat[4];
 			UInt32 fileFormatSize = sizeof(fileFormat);
             
 			AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_FileFormat, &fileFormatSize, &fileFormat);
-        }
+            
             break;
+        }
         case kAudioFileStreamProperty_DataFormat:
         {
             if (currentlyReadingEntry->audioStreamBasicDescription.mSampleRate == 0)
@@ -784,7 +784,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 
                 if (error || packetBufferSize == 0)
                 {
-                    currentlyReadingEntry->packetBufferSize = AudioPlayerDefaultPacketBufferSize;
+                    currentlyReadingEntry->packetBufferSize = STK_DEFAULT_PACKET_BUFFER_SIZE;
                 }
                 else
                 {
@@ -823,8 +823,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 }
             }
             
+            break;
         }
-        break;
         case kAudioFileStreamProperty_AudioDataByteCount:
         {
             UInt64 audioDataByteCount;
@@ -835,25 +835,30 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyReadingEntry->audioDataByteCount = audioDataByteCount;
             
             [currentlyReadingEntry updateAudioDataSource];
+            
+            break;
         }
-        break;
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
             discontinuous = YES;
+            
+            break;
         }
-        break;
         case kAudioFileStreamProperty_FormatList:
         {
             Boolean outWriteable;
             UInt32 formatListSize;
             OSStatus err = AudioFileStreamGetPropertyInfo(inAudioFileStream, kAudioFileStreamProperty_FormatList, &formatListSize, &outWriteable);
+            
             if (err)
             {
                 break;
             }
             
-            AudioFormatListItem *formatList = malloc(formatListSize);
+            AudioFormatListItem* formatList = malloc(formatListSize);
+            
             err = AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_FormatList, &formatListSize, formatList);
+            
             if (err)
             {
                 free(formatList);
@@ -864,8 +869,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 AudioStreamBasicDescription pasbd = formatList[i].mASBD;
                 
-                if (pasbd.mFormatID == kAudioFormatMPEG4AAC_HE ||
-                    pasbd.mFormatID == kAudioFormatMPEG4AAC_HE_V2)
+                if (pasbd.mFormatID == kAudioFormatMPEG4AAC_HE || pasbd.mFormatID == kAudioFormatMPEG4AAC_HE_V2)
                 {
                     //
                     // We've found HE-AAC, remember this to tell the audio queue
@@ -877,9 +881,12 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                     break;
                 }
             }
+            
             free(formatList);
+            
+            break;
         }
-        break;
+        
     }
 }
 
@@ -1151,14 +1158,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         signal = YES;
     }
     
-    if (!audioQueueFlushing && [self progress] > 4.0 && numberOfBuffersUsed == 0 && self.internalState == AudioPlayerInternalStatePlaying)
-    {
-        self.internalState = AudioPlayerInternalStateRebuffering;
-    }
-    
     if (entry != nil)
     {
-        if ([self currentTimeInFrames] > entry.lastFrameIndex && entry.lastFrameIndex != -1)
+        if (([self currentTimeInFrames] > entry.lastFrameIndex && entry.lastFrameIndex != -1))
         {
             LOGINFO(@"Final frame played");
             
@@ -1207,16 +1209,46 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
     }
     
+    if (!audioQueueFlushing)
+    {
+        if (numberOfBuffersUsed == 0 && !seekToTimeWasRequested)
+        {
+            OSSpinLockLock(&currentlyPlayingLock);
+            
+            Float64 time = [self currentTimeInFrames];
+            
+            if (self->rebufferingStartFrames == 0
+                && time >= STK_FRAMES_MISSED_BEFORE_CONSIDERED_UNDERUN
+                && self.internalState != AudioPlayerInternalStateWaitingForData
+                && currentlyReadingEntry != nil)
+            {
+                LOGINFO(@"Buffer underun");
+                
+                AudioQueuePause(audioQueue);
+                
+                self->rebufferingStartFrames = [self currentTimeInFrames];
+                
+                OSSpinLockUnlock(&currentlyPlayingLock);
+            }
+            else
+            {
+                OSSpinLockUnlock(&currentlyPlayingLock);
+            }
+            
+            signal = YES;
+        }
+    }
+    
     if (self.internalState == AudioPlayerInternalStateStopped
         || self.internalState == AudioPlayerInternalStateStopping
         || self.internalState == AudioPlayerInternalStateDisposed
         || self.internalState == AudioPlayerInternalStateError)
     {
-        signal = waiting || numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2);
+        signal = signal || waiting || numberOfBuffersUsed < (STK_BUFFERS_NEEDED_TO_START * 2);
     }
     else if (audioQueueFlushing)
     {
-        signal = signal || (audioQueueFlushing && numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2));
+        signal = signal || (audioQueueFlushing && numberOfBuffersUsed < (STK_BUFFERS_NEEDED_TO_START * 2));
     }
     else
     {
@@ -1226,7 +1258,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         }
         else
         {
-            if ((waiting && numberOfBuffersUsed < audioQueueBufferCount / 2) || (numberOfBuffersUsed < (AudioPlayerBuffersNeededToStart * 2)))
+//            if ((waiting && numberOfBuffersUsed < audioQueueBufferCount / 2) || (numberOfBuffersUsed < (STK_BUFFERS_NEEDED_TO_START * 2)))
+            if (numberOfBuffersUsed < (STK_BUFFERS_NEEDED_TO_START * 2))
             {
                 signal = YES;
             }
@@ -1370,8 +1403,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             return;
         }
         
-        if (self.internalState == AudioPlayerInternalStateWaitingForData && numberOfBuffersUsed >= AudioPlayerBuffersNeededToStart)
+        OSSpinLockLock(&currentlyPlayingLock);
+        
+        BOOL tailEndOfBuffer  = currentlyReadingEntry == currentlyPlayingEntry && currentlyReadingEntry.dataSource.position == currentlyReadingEntry.dataSource.length;
+        
+        if (self->rebufferingStartFrames > 0 && (numberOfBuffersUsed > STK_BUFFERS_NEEDED_WHEN_UNDERUNNING || tailEndOfBuffer))
         {
+            self->rebufferingStartFrames = 0;
+            
+            OSSpinLockUnlock(&currentlyPlayingLock);
+            
             if (![self startAudioQueue] || audioQueue == nil)
             {
                 pthread_mutex_unlock(&playerMutex);
@@ -1379,10 +1420,19 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 return;
             }
         }
-        
-        if (self.internalState == AudioPlayerInternalStateRebuffering && numberOfBuffersUsed >= AudioPlayerBuffersNeededToStart)
+        else
         {
-            self.internalState = AudioPlayerInternalStatePlaying;
+            OSSpinLockUnlock(&currentlyPlayingLock);
+        }
+        
+        if (self.internalState == AudioPlayerInternalStateWaitingForData && (numberOfBuffersUsed >= STK_BUFFERS_NEEDED_TO_START || tailEndOfBuffer))
+        {
+            if (![self startAudioQueue] || audioQueue == nil)
+            {
+                pthread_mutex_unlock(&playerMutex);
+                
+                return;
+            }
         }
         
         if (++fillBufferIndex >= audioQueueBufferCount)
@@ -1546,6 +1596,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     audioPacketsPlayedCount = 0;
     framesQueued = 0;
     timelineAdjust = 0;
+    rebufferingStartFrames = 0;
     
     // Get file cookie/magic bytes information
     
@@ -1637,10 +1688,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
-    Float64 currentTime = [self currentTimeInFrames];
-    
     OSSpinLockLock(&currentlyPlayingLock);
     
+    Float64 currentTime = [self currentTimeInFrames];
     STKQueueEntry* entry = currentlyPlayingEntry;
     
     if (entry == nil)
@@ -1650,7 +1700,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
-    double retval = [entry calculateProgressWithTotalFramesPlayed:currentTime];
+    Float64 time = currentTime;
+    
+    double retval = [entry calculateProgressWithTotalFramesPlayed:time];
     
     OSSpinLockUnlock(&currentlyPlayingLock);
     
@@ -2000,8 +2052,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 if (self.internalState != AudioPlayerInternalStateStopped)
                 {
-                    [self stopAudioQueueWithReason:@"from processRunLoop/2"];
-                    stopReason = AudioPlayerStopReasonEof;
+                    //[self stopAudioQueueWithReason:@"from processRunLoop/2"];
+                    //stopReason = AudioPlayerStopReasonEof;
                 }
             }
         }
@@ -2231,6 +2283,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     packetsFilled = 0;
     framesQueued = 0;
     timelineAdjust = 0;
+    rebufferingStartFrames = 0;
     
     audioPacketsReadCount = 0;
     audioPacketsPlayedCount = 0;
@@ -2253,12 +2306,29 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         {
             error = AudioQueueReset(audioQueue);
             
+            OSSpinLockLock(&currentlyPlayingLock);
+            
             AudioTimeStamp timeStamp;
             Boolean outTimelineDiscontinuity;
             
             AudioQueueGetCurrentTime(audioQueue, NULL, &timeStamp, &outTimelineDiscontinuity);
             
             timelineAdjust = timeStamp.mSampleTime;
+            
+            BOOL startAudioQueue = NO;
+            
+            if (rebufferingStartFrames > 0)
+            {
+                startAudioQueue = YES;
+                rebufferingStartFrames = 0;
+            }
+            
+            OSSpinLockUnlock(&currentlyPlayingLock);
+            
+            if (startAudioQueue)
+            {
+                [self startAudioQueue];
+            }
             
             if (error)
             {
@@ -2363,6 +2433,16 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             return;
         }
+        
+        OSSpinLockLock(&currentlyPlayingLock);
+        
+        if (currentlyReadingEntry == nil)
+        {
+            [dataSourceIn unregisterForEvents];
+            [dataSourceIn close];
+        }
+        
+        OSSpinLockUnlock(&currentlyPlayingLock);
     }
 }
 
