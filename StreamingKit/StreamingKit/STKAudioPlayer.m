@@ -1954,7 +1954,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         if (audioQueue)
         {
-            [self resetAudioQueueWithReason:@"from setCurrentlyReadingEntry"];
+            [self resetAudioQueueWithReason:@"from setCurrentlyReadingEntry" andPause:YES];
         }
     }
     
@@ -2498,7 +2498,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     self.internalState = AudioPlayerInternalStateStopped;
 }
 
+
 -(void) resetAudioQueueWithReason:(NSString*)reason
+{
+    [self resetAudioQueueWithReason:reason andPause:NO];
+}
+
+-(void) resetAudioQueueWithReason:(NSString*)reason andPause:(BOOL)pause
 {
 	OSStatus error;
     
@@ -2510,12 +2516,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         if (audioQueue)
         {
-            error = AudioQueueReset(audioQueue);
-            
-            OSSpinLockLock(&currentEntryReferencesLock);
-            
             AudioTimeStamp timeStamp;
             Boolean outTimelineDiscontinuity;
+            
+            error = AudioQueueReset(audioQueue);
+            
+           if (pause)
+            {
+                AudioQueuePause(audioQueue);
+            }
             
             AudioQueueGetCurrentTime(audioQueue, NULL, &timeStamp, &outTimelineDiscontinuity);
             
@@ -2529,9 +2538,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 rebufferingStartFrames = 0;
             }
             
-            OSSpinLockUnlock(&currentEntryReferencesLock);
-            
-            if (startAudioQueue)
+            if (!pause && startAudioQueue)
             {
                 [self startAudioQueue];
             }
