@@ -1003,7 +1003,18 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             SInt64 packetSize = packetDescriptionsIn[i].mDataByteSize;
             int bufSpaceRemaining;
             
-            if (currentlyReadingEntry->processedPacketsSizeTotal < 0xfffff)
+            int framesPerPacket;
+            
+            if (packetDescriptionsIn[i].mVariableFramesInPacket > 0)
+            {
+                framesPerPacket = packetDescriptionsIn[i].mVariableFramesInPacket;
+            }
+            else
+            {
+                framesPerPacket = currentlyReadingEntry->audioStreamBasicDescription.mFramesPerPacket;
+            }
+            
+            if (currentlyReadingEntry->processedPacketsCount * framesPerPacket < currentlyReadingEntry->audioStreamBasicDescription.mSampleRate * 5 * currentlyReadingEntry->audioStreamBasicDescription.mChannelsPerFrame)
             {
                 OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
                 OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
@@ -1034,14 +1045,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             AudioQueueBufferRef bufferToFill = audioQueueBuffer[fillBufferIndex];
             memcpy((char*)bufferToFill->mAudioData + bytesFilled, (const char*)inputData + packetOffset, (unsigned long)packetSize);
             
-            if (packetDescriptionsIn[i].mVariableFramesInPacket > 0)
-            {
-            	framesFilled += packetDescriptionsIn[i].mVariableFramesInPacket;
-            }
-            else
-            {
-                framesFilled += currentlyReadingEntry->audioStreamBasicDescription.mFramesPerPacket;
-            }
+
+            framesFilled += framesPerPacket;
             
             packetDescs[packetsFilled] = packetDescriptionsIn[i];
             packetDescs[packetsFilled].mStartOffset = bytesFilled;
