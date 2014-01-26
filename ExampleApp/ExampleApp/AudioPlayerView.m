@@ -71,8 +71,13 @@
 		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
         
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playButton.frame = CGRectMake((320 - size.width) / 2, 380, size.width, size.height);
+		playButton.frame = CGRectMake(30, 380, size.width, size.height);
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+        
+        disposeButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+		disposeButton.frame = CGRectMake((320 - size.width) - 30, 380, size.width, size.height);
+		[disposeButton addTarget:self action:@selector(disposeButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+        [disposeButton setTitle:@"Dispose" forState:UIControlStateNormal];
 		
 		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, 280, 20)];
 		slider.continuous = YES;
@@ -98,6 +103,7 @@
         [self addSubview:repeatSwitch];
         [self addSubview:label];
         [self addSubview:statusLabel];
+        [self addSubview:disposeButton];
         
 		[self setupTimer];
 		[self updateControls];
@@ -171,12 +177,22 @@
 	[self.delegate audioPlayerViewQueueShortFileSelected:self];
 }
 
+-(void) disposeButtonPressed
+{
+    [audioPlayer dispose];
+    audioPlayer = nil;
+}
+
 -(void) playButtonPressed
 {
 	if (!audioPlayer)
 	{
 		return;
 	}
+    
+    [audioPlayer dispose];
+    
+    return;
 	
 	if (audioPlayer.state == AudioPlayerStatePaused)
 	{

@@ -52,6 +52,7 @@
 	UISlider* slider;
     UISwitch* repeatSwitch;
 	UIButton* playButton;
+    UIButton* disposeButton;
 	UIButton* playFromHTTPButton;
     UIButton* queueShortFileButton;
 	UIButton* playFromLocalFileButton;
