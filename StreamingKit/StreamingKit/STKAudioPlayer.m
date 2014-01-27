@@ -208,7 +208,7 @@ AudioQueueBufferRefLookupEntry;
         [self updateAudioDataSource];
     }
     
-    if (retval > duration)
+    if (retval > duration && duration != 0)
     {
         retval = duration;
     }
