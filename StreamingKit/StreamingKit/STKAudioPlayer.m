@@ -2785,16 +2785,17 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 }
             }
         }
-
-        OSSpinLockLock(&currentEntryReferencesLock);
-        currentlyReadingEntry = nil;
-        OSSpinLockUnlock(&currentEntryReferencesLock);
     }
     else
     {
         stopReason = AudioPlayerStopReasonEof;
         self.internalState = AudioPlayerInternalStateStopped;
     }
+    
+    OSSpinLockLock(&currentEntryReferencesLock);
+    currentlyReadingEntry = nil;
+    OSSpinLockUnlock(&currentEntryReferencesLock);
+
     
     pthread_mutex_unlock(&playerMutex);
 }
@@ -2920,7 +2921,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         [self invokeOnPlaybackThread:^
         {
-            pthread_mutex_lock(&playerMutex);
+            pthread_mutex_lock(&queueBuffersMutex);
             disposeWasRequested = YES;
             pthread_mutex_unlock(&queueBuffersMutex);
         }];
