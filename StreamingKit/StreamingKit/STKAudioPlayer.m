@@ -1030,7 +1030,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 framesPerPacket = currentlyReadingEntry->audioStreamBasicDescription.mFramesPerPacket;
             }
             
-            if (currentlyReadingEntry->processedPacketsCount * framesPerPacket < currentlyReadingEntry->audioStreamBasicDescription.mSampleRate * 15 * currentlyReadingEntry->audioStreamBasicDescription.mChannelsPerFrame)
+            if (currentlyReadingEntry->processedPacketsCount * framesPerPacket < currentlyReadingEntry->audioStreamBasicDescription.mSampleRate * 10 * currentlyReadingEntry->audioStreamBasicDescription.mChannelsPerFrame)
             {
                 OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
                 OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
@@ -1885,6 +1885,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return 0;
     }
     
+    if (self.internalState == AudioPlayerInternalStateStopped)
+    {
+        return 0;
+    }
+    
     OSSpinLockLock(&currentEntryReferencesLock);
     
     STKQueueEntry* entry = currentlyPlayingEntry;
@@ -1915,6 +1920,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     if (seekToTimeWasRequested)
     {
         return requestedSeekTime;
+    }
+    
+    if (self.internalState == AudioPlayerInternalStateStopped)
+    {
+        return 0;
     }
     
     if (newFileToPlay)
@@ -2841,8 +2851,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     {
         currentlyReadingEntry.lastFrameIndex = self->framesQueued;
         currentlyReadingEntry.lastByteIndex = audioPacketsReadCount;
-        
-        LOGINFO(([NSString stringWithFormat:@"eof2: %lld %lld %d", audioPacketsReadCount, audioPacketsPlayedCount, numberOfBuffersUsed]));
         
         if (numberOfBuffersUsed == 0 && currentlyReadingEntry == currentlyPlayingEntry)
         {
