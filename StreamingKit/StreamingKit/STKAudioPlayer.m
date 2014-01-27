@@ -949,26 +949,28 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
 	if (audioQueue == nil)
     {
-        if (currentlyReadingEntry == currentlyPlayingEntry && currentlyReadingEntry != nil)
+        if (currentlyPlayingEntry == nil)
         {
-            [self createAudioQueue];
+            return;
+        }
         
-            if (audioQueue == nil)
+        [self createAudioQueue];
+    
+        if (audioQueue == nil)
+        {
+            return;
+        }
+        
+        if (self.internalState == AudioPlayerInternalStateStopped)
+        {
+            if (stopReason == AudioPlayerStopReasonEof)
+            {
+                stopReason = AudioPlayerStopReasonNoStop;
+                self.internalState = AudioPlayerInternalStateWaitingForData;
+            }
+            else
             {
                 return;
-            }
-            
-            if (self.internalState == AudioPlayerInternalStateStopped)
-            {
-                if (stopReason == AudioPlayerStopReasonEof)
-                {
-                    stopReason = AudioPlayerStopReasonNoStop;
-                    self.internalState = AudioPlayerInternalStateWaitingForData;
-                }
-                else
-                {
-                    return;
-                }
             }
         }
     }
@@ -1032,7 +1034,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 [self enqueueBuffer];
                 
-                if (disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
+                if (audioQueue == nil || disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
                 {
                     return;
                 }
@@ -1060,7 +1062,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             {
                 [self enqueueBuffer];
                 
-                if (disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
+                if (audioQueue == nil || disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
                 {
                     return;
                 }
@@ -1081,7 +1083,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 			{
 				[self enqueueBuffer];
                 
-                if (disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
+                if (audioQueue == nil || disposeWasRequested || seekToTimeWasRequested || self.internalState == AudioPlayerInternalStateStopped || self.internalState == AudioPlayerInternalStateStopping || self.internalState == AudioPlayerInternalStateDisposed)
                 {
                     return;
                 }
@@ -1276,10 +1278,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                         && self.internalState != AudioPlayerInternalStateWaitingForData
                         && [self moreFramesAreDefinitelyAvailableToPlay])
                     {
-                        if ([self moreFramesAreDefinitelyAvailableToPlay])
-                        {
-                        }
-                        
                         AudioQueuePause(audioQueue);
                         
                         self->rebufferingStartFrames = [self currentTimeInFrames];
