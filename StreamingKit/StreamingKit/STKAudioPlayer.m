@@ -195,7 +195,6 @@ AudioQueueBufferRefLookupEntry;
 -(double) calculateProgressWithBytesPlayed:(Float64)bytesPlayed
 {
     double retval = lastProgress;
-    double duration = [self duration];
     
     if (self->sampleRate > 0)
     {
@@ -208,11 +207,6 @@ AudioQueueBufferRefLookupEntry;
         [self updateAudioDataSource];
     }
     
-    if (retval > duration && duration != 0)
-    {
-        retval = duration;
-    }
-	
 	return retval;
 }
 
@@ -300,13 +294,13 @@ AudioQueueBufferRefLookupEntry;
     NSMutableArray* upcomingQueue;
     NSMutableArray* bufferingQueue;
     
+    bool* bufferUsed;
     AudioQueueBufferRef* audioQueueBuffer;
     AudioQueueBufferRefLookupEntry* audioQueueBufferLookup;
     unsigned int audioQueueBufferRefLookupCount;
     unsigned int audioQueueBufferCount;
     AudioStreamPacketDescription* packetDescs;
-    bool* bufferUsed;
-    int numberOfBuffersUsed;
+    UInt32 numberOfBuffersUsed;
     
     AudioQueueRef audioQueue;
     AudioStreamBasicDescription currentAudioStreamBasicDescription;
@@ -321,10 +315,10 @@ AudioQueueBufferRefLookupEntry;
     
     BOOL discontinuous;
     
-    int bytesFilled;
-	int packetsFilled;
-    int framesFilled;
-    int fillBufferIndex;
+    int32_t bytesFilled;
+	int32_t packetsFilled;
+    int32_t framesFilled;
+    int32_t fillBufferIndex;
     
     volatile Float64 framesQueued;
     volatile Float64 timelineAdjust;
@@ -337,13 +331,13 @@ AudioQueueBufferRefLookupEntry;
     AudioPlayerErrorCode errorCode;
     AudioPlayerStopReason stopReason;
     
-    int seekLock;
     int32_t seekVersion;
-    int currentEntryReferencesLock;
+    OSSpinLock seekLock;
+    OSSpinLock currentEntryReferencesLock;
+
     pthread_mutex_t playerMutex;
     pthread_mutex_t queueBuffersMutex;
     pthread_cond_t queueBufferReadyCondition;
-
     pthread_mutex_t mainThreadSyncCallMutex;
     pthread_cond_t mainThreadSyncCallReadyCondition;
     
@@ -357,8 +351,8 @@ AudioQueueBufferRefLookupEntry;
     volatile SInt64 audioPacketsPlayedCount;
     
     BOOL meteringEnabled;
+    UInt32 numberOfChannels;
     AudioQueueLevelMeterState* levelMeterState;
-    NSInteger numberOfChannels;
 }
 
 @property (readwrite) AudioPlayerInternalState internalState;
@@ -1036,7 +1030,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 framesPerPacket = currentlyReadingEntry->audioStreamBasicDescription.mFramesPerPacket;
             }
             
-            if (currentlyReadingEntry->processedPacketsCount * framesPerPacket < currentlyReadingEntry->audioStreamBasicDescription.mSampleRate * 5 * currentlyReadingEntry->audioStreamBasicDescription.mChannelsPerFrame)
+            if (currentlyReadingEntry->processedPacketsCount * framesPerPacket < currentlyReadingEntry->audioStreamBasicDescription.mSampleRate * 15 * currentlyReadingEntry->audioStreamBasicDescription.mChannelsPerFrame)
             {
                 OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
                 OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
@@ -1906,6 +1900,13 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
 	OSSpinLockUnlock(&currentEntryReferencesLock);
     
+    double progress = [self progress];
+    
+    if (retval < progress && retval > 0)
+    {
+        return progress;
+    }
+    
     return retval;
 }
 
@@ -2275,7 +2276,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             currentlyReadingEntry->parsedHeader = NO;
         }
-        else if (self.internalState == AudioPlayerInternalStateStopped && stopReason == AudioPlayerStopReasonUserAction)
+        else if (self.internalState == AudioPlayerInternalStateStopped
+                 && (stopReason == AudioPlayerStopReasonUserAction || stopReason == AudioPlayerStopReasonUserActionFlushStop))
         {
             [self stopAudioQueueWithReason:@"from processRunLoop/1"];
             
@@ -2295,87 +2297,78 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 [bufferingQueue dequeue];
             }
             
-            pthread_mutex_unlock(&queueBuffersMutex);
-            
             OSSpinLockLock(&currentEntryReferencesLock);
 			currentlyPlayingEntry = nil;
             currentlyReadingEntry = nil;
             seekToTimeWasRequested = NO;
             OSSpinLockUnlock(&currentEntryReferencesLock);
-        }
-        else if (self.internalState == AudioPlayerInternalStateStopped && stopReason == AudioPlayerStopReasonUserActionFlushStop)
-        {
-            currentlyReadingEntry.dataSource.delegate = nil;
-            [currentlyReadingEntry.dataSource unregisterForEvents];
-            [currentlyReadingEntry.dataSource close];
             
-            if (currentlyPlayingEntry)
-            {
-                [self processFinishPlayingIfAnyAndPlayingNext:currentlyPlayingEntry withNext:nil];
-            }
-            
-            pthread_mutex_lock(&queueBuffersMutex);
-            if ([bufferingQueue peek] == currentlyPlayingEntry)
-            {
-                [bufferingQueue dequeue];
-            }
             pthread_mutex_unlock(&queueBuffersMutex);
             
-            OSSpinLockLock(&currentEntryReferencesLock);
-			currentlyPlayingEntry = nil;
-            currentlyReadingEntry = nil;
-            OSSpinLockUnlock(&currentEntryReferencesLock);
-            
-            [self resetAudioQueueWithReason:@"from processRunLoop"];
+            if (stopReason == AudioPlayerStopReasonUserActionFlushStop)
+            {
+                [self resetAudioQueueWithReason:@"from processRunLoop"];
+            }
         }
         else if (currentlyReadingEntry == nil && !dontPlayNew)
         {
             pthread_mutex_lock(&queueBuffersMutex);
             
+            BOOL processNextToRead = YES;
             STKQueueEntry* next = [bufferingQueue peek];
             
             if (next != nil && next->audioStreamBasicDescription.mSampleRate == 0)
             {
                 pthread_mutex_unlock(&queueBuffersMutex);
                 
-                goto endOfIfElse;
+                processNextToRead = NO;
             }
             
-            next = [upcomingQueue peek];
-            
-            if ([next isKnownToBeIncompatible:&currentAudioStreamBasicDescription] && currentlyPlayingEntry != nil)
+            if (processNextToRead)
             {
-                pthread_mutex_unlock(&queueBuffersMutex);
+                next = [upcomingQueue peek];
                 
-                goto endOfIfElse;
-            }
-            
-            if (upcomingQueue.count > 0)
-            {
-                STKQueueEntry* entry = [upcomingQueue dequeue];
-                
-                BOOL startPlaying = currentlyPlayingEntry == nil;
-                BOOL wasCurrentlyPlayingNothing = currentlyPlayingEntry == nil;
-                
-                pthread_mutex_unlock(&queueBuffersMutex);
-                
-                [self setCurrentlyReadingEntry:entry andStartPlaying:startPlaying];
-                
-                if (wasCurrentlyPlayingNothing)
+                if ([next isKnownToBeIncompatible:&currentAudioStreamBasicDescription] && currentlyPlayingEntry != nil)
                 {
-                    currentAudioStreamBasicDescription.mSampleRate = 0;
+                    pthread_mutex_unlock(&queueBuffersMutex);
                     
-                    [self setInternalState:AudioPlayerInternalStateWaitingForData];
+                    processNextToRead = NO;
                 }
             }
-            else if (currentlyPlayingEntry == nil)
+            
+            if (processNextToRead)
             {
-                pthread_mutex_unlock(&queueBuffersMutex);
-                
-                if (self.internalState != AudioPlayerInternalStateStopped)
+                if (upcomingQueue.count > 0)
                 {
-                    [self stopAudioQueueWithReason:@"from processRunLoop/2"];
-                    stopReason = AudioPlayerStopReasonEof;
+                    STKQueueEntry* entry = [upcomingQueue dequeue];
+                    
+                    BOOL startPlaying = currentlyPlayingEntry == nil;
+                    BOOL wasCurrentlyPlayingNothing = currentlyPlayingEntry == nil;
+                    
+                    pthread_mutex_unlock(&queueBuffersMutex);
+                    
+                    [self setCurrentlyReadingEntry:entry andStartPlaying:startPlaying];
+                    
+                    if (wasCurrentlyPlayingNothing)
+                    {
+                        currentAudioStreamBasicDescription.mSampleRate = 0;
+                        
+                        [self setInternalState:AudioPlayerInternalStateWaitingForData];
+                    }
+                }
+                else if (currentlyPlayingEntry == nil)
+                {
+                    pthread_mutex_unlock(&queueBuffersMutex);
+                    
+                    if (self.internalState != AudioPlayerInternalStateStopped)
+                    {
+                        [self stopAudioQueueWithReason:@"from processRunLoop/2"];
+                        stopReason = AudioPlayerStopReasonEof;
+                    }
+                }
+                else
+                {
+                    pthread_mutex_unlock(&queueBuffersMutex);
                 }
             }
             else
@@ -2383,8 +2376,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
                 pthread_mutex_unlock(&queueBuffersMutex);
             }
         }
-        
-    endOfIfElse:
         
         if (disposeWasRequested)
         {
@@ -3121,7 +3112,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
     }
     
-    NSInteger channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
+    UInt32 channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
     
     if (numberOfChannels != channels)
     {
