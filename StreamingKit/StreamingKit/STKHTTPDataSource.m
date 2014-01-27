@@ -197,7 +197,7 @@
         CFRelease(stream);
     }
     
-    NSAssert(!(eventsRunLoop != nil && [NSRunLoop currentRunLoop] != eventsRunLoop), @"Seek called on wrong thread");
+    NSAssert([NSRunLoop currentRunLoop] == eventsRunLoop, @"Seek called on wrong thread");
     
     stream = 0;
     relativePosition = 0;
