@@ -433,6 +433,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         case AudioPlayerInternalStateRunning:
         case AudioPlayerInternalStateStartingThread:
         case AudioPlayerInternalStatePlaying:
+        case AudioPlayerInternalStateWaitingForDataAfterSeek:
         case AudioPlayerInternalStateFlushingAndStoppingButStillPlaying:
             newState = AudioPlayerStatePlaying;
             break;
@@ -740,8 +741,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         pthread_mutex_lock(&playerMutex);
         {
             [upcomingQueue enqueue:[[STKQueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
-
-            LOGINFO(([NSString stringWithFormat:@"Queueing: %@ (buffering.count=%d, upcoming.count=%d)", [queueItemId description], bufferingQueue.count, upcomingQueue.count]));
 
             [self createOrWakeupPlaybackThread];
         }
@@ -1477,7 +1476,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     BOOL tailEndOfBuffer = ![self moreFramesAreDefinitelyAvailableToPlay];
     
-    return self.internalState == AudioPlayerInternalStateWaitingForData && (numberOfBuffersUsed >= STK_BUFFERS_NEEDED_TO_START || tailEndOfBuffer);
+    return (self.internalState == AudioPlayerInternalStateWaitingForData || self.internalState == AudioPlayerInternalStateWaitingForDataAfterSeek) && (numberOfBuffersUsed >= STK_BUFFERS_NEEDED_TO_START || tailEndOfBuffer);
 }
 
 -(void) enqueueBuffer
@@ -2029,7 +2028,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         return;
     }
     
-    LOGINFO(([NSString stringWithFormat:@"Finished: %@, Next: %@, buffering.count=%d,upcoming.count=%d", entry ? [entry description] : @"nothing", [next description], bufferingQueue.count, upcomingQueue.count]));
+    LOGINFO(([NSString stringWithFormat:@"Finished: %@, Next: %@, buffering.count=%d,upcoming.count=%d", entry ? [entry description] : @"nothing", [next description], (int)bufferingQueue.count, (int)upcomingQueue.count]));
     
     NSObject* queueItemId = entry.queueItemId;
     double progress = [entry calculateProgressWithTotalFramesPlayed:[self currentTimeInFrames]];
@@ -2175,10 +2174,11 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             currentlyPlayingEntry.lastFrameIndex = -1;
             currentlyPlayingEntry.lastByteIndex = -1;
             
+            self.internalState = AudioPlayerInternalStateWaitingForDataAfterSeek;
+            
             [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES];
             
             currentlyReadingEntry->parsedHeader = NO;
-            [currentlyReadingEntry.dataSource seekToOffset:0];
         }
         else if (self.internalState == AudioPlayerInternalStateStopped && stopReason == AudioPlayerStopReasonUserAction)
         {
@@ -2526,7 +2526,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
             
             error = AudioQueueReset(audioQueue);
             
-           if (pause)
+            if (pause)
             {
                 AudioQueuePause(audioQueue);
             }
@@ -2803,7 +2803,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
             if (audioQueue != nil)
             {
-                if(!((self.internalState == AudioPlayerInternalStateWaitingForData) || (self.internalState == AudioPlayerInternalStateRebuffering))
+                if(!((self.internalState == AudioPlayerInternalStateWaitingForData) || (self.internalState == AudioPlayerInternalStateRebuffering) || (self.internalState == AudioPlayerInternalStateWaitingForDataAfterSeek))
                     || [self readyToEndRebufferingState]
                     || [self readyToEndWaitingForDataState])
                 {
