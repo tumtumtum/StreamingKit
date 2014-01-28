@@ -287,6 +287,8 @@ AudioQueueBufferRefLookupEntry;
 {
     UInt8* readBuffer;
     int readBufferSize;
+    
+    AudioComponentInstance audioUnit;
 	
     STKQueueEntry* currentlyPlayingEntry;
     STKQueueEntry* currentlyReadingEntry;
@@ -295,6 +297,7 @@ AudioQueueBufferRefLookupEntry;
     NSMutableArray* bufferingQueue;
     
     bool* bufferUsed;
+    AudioConverterRef audioConverterRef;
     AudioQueueBufferRef* audioQueueBuffer;
     AudioQueueBufferRefLookupEntry* audioQueueBufferLookup;
     unsigned int audioQueueBufferRefLookupCount;
@@ -304,6 +307,7 @@ AudioQueueBufferRefLookupEntry;
     
     AudioQueueRef audioQueue;
     AudioStreamBasicDescription currentAudioStreamBasicDescription;
+    AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     
     NSThread* playbackThread;
     NSRunLoop* playbackThreadRunLoop;
@@ -516,6 +520,15 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 {
     if (self = [super init])
     {
+        canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
+        canonicalAudioStreamBasicDescription.mFormatID = kAudioFormatLinearPCM;
+        canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagsCanonical;
+        canonicalAudioStreamBasicDescription.mFramesPerPacket	= 1;
+        canonicalAudioStreamBasicDescription.mChannelsPerFrame = 2;
+        canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * sizeof(AudioSampleType);
+        canonicalAudioStreamBasicDescription.mBytesPerPacket = sizeof(AudioSampleType) * 2;
+        canonicalAudioStreamBasicDescription.mBytesPerFrame = sizeof(AudioSampleType) * 2;
+        
         readBufferSize = readBufferSizeIn;
         readBuffer = calloc(sizeof(UInt8), readBufferSize);
         
@@ -1169,7 +1182,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     if (upcomingQueue.count > 0)
     {
-        if  ([((STKQueueEntry*)[upcomingQueue peek]) isDefinitelyCompatible:&currentAudioStreamBasicDescription])
+        if ([((STKQueueEntry*)[upcomingQueue peek]) isDefinitelyCompatible:&currentAudioStreamBasicDescription])
         {
             return YES;
         }
@@ -1704,6 +1717,10 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(void) createAudioQueue
 {
+    [self createAudioUnit];
+    
+    return;
+    
 	OSStatus error;
 	
     LOGINFO(@"Called");
@@ -2537,6 +2554,8 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 
 -(BOOL) startAudioQueue
 {
+    [self startAudioUnit];
+    
 	OSStatus error;
     
     LOGINFO(@"Called");
@@ -3147,4 +3166,109 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     return levelMeterState[channelNumber].mAveragePower;
 }
 
+
+///
+/// AudioUnit
+///
+
+#define kOutputBus 0
+#define kInputBus 1
+
+static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
+{
+    return 0;
+}
+
+BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc)
+{
+    UInt32 size;
+    
+    if (AudioFormatGetPropertyInfo(kAudioFormatProperty_Decoders, sizeof(formatId), &formatId, &size) != 0)
+    {
+        return NO;
+    }
+
+    UInt32 decoderCount = size / sizeof(AudioClassDescription);
+    AudioClassDescription encoderDescriptions[decoderCount];
+    
+    if (AudioFormatGetProperty(kAudioFormatProperty_Decoders, sizeof(formatId), &formatId, &size, encoderDescriptions) != 0)
+    {
+        return NO;
+    }
+    
+    for (UInt32 i=0; i < decoderCount; ++i)
+    {
+        if (encoderDescriptions[i].mManufacturer == kAppleHardwareAudioCodecManufacturer)
+        {
+            *classDesc = encoderDescriptions[i];
+            
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+                        
+
+-(void) createAudioUnit
+{
+    pthread_mutex_lock(&playerMutex);
+    pthread_mutex_lock(&queueBuffersMutex);
+    
+    currentAudioStreamBasicDescription = currentlyPlayingEntry->audioStreamBasicDescription;
+    
+    OSStatus status;
+    AudioComponentDescription desc;
+    
+    desc.componentType = kAudioUnitType_Output;
+    desc.componentSubType = kAudioUnitSubType_RemoteIO;
+    desc.componentFlags = 0;
+    desc.componentFlagsMask = 0;
+    desc.componentManufacturer = kAudioUnitManufacturer_Apple;
+    
+    AudioComponent component = AudioComponentFindNext(NULL, &desc);
+    
+    status = AudioComponentInstanceNew(component, &audioUnit);
+    
+    UInt32 flag;
+    
+	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
+    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+    
+    AudioClassDescription classDesc;
+    
+    if (GetHardwareCodecClassDesc(currentAudioStreamBasicDescription.mFormatID, &classDesc))
+    {
+        status = AudioConverterNewSpecific(&currentAudioStreamBasicDescription, &canonicalAudioStreamBasicDescription, 1,  &classDesc, &audioConverterRef);
+    }
+    else
+    {
+        status = AudioConverterNew(&currentAudioStreamBasicDescription, &canonicalAudioStreamBasicDescription, &audioConverterRef);
+    }
+    
+    AURenderCallbackStruct callbackStruct;
+    
+    callbackStruct.inputProc = playbackCallback;
+    callbackStruct.inputProcRefCon = (__bridge void*)self;
+    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, kOutputBus, &callbackStruct, sizeof(callbackStruct));
+ 
+    status = AudioUnitInitialize(audioUnit);
+    
+    pthread_mutex_unlock(&queueBuffersMutex);
+    pthread_mutex_unlock(&playerMutex);
+}
+
+-(BOOL) startAudioUnit
+{
+    AudioOutputUnitStart(audioUnit);
+    
+    return YES;
+}
+
+-(void) stopAudioUnit
+{
+    AudioOutputUnitStop(audioUnit);
+}
+
 @end
+

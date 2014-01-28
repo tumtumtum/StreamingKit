@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1C9767718981BFE0057F881 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C9767618981BFE0057F881 /* AudioUnit.framework */; };
 		A1E7C4CC188D57F50010896F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4CB188D57F50010896F /* Foundation.framework */; };
 		A1E7C4DA188D57F60010896F /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
 		A1E7C4DB188D57F60010896F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4CB188D57F50010896F /* Foundation.framework */; };
@@ -46,6 +47,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1C9767618981BFE0057F881 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1E7C4C8188D57F50010896F /* libStreamingKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E7C4CB188D57F50010896F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		A1E7C4CF188D57F50010896F /* StreamingKit-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "StreamingKit-Prefix.pch"; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C9767718981BFE0057F881 /* AudioUnit.framework in Frameworks */,
 				A1E7C508188D62D20010896F /* UIKit.framework in Frameworks */,
 				A1E7C4CC188D57F50010896F /* Foundation.framework in Frameworks */,
 			);
@@ -116,6 +119,7 @@
 		A1E7C4CA188D57F50010896F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1C9767618981BFE0057F881 /* AudioUnit.framework */,
 				A1E7C507188D62D20010896F /* UIKit.framework */,
 				A1E7C4CB188D57F50010896F /* Foundation.framework */,
 				A1E7C4D9188D57F60010896F /* XCTest.framework */,
