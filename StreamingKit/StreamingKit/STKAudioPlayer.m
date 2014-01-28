@@ -2842,8 +2842,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         currentlyReadingEntry.lastFrameIndex = self->framesQueued;
         currentlyReadingEntry.lastByteIndex = audioPacketsReadCount;
         
-        LOGINFO(([NSString stringWithFormat:@"eof2: %lld %lld %d", audioPacketsReadCount, audioPacketsPlayedCount, numberOfBuffersUsed]));
-        
         if (numberOfBuffersUsed == 0 && currentlyReadingEntry == currentlyPlayingEntry)
         {
             seekToTimeWasRequested = NO;
