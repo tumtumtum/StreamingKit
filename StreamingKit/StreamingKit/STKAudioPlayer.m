@@ -41,12 +41,12 @@
 #import "STKLocalFileDataSource.h"
 #import "libkern/OSAtomic.h"
 
-#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (5)
+#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (2)
 
 #define STK_BIT_RATE_ESTIMATION_MIN_PACKETS (64)
 #define STK_BUFFERS_NEEDED_TO_START (32)
 #define STK_BUFFERS_NEEDED_WHEN_UNDERUNNING (128)
-#define STK_DEFAULT_READ_BUFFER_SIZE (10 * 1024)
+#define STK_DEFAULT_READ_BUFFER_SIZE (64 * 1024)
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
 #define STK_FRAMES_MISSED_BEFORE_CONSIDERED_UNDERRUN (1024)
 #define STK_DEFAULT_NUMBER_OF_AUDIOQUEUE_BUFFERS (1024)
@@ -300,10 +300,11 @@ AudioQueueBufferRefLookupEntry;
     
     bool* bufferUsed;
     
-    UInt32 pcmBufferFrameSizeInBytes;
-    UInt32 pcmBufferTotalFrameCount;
-    UInt32 pcmBufferFrameStartIndex;
-    UInt32 pcmBufferUsedFrameCount;
+    OSSpinLock pcmBufferSpinLock;
+    volatile UInt32 pcmBufferFrameSizeInBytes;
+    volatile UInt32 pcmBufferTotalFrameCount;
+    volatile UInt32 pcmBufferFrameStartIndex;
+    volatile UInt32 pcmBufferUsedFrameCount;
     
     AudioBuffer* pcmAudioBuffer;
     AudioBufferList pcmAudioBufferList;
@@ -3268,9 +3269,11 @@ AudioBufferList* AllocateAudioBufferList(UInt32 bytesPerFrame, UInt32 capacityFr
     
     status = AudioComponentInstanceNew(component, &audioUnit);
     
-    UInt32 flag;
+    UInt32 flag = 1;
     
-	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
+	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &flag, sizeof(flag));
+    status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
+    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
     status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
     
     AudioClassDescription classDesc;
@@ -3289,12 +3292,15 @@ AudioBufferList* AllocateAudioBufferList(UInt32 bytesPerFrame, UInt32 capacityFr
     
     callbackStruct.inputProc = playbackCallback;
     callbackStruct.inputProcRefCon = (__bridge void*)self;
-    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, kOutputBus, &callbackStruct, sizeof(callbackStruct));
+
+    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, kOutputBus, &callbackStruct, sizeof(callbackStruct));
  
     status = AudioUnitInitialize(audioUnit);
     
     pthread_mutex_unlock(&queueBuffersMutex);
     pthread_mutex_unlock(&playerMutex);
+    
+    [self startAudioUnit];
 }
 
 -(BOOL) startAudioUnit
@@ -3333,7 +3339,12 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     
     ioData->mNumberBuffers = 1;
     ioData->mBuffers[0] = convertInfo->audioBuffer;
-    *outDataPacketDescription = convertInfo->packetDescriptions;
+
+    if (outDataPacketDescription)
+    {
+        *outDataPacketDescription = convertInfo->packetDescriptions;
+    }
+    
     *ioNumberDataPackets = convertInfo->numberOfPackets;
     convertInfo->done = YES;
     
@@ -3400,8 +3411,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     {
         discontinuous = NO;
     }
-    
-    [self startAudioQueue];
+
+    [self startAudioUnit];
     
     OSStatus status;
     
@@ -3416,35 +3427,58 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
 
     while (true)
     {
-        UInt32 used;
-        UInt32 start;
-        UInt32 end;
-        UInt32 framesLeftInsideBuffer;
+        OSSpinLockLock(&pcmBufferSpinLock);
+        UInt32 used = pcmBufferUsedFrameCount;
+        UInt32 start = pcmBufferFrameStartIndex;
+        UInt32 end = (pcmBufferFrameStartIndex + pcmBufferUsedFrameCount) % pcmBufferTotalFrameCount;
+        UInt32 framesLeftInsideBuffer = pcmBufferTotalFrameCount - used;
+        OSSpinLockUnlock(&pcmBufferSpinLock);
         
-        pthread_mutex_lock(&pcmBuffersMutex);
-        
-        while (true)
+        if (framesLeftInsideBuffer == 0)
         {
-            used = pcmBufferUsedFrameCount;
-            start = pcmBufferFrameStartIndex;
-            end = pcmBufferFrameStartIndex + pcmBufferUsedFrameCount;
-            framesLeftInsideBuffer = pcmBufferTotalFrameCount - used;
-
-            if (framesLeftInsideBuffer > 0 || (disposeWasRequested || seekToTimeWasRequested || self.internalState == STKAudioPlayerInternalStateStopped || self.internalState == STKAudioPlayerInternalStateStopping || self.internalState == STKAudioPlayerInternalStateDisposed))
+            pthread_mutex_lock(&pcmBuffersMutex);
+            
+            while (true)
             {
-                break;
-            }
+                OSSpinLockLock(&pcmBufferSpinLock);
+                used = pcmBufferUsedFrameCount;
+                start = pcmBufferFrameStartIndex;
+                end = (pcmBufferFrameStartIndex + pcmBufferUsedFrameCount) % pcmBufferTotalFrameCount;
+                framesLeftInsideBuffer = pcmBufferTotalFrameCount - used;
+                OSSpinLockUnlock(&pcmBufferSpinLock);
 
-            pthread_cond_wait(&pcmBuffersReadyCondition, &pcmBuffersMutex);
+                if (framesLeftInsideBuffer > 0)
+                {
+                    break;
+                }
+                
+                if  (disposeWasRequested || seekToTimeWasRequested || self.internalState == STKAudioPlayerInternalStateStopped || self.internalState == STKAudioPlayerInternalStateStopping || self.internalState == STKAudioPlayerInternalStateDisposed)
+                {
+                    pthread_mutex_unlock(&pcmBuffersMutex);
+                    
+                    return;
+                }
+                
+                waiting = YES;
+
+                pthread_cond_wait(&pcmBuffersReadyCondition, &pcmBuffersMutex);
+                
+                waiting = NO;
+            }
+            
+            pthread_mutex_unlock(&pcmBuffersMutex);
         }
-        
-        pthread_mutex_unlock(&pcmBuffersMutex);
         
         AudioBuffer* localPcmAudioBuffer;
         AudioBufferList localPcmBufferList;
         
         localPcmBufferList.mNumberBuffers = 1;
         localPcmAudioBuffer = &localPcmBufferList.mBuffers[0];
+        
+        if (start == end)
+        {
+            NSLog(@"");
+        }
         
         if (end >= start)
         {
@@ -3462,9 +3496,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             if (status == 100)
             {
                 pthread_mutex_lock(&pcmBuffersMutex);
-                
                 pcmBufferUsedFrameCount += framesAdded;
-                
                 pthread_mutex_unlock(&pcmBuffersMutex);
                 
                 return;
@@ -3478,11 +3510,9 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             
             if (framesToDecode == 0)
             {
-                pthread_mutex_lock(&pcmBuffersMutex);
-                
+                OSSpinLockLock(&pcmBufferSpinLock);
                 pcmBufferUsedFrameCount += framesAdded;
-                
-                pthread_mutex_unlock(&pcmBuffersMutex);
+                OSSpinLockUnlock(&pcmBufferSpinLock);
                 
                 continue;
             }
@@ -3493,17 +3523,23 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             
             status = AudioConverterFillComplexBuffer(audioConverterRef, AudioConverterCallback, (void*)&convertInfo, &framesToDecode, &localPcmBufferList, NULL);
             
+            framesAdded += framesToDecode;
+            
             if (status == 100)
             {
-                framesAdded += framesToDecode;
-                
-                pthread_mutex_lock(&queueBuffersMutex);
-                
+                OSSpinLockLock(&pcmBufferSpinLock);
                 pcmBufferUsedFrameCount += framesAdded;
-                
-                pthread_mutex_unlock(&queueBuffersMutex);
+                OSSpinLockUnlock(&pcmBufferSpinLock);
                 
                 return;
+            }
+            else if (status == 0)
+            {
+                OSSpinLockLock(&pcmBufferSpinLock);
+                pcmBufferUsedFrameCount += framesAdded;
+                OSSpinLockUnlock(&pcmBufferSpinLock);
+                
+                continue;
             }
             else if (status != 0)
             {
@@ -3512,7 +3548,37 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
         }
         else
         {
-            NSLog(@"");
+            UInt32 framesAdded = 0;
+            UInt32 framesToDecode = start - end;
+            
+            localPcmAudioBuffer->mData = pcmAudioBuffer->mData + (end * pcmBufferFrameSizeInBytes);
+            localPcmAudioBuffer->mDataByteSize = framesToDecode * pcmBufferFrameSizeInBytes;
+            localPcmAudioBuffer->mNumberChannels = pcmAudioBuffer->mNumberChannels;
+            
+            status = AudioConverterFillComplexBuffer(audioConverterRef, AudioConverterCallback, (void*)&convertInfo, &framesToDecode, &localPcmBufferList, NULL);
+            
+            framesAdded = framesToDecode;
+            
+            if (status == 100)
+            {
+                OSSpinLockLock(&pcmBufferSpinLock);
+                pcmBufferUsedFrameCount += framesAdded;
+                OSSpinLockUnlock(&pcmBufferSpinLock);
+                
+                return;
+            }
+            else if (status == 0)
+            {
+                OSSpinLockLock(&pcmBufferSpinLock);
+                pcmBufferUsedFrameCount += framesAdded;
+                OSSpinLockUnlock(&pcmBufferSpinLock);
+                
+                continue;
+            }
+            else if (status != 0)
+            {
+                NSLog(@"");
+            }
         }
     }
 }
@@ -3521,9 +3587,79 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
 {
     STKAudioPlayer* audioPlayer = (__bridge STKAudioPlayer*)inRefCon;
 
-    pthread_mutex_lock(&audioPlayer->pcmBuffersMutex);
+    OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
+    AudioBuffer* audioBuffer = audioPlayer->pcmAudioBuffer;
+    UInt32 frameSizeInBytes = audioPlayer->pcmBufferFrameSizeInBytes;
+    UInt32 used = audioPlayer->pcmBufferUsedFrameCount;
+    UInt32 start = audioPlayer->pcmBufferFrameStartIndex;
+    UInt32 end = (audioPlayer->pcmBufferFrameStartIndex + audioPlayer->pcmBufferUsedFrameCount) % audioPlayer->pcmBufferTotalFrameCount;
+    BOOL signal = audioPlayer->waiting && used < audioPlayer->pcmBufferTotalFrameCount / 2;
     
-    pthread_mutex_unlock(&audioPlayer->pcmBuffersMutex);
+    OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+
+    assert(audioPlayer->pcmBufferUsedFrameCount <= audioPlayer->pcmBufferTotalFrameCount);
+    
+    if (used > 0)
+    {
+        UInt32 totalFramesCopied = 0;
+        
+        if (end > start)
+        {
+            UInt32 framesToCopy = MIN(inNumberFrames, used);
+            
+            ioData->mBuffers[0].mNumberChannels = 2;
+            ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
+            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+            
+            totalFramesCopied = framesToCopy;
+            
+            OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
+            audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
+            audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
+            OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+        }
+        else
+        {
+            UInt32 framesToCopy = MIN(inNumberFrames, audioPlayer->pcmBufferTotalFrameCount - start);
+            
+            ioData->mBuffers[0].mNumberChannels = 2;
+            ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
+            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+            
+            UInt32 moreFramesToCopy = 0;
+            UInt32 delta = inNumberFrames - framesToCopy;
+            
+            if (delta > 0)
+            {
+                moreFramesToCopy = MIN(delta, end);
+                
+                ioData->mBuffers[0].mNumberChannels = 2;
+                ioData->mBuffers[0].mDataByteSize += frameSizeInBytes * moreFramesToCopy;
+                memcpy(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), audioBuffer->mData, frameSizeInBytes * moreFramesToCopy);
+            }
+            
+            totalFramesCopied = framesToCopy + moreFramesToCopy;
+            
+            OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
+            audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
+            audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
+            OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+        }
+        
+        if (totalFramesCopied < inNumberFrames)
+        {
+            UInt32 delta = inNumberFrames - totalFramesCopied;
+            
+            memset(ioData->mBuffers[0].mData + (totalFramesCopied * frameSizeInBytes), 1, delta * frameSizeInBytes);
+        }
+    }
+    
+    if (signal)
+    {
+        pthread_mutex_lock(&audioPlayer->pcmBuffersMutex);
+        pthread_cond_signal(&audioPlayer->pcmBuffersReadyCondition);
+        pthread_mutex_unlock(&audioPlayer->pcmBuffersMutex);
+    }
     
     return 0;
 }
