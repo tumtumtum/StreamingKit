@@ -159,7 +159,7 @@
         label.text =  @"";
     }
     
-    statusLabel.text = audioPlayer.state == AudioPlayerStateBuffering ? @"buffering" : @"";
+    statusLabel.text = audioPlayer.state == STKAudioPlayerStateBuffering ? @"buffering" : @"";
 }
 
 -(void) playFromHTTPButtonTouched
@@ -194,7 +194,7 @@
     
     return;
 	
-	if (audioPlayer.state == AudioPlayerStatePaused)
+	if (audioPlayer.state == STKAudioPlayerStatePaused)
 	{
 		[audioPlayer resume];
 	}
@@ -220,11 +220,11 @@
 	{
 		[playButton setTitle:@"" forState:UIControlStateNormal];
 	}
-	else if (audioPlayer.state == AudioPlayerStatePaused)
+	else if (audioPlayer.state == STKAudioPlayerStatePaused)
 	{
 		[playButton setTitle:@"Resume" forState:UIControlStateNormal];
 	}
-	else if (audioPlayer.state & AudioPlayerStatePlaying)
+	else if (audioPlayer.state & STKAudioPlayerStatePlaying)
 	{
 		[playButton setTitle:@"Pause" forState:UIControlStateNormal];
 	}
@@ -254,12 +254,12 @@
 	return audioPlayer;
 }
 
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(AudioPlayerState)state
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(STKAudioPlayerState)state
 {
 	[self updateControls];
 }
 
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(AudioPlayerErrorCode)errorCode
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(STKAudioPlayerErrorCode)errorCode
 {
 	[self updateControls];
 }
@@ -289,7 +289,7 @@
     }
 }
 
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(AudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(STKAudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration
 {
 	[self updateControls];
  

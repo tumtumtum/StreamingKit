@@ -86,7 +86,10 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 {
     if (stream)
     {
-        [self unregisterForEvents];
+        if (eventsRunLoop)
+        {
+        	[self unregisterForEvents];
+        }
         
         [self close];
         
