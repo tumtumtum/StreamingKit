@@ -122,6 +122,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) unregisterForEvents
 {
+    [super unregisterForEvents];
+    
     [self stopNotifier];
 }
 
