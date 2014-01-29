@@ -3270,11 +3270,9 @@ AudioBufferList* AllocateAudioBufferList(UInt32 bytesPerFrame, UInt32 capacityFr
     status = AudioComponentInstanceNew(component, &audioUnit);
     
     UInt32 flag = 1;
-    
+
 	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &flag, sizeof(flag));
-    status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
     status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
-    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
     
     AudioClassDescription classDesc;
     
