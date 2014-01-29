@@ -37,11 +37,19 @@
     
 	audioPlayerView.delegate = self;
 	audioPlayerView.audioPlayer = audioPlayer;
+    
+    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+    [self becomeFirstResponder];
 	
 	[self.window addSubview:audioPlayerView];
 	
     [self.window makeKeyAndVisible];
 	
+    return YES;
+}
+
+-(BOOL) canBecomeFirstResponder
+{
     return YES;
 }
 
