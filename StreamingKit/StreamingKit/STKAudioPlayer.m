@@ -3228,27 +3228,6 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
     return NO;
 }
 
-AudioBufferList* AllocateAudioBufferList(UInt32 bytesPerFrame, UInt32 capacityFrames, UInt32 channelsPerFrame, bool interleaved)
-{
-    AudioBufferList *bufferList = 0;
-    
-    UInt32 numBuffers = interleaved ? 1 : channelsPerFrame;
-    UInt32 channelsPerBuffer = interleaved ? channelsPerFrame : 1;
-    
-    bufferList = (AudioBufferList *)(calloc(1, offsetof(AudioBufferList, mBuffers) + (sizeof(AudioBuffer) * numBuffers)));
-    
-    bufferList->mNumberBuffers = numBuffers;
-    
-    for(UInt32 bufferIndex = 0; bufferIndex < bufferList->mNumberBuffers; ++bufferIndex)
-    {
-        bufferList->mBuffers[bufferIndex].mData = (void*)(calloc(capacityFrames, bytesPerFrame));
-        bufferList->mBuffers[bufferIndex].mDataByteSize = capacityFrames * bytesPerFrame;
-        bufferList->mBuffers[bufferIndex].mNumberChannels = channelsPerBuffer;
-    }
-    
-    return bufferList;
-}
-
 -(void) createAudioUnit
 {
     pthread_mutex_lock(&playerMutex);
