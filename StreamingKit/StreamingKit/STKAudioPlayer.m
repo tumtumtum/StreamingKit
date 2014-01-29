@@ -41,10 +41,12 @@
 #import "STKLocalFileDataSource.h"
 #import "libkern/OSAtomic.h"
 
+#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (5)
+
 #define STK_BIT_RATE_ESTIMATION_MIN_PACKETS (64)
 #define STK_BUFFERS_NEEDED_TO_START (32)
 #define STK_BUFFERS_NEEDED_WHEN_UNDERUNNING (128)
-#define STK_DEFAULT_READ_BUFFER_SIZE (2 * 1024)
+#define STK_DEFAULT_READ_BUFFER_SIZE (10 * 1024)
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
 #define STK_FRAMES_MISSED_BEFORE_CONSIDERED_UNDERRUN (1024)
 #define STK_DEFAULT_NUMBER_OF_AUDIOQUEUE_BUFFERS (1024)
@@ -297,6 +299,15 @@ AudioQueueBufferRefLookupEntry;
     NSMutableArray* bufferingQueue;
     
     bool* bufferUsed;
+    
+    UInt32 pcmBufferFrameSizeInBytes;
+    UInt32 pcmBufferTotalFrameCount;
+    UInt32 pcmBufferFrameStartIndex;
+    UInt32 pcmBufferUsedFrameCount;
+    
+    AudioBuffer* pcmAudioBuffer;
+    AudioBufferList pcmAudioBufferList;
+    
     AudioConverterRef audioConverterRef;
     AudioQueueBufferRef* audioQueueBuffer;
     AudioQueueBufferRefLookupEntry* audioQueueBufferLookup;
@@ -340,6 +351,8 @@ AudioQueueBufferRefLookupEntry;
     OSSpinLock currentEntryReferencesLock;
 
     pthread_mutex_t playerMutex;
+    pthread_mutex_t pcmBuffersMutex;
+    pthread_cond_t pcmBuffersReadyCondition;
     pthread_mutex_t queueBuffersMutex;
     pthread_cond_t queueBufferReadyCondition;
     pthread_mutex_t mainThreadSyncCallMutex;
@@ -523,11 +536,20 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
         canonicalAudioStreamBasicDescription.mFormatID = kAudioFormatLinearPCM;
         canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagsCanonical;
-        canonicalAudioStreamBasicDescription.mFramesPerPacket	= 1;
+        canonicalAudioStreamBasicDescription.mFramesPerPacket = 1;
         canonicalAudioStreamBasicDescription.mChannelsPerFrame = 2;
+        canonicalAudioStreamBasicDescription.mBytesPerFrame = sizeof(AudioSampleType) * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
         canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * sizeof(AudioSampleType);
-        canonicalAudioStreamBasicDescription.mBytesPerPacket = sizeof(AudioSampleType) * 2;
-        canonicalAudioStreamBasicDescription.mBytesPerFrame = sizeof(AudioSampleType) * 2;
+        canonicalAudioStreamBasicDescription.mBytesPerPacket = canonicalAudioStreamBasicDescription.mBytesPerFrame * canonicalAudioStreamBasicDescription.mFramesPerPacket;
+        
+        pcmAudioBuffer = &pcmAudioBufferList.mBuffers[0];
+        pcmAudioBufferList.mNumberBuffers = 1;
+        pcmAudioBufferList.mBuffers[0].mDataByteSize = (canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS) * canonicalAudioStreamBasicDescription.mBytesPerFrame;
+        pcmAudioBufferList.mBuffers[0].mData = (void*)calloc(pcmAudioBuffer->mDataByteSize, 1);
+        pcmAudioBufferList.mBuffers[0].mNumberChannels = 2;
+        
+        pcmBufferFrameSizeInBytes = canonicalAudioStreamBasicDescription.mBytesPerFrame;
+        pcmBufferTotalFrameCount = pcmAudioBuffer->mDataByteSize / pcmBufferFrameSizeInBytes;
         
         readBufferSize = readBufferSizeIn;
         readBuffer = calloc(sizeof(UInt8), readBufferSize);
@@ -548,7 +570,9 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
         
         pthread_mutex_init(&playerMutex, &attr);
         pthread_mutex_init(&queueBuffersMutex, NULL);
+        pthread_mutex_init(&pcmBuffersMutex, NULL);
         pthread_cond_init(&queueBufferReadyCondition, NULL);
+        pthread_cond_init(&pcmBuffersReadyCondition, NULL);
 
         pthread_mutex_init(&mainThreadSyncCallMutex, NULL);
         pthread_cond_init(&mainThreadSyncCallReadyCondition, NULL);
@@ -581,6 +605,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     
     pthread_mutex_destroy(&playerMutex);
     pthread_mutex_destroy(&queueBuffersMutex);
+    pthread_mutex_destroy(&pcmBuffersMutex);
     pthread_cond_destroy(&queueBufferReadyCondition);
 
     pthread_mutex_destroy(&mainThreadSyncCallMutex);
@@ -961,7 +986,7 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     }
 }
 
--(void) handleAudioPackets:(const void*)inputData numberBytes:(UInt32)numberBytes numberPackets:(UInt32)numberPackets packetDescriptions:(AudioStreamPacketDescription*)packetDescriptionsIn
+-(void) handleAudioPackets2:(const void*)inputData numberBytes:(UInt32)numberBytes numberPackets:(UInt32)numberPackets packetDescriptions:(AudioStreamPacketDescription*)packetDescriptionsIn
 {
     if (currentlyReadingEntry == nil)
     {
@@ -1718,8 +1743,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 -(void) createAudioQueue
 {
     [self createAudioUnit];
-    
-    return;
     
 	OSStatus error;
 	
@@ -3174,11 +3197,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
 #define kOutputBus 0
 #define kInputBus 1
 
-static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
-{
-    return 0;
-}
-
 BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc)
 {
     UInt32 size;
@@ -3196,7 +3214,7 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
         return NO;
     }
     
-    for (UInt32 i=0; i < decoderCount; ++i)
+    for (UInt32 i = 0; i < decoderCount; ++i)
     {
         if (encoderDescriptions[i].mManufacturer == kAppleHardwareAudioCodecManufacturer)
         {
@@ -3208,7 +3226,27 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
     
     return NO;
 }
-                        
+
+AudioBufferList* AllocateAudioBufferList(UInt32 bytesPerFrame, UInt32 capacityFrames, UInt32 channelsPerFrame, bool interleaved)
+{
+    AudioBufferList *bufferList = 0;
+    
+    UInt32 numBuffers = interleaved ? 1 : channelsPerFrame;
+    UInt32 channelsPerBuffer = interleaved ? channelsPerFrame : 1;
+    
+    bufferList = (AudioBufferList *)(calloc(1, offsetof(AudioBufferList, mBuffers) + (sizeof(AudioBuffer) * numBuffers)));
+    
+    bufferList->mNumberBuffers = numBuffers;
+    
+    for(UInt32 bufferIndex = 0; bufferIndex < bufferList->mNumberBuffers; ++bufferIndex)
+    {
+        bufferList->mBuffers[bufferIndex].mData = (void*)(calloc(capacityFrames, bytesPerFrame));
+        bufferList->mBuffers[bufferIndex].mDataByteSize = capacityFrames * bytesPerFrame;
+        bufferList->mBuffers[bufferIndex].mNumberChannels = channelsPerBuffer;
+    }
+    
+    return bufferList;
+}
 
 -(void) createAudioUnit
 {
@@ -3241,7 +3279,8 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
     {
         status = AudioConverterNewSpecific(&currentAudioStreamBasicDescription, &canonicalAudioStreamBasicDescription, 1,  &classDesc, &audioConverterRef);
     }
-    else
+
+    if (!audioConverterRef)
     {
         status = AudioConverterNew(&currentAudioStreamBasicDescription, &canonicalAudioStreamBasicDescription, &audioConverterRef);
     }
@@ -3260,7 +3299,9 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
 
 -(BOOL) startAudioUnit
 {
-    AudioOutputUnitStart(audioUnit);
+    OSStatus status;
+    
+    status = AudioOutputUnitStart(audioUnit);
     
     return YES;
 }
@@ -3268,6 +3309,223 @@ BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc
 -(void) stopAudioUnit
 {
     AudioOutputUnitStop(audioUnit);
+}
+
+typedef struct
+{
+    BOOL done;
+    UInt32 numberOfPackets;
+    AudioBuffer audioBuffer;
+    AudioStreamPacketDescription* packetDescriptions;
+}
+AudioConvertInfo;
+
+OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNumberDataPackets, AudioBufferList* ioData, AudioStreamPacketDescription **outDataPacketDescription, void* inUserData)
+{
+    AudioConvertInfo* convertInfo = (AudioConvertInfo*)inUserData;
+    
+    if (convertInfo->done)
+    {
+        ioNumberDataPackets = 0;
+        
+    	return 100;
+    }
+    
+    ioData->mNumberBuffers = 1;
+    ioData->mBuffers[0] = convertInfo->audioBuffer;
+    *outDataPacketDescription = convertInfo->packetDescriptions;
+    *ioNumberDataPackets = convertInfo->numberOfPackets;
+    convertInfo->done = YES;
+    
+    return 0;
+}
+
+-(void) handleAudioPackets:(const void*)inputData numberBytes:(UInt32)numberBytes numberPackets:(UInt32)numberPackets packetDescriptions:(AudioStreamPacketDescription*)packetDescriptionsIn
+{
+    if (currentlyReadingEntry == nil)
+    {
+        return;
+    }
+    
+    if (seekToTimeWasRequested || disposeWasRequested)
+    {
+        return;
+    }
+    
+	if (audioQueue == nil)
+    {
+        if (currentlyPlayingEntry == nil)
+        {
+            return;
+        }
+        
+        [self createAudioQueue];
+        
+        if (audioQueue == nil)
+        {
+            return;
+        }
+        
+        if (self.internalState == STKAudioPlayerInternalStateStopped)
+        {
+            if (stopReason == AudioPlayerStopReasonEof)
+            {
+                stopReason = AudioPlayerStopReasonNoStop;
+                self.internalState = STKAudioPlayerInternalStateWaitingForData;
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+    else if (memcmp(&currentAudioStreamBasicDescription, &currentlyReadingEntry->audioStreamBasicDescription, sizeof(currentAudioStreamBasicDescription)) != 0)
+    {
+        if (currentlyReadingEntry == currentlyPlayingEntry && currentlyReadingEntry != nil)
+        {
+            [self createAudioQueue];
+            
+            if (audioQueue == nil)
+            {
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
+    }
+    
+    if (discontinuous)
+    {
+        discontinuous = NO;
+    }
+    
+    [self startAudioQueue];
+    
+    OSStatus status;
+    
+    AudioConvertInfo convertInfo;
+
+    convertInfo.done = NO;
+    convertInfo.numberOfPackets = numberPackets;
+    convertInfo.packetDescriptions = packetDescriptionsIn;
+    convertInfo.audioBuffer.mData = (void *)inputData;
+    convertInfo.audioBuffer.mDataByteSize = numberBytes;
+    convertInfo.audioBuffer.mNumberChannels = currentAudioStreamBasicDescription.mChannelsPerFrame;
+
+    while (true)
+    {
+        UInt32 used;
+        UInt32 start;
+        UInt32 end;
+        UInt32 framesLeftInsideBuffer;
+        
+        pthread_mutex_lock(&pcmBuffersMutex);
+        
+        while (true)
+        {
+            used = pcmBufferUsedFrameCount;
+            start = pcmBufferFrameStartIndex;
+            end = pcmBufferFrameStartIndex + pcmBufferUsedFrameCount;
+            framesLeftInsideBuffer = pcmBufferTotalFrameCount - used;
+
+            if (framesLeftInsideBuffer > 0 || (disposeWasRequested || seekToTimeWasRequested || self.internalState == STKAudioPlayerInternalStateStopped || self.internalState == STKAudioPlayerInternalStateStopping || self.internalState == STKAudioPlayerInternalStateDisposed))
+            {
+                break;
+            }
+
+            pthread_cond_wait(&pcmBuffersReadyCondition, &pcmBuffersMutex);
+        }
+        
+        pthread_mutex_unlock(&pcmBuffersMutex);
+        
+        AudioBuffer* localPcmAudioBuffer;
+        AudioBufferList localPcmBufferList;
+        
+        localPcmBufferList.mNumberBuffers = 1;
+        localPcmAudioBuffer = &localPcmBufferList.mBuffers[0];
+        
+        if (end >= start)
+        {
+            UInt32 framesAdded = 0;
+            UInt32 framesToDecode = pcmBufferTotalFrameCount - end;
+            
+            localPcmAudioBuffer->mData = pcmAudioBuffer->mData + (end * pcmBufferFrameSizeInBytes);
+            localPcmAudioBuffer->mDataByteSize = framesToDecode * pcmBufferFrameSizeInBytes;
+            localPcmAudioBuffer->mNumberChannels = pcmAudioBuffer->mNumberChannels;
+            
+            status = AudioConverterFillComplexBuffer(audioConverterRef, AudioConverterCallback, (void*)&convertInfo, &framesToDecode, &localPcmBufferList, NULL);
+            
+            framesAdded = framesToDecode;
+
+            if (status == 100)
+            {
+                pthread_mutex_lock(&pcmBuffersMutex);
+                
+                pcmBufferUsedFrameCount += framesAdded;
+                
+                pthread_mutex_unlock(&pcmBuffersMutex);
+                
+                return;
+            }
+            else if (status != 0)
+            {
+                NSLog(@"");
+            }
+            
+            framesToDecode = start;
+            
+            if (framesToDecode == 0)
+            {
+                pthread_mutex_lock(&pcmBuffersMutex);
+                
+                pcmBufferUsedFrameCount += framesAdded;
+                
+                pthread_mutex_unlock(&pcmBuffersMutex);
+                
+                continue;
+            }
+            
+            localPcmAudioBuffer->mData = pcmAudioBuffer->mData;
+            localPcmAudioBuffer->mDataByteSize = framesToDecode * pcmBufferFrameSizeInBytes;
+            localPcmAudioBuffer->mNumberChannels = pcmAudioBuffer->mNumberChannels;
+            
+            status = AudioConverterFillComplexBuffer(audioConverterRef, AudioConverterCallback, (void*)&convertInfo, &framesToDecode, &localPcmBufferList, NULL);
+            
+            if (status == 100)
+            {
+                framesAdded += framesToDecode;
+                
+                pthread_mutex_lock(&queueBuffersMutex);
+                
+                pcmBufferUsedFrameCount += framesAdded;
+                
+                pthread_mutex_unlock(&queueBuffersMutex);
+                
+                return;
+            }
+            else if (status != 0)
+            {
+                NSLog(@"");
+            }
+        }
+        else
+        {
+            NSLog(@"");
+        }
+    }
+}
+
+static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
+{
+    STKAudioPlayer* audioPlayer = (__bridge STKAudioPlayer*)inRefCon;
+
+    pthread_mutex_lock(&audioPlayer->pcmBuffersMutex);
+    
+    pthread_mutex_unlock(&audioPlayer->pcmBuffersMutex);
+    
+    return 0;
 }
 
 @end
