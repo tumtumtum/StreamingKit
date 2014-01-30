@@ -2,12 +2,9 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- https://github.com/tumtumtum/audjustable
+ https://github.com/tumtumtum/StreamingKit
  
- Inspired by Matt Gallagher's AudioStreamer:
- https://github.com/mattgallagher/AudioStreamer
- 
- Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
+ Copyright (c) 2014 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -41,7 +38,8 @@
 #import "STKLocalFileDataSource.h"
 #import "libkern/OSAtomic.h"
 
-#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (2)
+#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (5)
+#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0.75)
 
 #define STK_BIT_RATE_ESTIMATION_MIN_PACKETS (64)
 #define STK_BUFFERS_NEEDED_TO_START (32)
@@ -50,8 +48,6 @@
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
 #define STK_FRAMES_MISSED_BEFORE_CONSIDERED_UNDERRUN (1024)
 #define STK_DEFAULT_NUMBER_OF_AUDIOQUEUE_BUFFERS (1024)
-
-#define OSSTATUS_PARAM_ERROR (-50)
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
@@ -301,6 +297,7 @@ AudioQueueBufferRefLookupEntry;
     bool* bufferUsed;
     
     OSSpinLock pcmBufferSpinLock;
+    volatile BOOL buffering;
     volatile UInt32 pcmBufferFrameSizeInBytes;
     volatile UInt32 pcmBufferTotalFrameCount;
     volatile UInt32 pcmBufferFrameStartIndex;
@@ -3117,79 +3114,6 @@ static void AudioQueueIsRunningCallbackProc(void* userData, AudioQueueRef audioQ
     return retval;
 }
 
-#pragma mark Metering
-
--(void) setMeteringEnabled:(BOOL)value
-{
-    if (!audioQueue)
-    {
-        meteringEnabled = value;
-        
-        return;
-    }
-    
-    UInt32 on = value ? 1 : 0;
-    OSStatus error = AudioQueueSetProperty(audioQueue, kAudioQueueProperty_EnableLevelMetering, &on, sizeof(on));
-    
-    if (error)
-    {
-        meteringEnabled = NO;
-    }
-    else
-    {
-        meteringEnabled = YES;
-    }
-}
-
--(BOOL) meteringEnabled
-{
-    return meteringEnabled;
-}
-
--(void) updateMeters
-{
-    if (!meteringEnabled)
-    {
-        NSAssert(NO, @"Metering is not enabled. Make sure to set meteringEnabled = YES.");
-    }
-    
-    UInt32 channels = currentAudioStreamBasicDescription.mChannelsPerFrame;
-    
-    if (numberOfChannels != channels)
-    {
-        numberOfChannels = channels;
-        
-        if (levelMeterState) free(levelMeterState);
-        {
-            levelMeterState = malloc(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
-        }
-    }
-    
-    UInt32 sizeofMeters = (UInt32)(sizeof(AudioQueueLevelMeterState) * numberOfChannels);
-    
-    AudioQueueGetProperty(audioQueue, kAudioQueueProperty_CurrentLevelMeterDB, levelMeterState, &sizeofMeters);
-}
-
--(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber
-{
-    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels))
-    {
-        return 0;
-    }
-    
-    return levelMeterState[channelNumber].mPeakPower;
-}
-
--(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber
-{
-    if (!meteringEnabled || !levelMeterState || (channelNumber > numberOfChannels))
-    {
-        return 0;
-    }
-    
-    return levelMeterState[channelNumber].mAveragePower;
-}
-
 
 ///
 /// AudioUnit
@@ -3571,64 +3495,78 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
     UInt32 start = audioPlayer->pcmBufferFrameStartIndex;
     UInt32 end = (audioPlayer->pcmBufferFrameStartIndex + audioPlayer->pcmBufferUsedFrameCount) % audioPlayer->pcmBufferTotalFrameCount;
     BOOL signal = audioPlayer->waiting && used < audioPlayer->pcmBufferTotalFrameCount / 2;
-    
     OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
-
-    assert(audioPlayer->pcmBufferUsedFrameCount <= audioPlayer->pcmBufferTotalFrameCount);
+    
+    UInt32 totalFramesCopied = 0;
     
     if (used > 0)
     {
-        UInt32 totalFramesCopied = 0;
-        
-        if (end > start)
+        if (!(audioPlayer->buffering && used < audioPlayer->pcmBufferTotalFrameCount))
         {
-            UInt32 framesToCopy = MIN(inNumberFrames, used);
-            
-            ioData->mBuffers[0].mNumberChannels = 2;
-            ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
-            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
-            
-            totalFramesCopied = framesToCopy;
-            
-            OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
-            audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
-            audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
-            OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
-        }
-        else
-        {
-            UInt32 framesToCopy = MIN(inNumberFrames, audioPlayer->pcmBufferTotalFrameCount - start);
-            
-            ioData->mBuffers[0].mNumberChannels = 2;
-            ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
-            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
-            
-            UInt32 moreFramesToCopy = 0;
-            UInt32 delta = inNumberFrames - framesToCopy;
-            
-            if (delta > 0)
+            if (audioPlayer->buffering)
             {
-                moreFramesToCopy = MIN(delta, end);
+                NSLog(@"Buffering resuming");
                 
-                ioData->mBuffers[0].mNumberChannels = 2;
-                ioData->mBuffers[0].mDataByteSize += frameSizeInBytes * moreFramesToCopy;
-                memcpy(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), audioBuffer->mData, frameSizeInBytes * moreFramesToCopy);
+                audioPlayer->buffering = NO;
             }
             
-            totalFramesCopied = framesToCopy + moreFramesToCopy;
-            
-            OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
-            audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
-            audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
-            OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+            if (end > start)
+            {
+                UInt32 framesToCopy = MIN(inNumberFrames, used);
+                
+                ioData->mBuffers[0].mNumberChannels = 2;
+                ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
+                memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+                
+                totalFramesCopied = framesToCopy;
+                
+                OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
+                audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
+                audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
+                OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+            }
+            else
+            {
+                UInt32 framesToCopy = MIN(inNumberFrames, audioPlayer->pcmBufferTotalFrameCount - start);
+                
+                ioData->mBuffers[0].mNumberChannels = 2;
+                ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
+                memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+                
+                UInt32 moreFramesToCopy = 0;
+                UInt32 delta = inNumberFrames - framesToCopy;
+                
+                if (delta > 0)
+                {
+                    moreFramesToCopy = MIN(delta, end);
+                    
+                    ioData->mBuffers[0].mNumberChannels = 2;
+                    ioData->mBuffers[0].mDataByteSize += frameSizeInBytes * moreFramesToCopy;
+                    memcpy(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), audioBuffer->mData, frameSizeInBytes * moreFramesToCopy);
+                }
+                
+                totalFramesCopied = framesToCopy + moreFramesToCopy;
+                
+                OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
+                audioPlayer->pcmBufferFrameStartIndex = (audioPlayer->pcmBufferFrameStartIndex + totalFramesCopied) % audioPlayer->pcmBufferTotalFrameCount;
+                audioPlayer->pcmBufferUsedFrameCount -= totalFramesCopied;
+                OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+            }
+        }
+    }
+    
+    if (totalFramesCopied < inNumberFrames)
+    {
+        UInt32 delta = inNumberFrames - totalFramesCopied;
+        
+        memset(ioData->mBuffers[0].mData + (totalFramesCopied * frameSizeInBytes), 0, delta * frameSizeInBytes);
+
+        if (!audioPlayer->buffering)
+        {
+            NSLog(@"Buffering");
         }
         
-        if (totalFramesCopied < inNumberFrames)
-        {
-            UInt32 delta = inNumberFrames - totalFramesCopied;
-            
-            memset(ioData->mBuffers[0].mData + (totalFramesCopied * frameSizeInBytes), 1, delta * frameSizeInBytes);
-        }
+        audioPlayer->buffering = YES;
     }
     
     if (signal)

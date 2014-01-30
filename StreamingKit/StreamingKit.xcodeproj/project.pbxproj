@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = A1BF65D1189A6582004DD08C /* STKQueueEntry.m */; };
 		A1C9767718981BFE0057F881 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C9767618981BFE0057F881 /* AudioUnit.framework */; };
 		A1E7C4CC188D57F50010896F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4CB188D57F50010896F /* Foundation.framework */; };
 		A1E7C4DA188D57F60010896F /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
@@ -47,6 +48,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1BF65D0189A6582004DD08C /* STKQueueEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKQueueEntry.h; sourceTree = "<group>"; };
+		A1BF65D1189A6582004DD08C /* STKQueueEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKQueueEntry.m; sourceTree = "<group>"; };
 		A1C9767618981BFE0057F881 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1E7C4C8188D57F50010896F /* libStreamingKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E7C4CB188D57F50010896F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -145,6 +148,8 @@
 				A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */,
 				A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */,
 				A1E7C4CE188D57F50010896F /* Supporting Files */,
+				A1BF65D0189A6582004DD08C /* STKQueueEntry.h */,
+				A1BF65D1189A6582004DD08C /* STKQueueEntry.m */,
 			);
 			path = StreamingKit;
 			sourceTree = "<group>";
@@ -260,6 +265,7 @@
 				A1E7C501188D5E550010896F /* STKCoreFoundationDataSource.m in Sources */,
 				A1E7C4FF188D5E550010896F /* STKAudioPlayer.m in Sources */,
 				A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */,
+				A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */,
 				A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */,
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,

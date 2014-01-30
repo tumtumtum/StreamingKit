@@ -2,7 +2,7 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- https://github.com/tumtumtum/audjustable
+ https://github.com/tumtumtum/StreamingKit
  
  Inspired by Matt Gallagher's AudioStreamer:
  https://github.com/mattgallagher/AudioStreamer
@@ -143,8 +143,5 @@ STKAudioPlayerErrorCode;
 -(void) unmute;
 -(void) dispose;
 -(NSObject*) currentlyPlayingQueueItemId;
--(void) updateMeters;
--(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
--(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 @end
