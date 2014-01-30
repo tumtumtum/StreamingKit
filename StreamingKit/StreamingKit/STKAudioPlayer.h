@@ -125,7 +125,7 @@ STKAudioPlayerErrorCode;
 @property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
 
 -(id) init;
--(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
+-(id) initWithReadBufferSize:(int)readBufferSizeIn;
 -(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 -(void) play:(NSString*)urlString;
 -(void) playWithURL:(NSURL*)url;

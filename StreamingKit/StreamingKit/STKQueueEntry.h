@@ -16,6 +16,8 @@
     double sampleRate;
     double lastProgress;
     double packetDuration;
+    Float64 framesQueued;
+    Float64 framesPlayed;
     UInt64 audioDataOffset;
     UInt64 audioDataByteCount;
     UInt32 packetBufferSize;

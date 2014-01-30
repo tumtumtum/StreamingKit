@@ -57,9 +57,9 @@
     }
 }
 
--(Float64) calculateProgressWithTotalFramesPlayed:(Float64)framesPlayed
+-(Float64) calculateProgressWithTotalFramesPlayed:(Float64)framesPlayedIn
 {
-    return (Float64)self.seekTime + ((framesPlayed - self.firstFrameIndex) / (Float64)self->audioStreamBasicDescription.mSampleRate);
+    return (Float64)self.seekTime + ((framesPlayedIn - self.firstFrameIndex) / (Float64)self->audioStreamBasicDescription.mSampleRate);
 }
 
 -(double) calculateProgressWithBytesPlayed:(Float64)bytesPlayed

@@ -8,7 +8,7 @@
 
 #import "NSMutableArray+STKAudioPlayer.h"
 
-@implementation NSMutableArray(STKAudioPlayer)
+@implementation NSMutableArray (STKAudioPlayer)
 
 -(void) enqueue:(id)obj
 {
