@@ -123,7 +123,6 @@ STKAudioPlayerErrorCode;
 @property (readwrite) STKAudioPlayerState state;
 @property (readonly) STKAudioPlayerStopReason stopReason;
 @property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
-@property (readwrite) BOOL meteringEnabled;
 
 -(id) init;
 -(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;

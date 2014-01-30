@@ -8,6 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-@interface NSMutableArray (STKAudioPlayer)
-
+@interface NSMutableArray(STKAudioPlayer)
+-(void) enqueue:(id)obj;
+-(void) skipQueue:(id)obj;
+-(id) dequeue;
+-(id) peek;
 @end
