@@ -70,6 +70,8 @@
 		[queueShortFileButton addTarget:self action:@selector(queueShortFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
         
+        size = CGSizeMake(90, 50);
+        
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 		playButton.frame = CGRectMake(30, 380, size.width, size.height);
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
@@ -190,10 +192,6 @@
 		return;
 	}
     
-    [audioPlayer dispose];
-    
-    return;
-	
 	if (audioPlayer.state == STKAudioPlayerStatePaused)
 	{
 		[audioPlayer resume];
@@ -259,7 +257,7 @@
 	[self updateControls];
 }
 
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(STKAudioPlayerErrorCode)errorCode
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer unexpectedError:(STKAudioPlayerErrorCode)errorCode
 {
 	[self updateControls];
 }

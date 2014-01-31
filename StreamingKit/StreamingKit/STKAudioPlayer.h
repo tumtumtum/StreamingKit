@@ -55,10 +55,10 @@ typedef enum
     /* Same as STKAudioPlayerInternalStateWaitingForData but isn't immediately raised as a buffering event */
     STKAudioPlayerInternalStateWaitingForDataAfterSeek = (1 << 5) | STKAudioPlayerInternalStateRunning,
     STKAudioPlayerInternalStatePaused = (1 << 6) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 7) | STKAudioPlayerInternalStateRunning,
     STKAudioPlayerInternalStateStopping = (1 << 8),
     STKAudioPlayerInternalStateStopped = (1 << 9),
-    STKAudioPlayerInternalStateDisposed = (1 << 10),
+    STKAudioPlayerInternalStatePendingNext = (1 << 10),
+    STKAudioPlayerInternalStateDisposed = (1 << 30),
     STKAudioPlayerInternalStateError = (1 << 31)
 }
 STKAudioPlayerInternalState;
@@ -80,8 +80,7 @@ typedef enum
 {
 	AudioPlayerStopReasonNoStop = 0,
 	AudioPlayerStopReasonEof,
-	AudioPlayerStopReasonUserAction,
-    AudioPlayerStopReasonUserActionFlushStop
+	AudioPlayerStopReasonUserAction
 }
 STKAudioPlayerStopReason;
 
@@ -105,7 +104,7 @@ STKAudioPlayerErrorCode;
 @protocol STKAudioPlayerDelegate <NSObject>
 
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(STKAudioPlayerState)state;
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(STKAudioPlayerErrorCode)errorCode;
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer unexpectedError:(STKAudioPlayerErrorCode)errorCode;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didStartPlayingQueueItemId:(NSObject*)queueItemId;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishBufferingSourceWithQueueItemId:(NSObject*)queueItemId;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(STKAudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration;
@@ -137,7 +136,6 @@ STKAudioPlayerErrorCode;
 -(void) pause;
 -(void) resume;
 -(void) stop;
--(void) flushStop;
 -(void) mute;
 -(void) unmute;
 -(void) dispose;
