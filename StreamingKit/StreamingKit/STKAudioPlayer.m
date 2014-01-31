@@ -726,44 +726,21 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return NO;
 }
 
--(void)invokeOnPlaybackThreadAtIntervalHelper:(NSTimer*)timer
-{
-    void(^block)() = (void(^)())timer.userInfo;
-    
-    block();
-}
-
--(BOOL) invokeOnPlaybackThreadAtInterval:(NSTimeInterval)interval withBlock:(void(^)())block
-{
-	NSRunLoop* runLoop = playbackThreadRunLoop;
-	
-    if (runLoop)
-    {
-        NSTimer* timer = [NSTimer timerWithTimeInterval:interval target:self selector:@selector(invokeOnPlaybackThreadAtIntervalHelper:) userInfo:[block copy] repeats:NO];
-        
-        [runLoop addTimer:timer forMode:NSRunLoopCommonModes];
-        
-        return YES;
-    }
-    
-    return NO;
-}
-
 -(void) wakeupPlaybackThread
 {
 	[self invokeOnPlaybackThread:^
-    {
-        [self processRunloop];
-    }];
-    
-    pthread_mutex_lock(&playerMutex);
-    
-    if (waiting)
-    {
-        pthread_cond_signal(&playerThreadReadyCondition);
-    }
-    
-    pthread_mutex_unlock(&playerMutex);
+	{
+		[self processRunloop];
+	}];
+
+	pthread_mutex_lock(&playerMutex);
+
+	if (waiting)
+	{
+		pthread_cond_signal(&playerThreadReadyCondition);
+	}
+
+	pthread_mutex_unlock(&playerMutex);
 }
 
 -(void) seekToTime:(double)value
@@ -945,39 +922,42 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(void) dispatchSyncOnMainThread:(void(^)())block
 {
-    __block BOOL finished = NO;
-    
-    if (disposeWasRequested)
-    {
-        return;
-    }
-    
-    dispatch_async(dispatch_get_main_queue(), ^
-    {
-        block();
-        
-        pthread_mutex_lock(&mainThreadSyncCallMutex);
-        finished = YES;
-        pthread_cond_signal(&mainThreadSyncCallReadyCondition);
-        pthread_mutex_unlock(&mainThreadSyncCallMutex);
-    });
-    
-    while (true)
-    {
-        if (disposeWasRequested)
-        {
-            break;
-        }
-        
-        if (finished)
-        {
-            break;
-        }
-        
-        pthread_mutex_lock(&mainThreadSyncCallMutex);
-        pthread_cond_wait(&mainThreadSyncCallReadyCondition, &mainThreadSyncCallMutex);
-        pthread_mutex_unlock(&mainThreadSyncCallMutex);
-    }
+	__block BOOL finished = NO;
+
+	if (disposeWasRequested)
+	{
+		return;
+	}
+
+	dispatch_async(dispatch_get_main_queue(), ^
+	{
+		if (!disposeWasRequested)
+		{
+			block();
+		}
+
+		pthread_mutex_lock(&mainThreadSyncCallMutex);
+		finished = YES;
+		pthread_cond_signal(&mainThreadSyncCallReadyCondition);
+		pthread_mutex_unlock(&mainThreadSyncCallMutex);
+	});
+
+	while (true)
+	{
+		if (disposeWasRequested)
+		{
+			break;
+		}
+
+		if (finished)
+		{
+			break;
+		}
+
+		pthread_mutex_lock(&mainThreadSyncCallMutex);
+		pthread_cond_wait(&mainThreadSyncCallReadyCondition, &mainThreadSyncCallMutex);
+		pthread_mutex_unlock(&mainThreadSyncCallMutex);
+	}
 }
 
 -(void) playbackThreadQueueMainThreadSyncBlock:(void(^)())block
