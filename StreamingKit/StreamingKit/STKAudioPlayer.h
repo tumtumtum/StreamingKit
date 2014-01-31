@@ -130,6 +130,10 @@ STKAudioPlayerOptions;
 -(id) init;
 -(id) initWithReadBufferSize:(int)readBufferSizeIn andOptions:(STKAudioPlayerOptions)options;
 
+/// Creates a datasource from a given URL
+/// URLs with FILE schemes will return an STKLocalFileDataSource
+/// URLs with HTTP schemes will return an STKHTTPDataSource wrapped within an STKAutoRecoveringHTTPDataSource
+/// URLs with unrecognised schemes will return nil
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 /// Plays an item from the given URL (all pending queued items are removed)
 -(void) play:(NSString*)urlString;

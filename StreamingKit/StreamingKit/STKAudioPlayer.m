@@ -35,6 +35,7 @@
 #import "STKAudioPlayer.h"
 #import "AudioToolbox/AudioToolbox.h"
 #import "STKHTTPDataSource.h"
+#import "STKAutoRecoveringHTTPDataSource.h"
 #import "STKLocalFileDataSource.h"
 #import "STKQueueEntry.h"
 #import "NSMutableArray+STKAudioPlayer.h"
@@ -367,15 +368,15 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url
 {
-    STKDataSource* retval;
+    STKDataSource* retval = nil;
     
     if ([url.scheme isEqualToString:@"file"])
     {
         retval = [[STKLocalFileDataSource alloc] initWithFilePath:url.path];
     }
-    else
+    else if ([url.scheme isEqualToString:@"http"] || [url.scheme isEqualToString:@"https"])
     {
-        retval = [[STKHTTPDataSource alloc] initWithURL:url];
+        retval = [[STKAutoRecoveringHTTPDataSource alloc] initWithHTTPDataSource:[[STKHTTPDataSource alloc] initWithURL:url]];
     }
     
     return retval;
