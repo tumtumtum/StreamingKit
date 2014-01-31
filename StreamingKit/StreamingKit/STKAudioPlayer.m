@@ -933,14 +933,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 				[self.delegate audioPlayer:self didFinishPlayingQueueItemId:queueItemId withReason:stopReason andProgress:progress andDuration:duration];
             }];
         }
-        
-        if (currentlyReadingEntry == nil)
-        {
-			if (upcomingQueue.count == 0)
-			{
-				[self stopAudioUnitWithReason:STKAudioPlayerStopReasonEof];
-			}
-        }
     }
     
     [self wakeupPlaybackThread];
