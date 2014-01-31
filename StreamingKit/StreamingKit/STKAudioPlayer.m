@@ -1664,10 +1664,32 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
     status = AudioComponentInstanceNew(component, &audioUnit);
     
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
+    
     UInt32 flag = 1;
 
 	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
+    
     status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
     
     AURenderCallbackStruct callbackStruct;
     
@@ -1675,8 +1697,22 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     callbackStruct.inputProcRefCon = (__bridge void*)self;
 
     status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, kOutputBus, &callbackStruct, sizeof(callbackStruct));
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
  
     status = AudioUnitInitialize(audioUnit);
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
     
     pthread_mutex_unlock(&playerMutex);
 }
@@ -1686,6 +1722,13 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     OSStatus status;
     
     status = AudioOutputUnitStart(audioUnit);
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return NO;
+    }
     
     return YES;
 }
@@ -1703,6 +1746,13 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
     
     status = AudioOutputUnitStop(audioUnit);
+    
+    if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
     
     stopReason = stopReasonIn;
     self.internalState = STKAudioPlayerInternalStateStopped;
