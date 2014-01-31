@@ -21,6 +21,7 @@
         self.queueItemId = queueItemIdIn;
         self.lastFrameIndex = -1;
         self.lastByteIndex = -1;
+        self->lastFrameQueued = -1;
     }
     
     return self;
@@ -144,6 +145,11 @@
     }
     
     return memcmp(&(self->audioStreamBasicDescription), basicDescription, sizeof(*basicDescription)) != 0;
+}
+
+-(Float64) progressInFrames
+{
+    return self.seekTime + self->framesPlayed;
 }
 
 -(NSString*) description

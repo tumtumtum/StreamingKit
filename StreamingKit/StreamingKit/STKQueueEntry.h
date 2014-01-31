@@ -16,12 +16,14 @@
     double sampleRate;
     double lastProgress;
     double packetDuration;
-    Float64 framesQueued;
-    Float64 framesPlayed;
+    int framesQueued;
+    int framesPlayed;
+    Float64 lastFrameQueued;
     UInt64 audioDataOffset;
     UInt64 audioDataByteCount;
     UInt32 packetBufferSize;
     volatile BOOL cancel;
+    volatile BOOL finished;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
@@ -38,6 +40,7 @@
 @property (readonly) UInt64 audioDataLengthInBytes;
 
 -(double) duration;
+-(Float64) progressInFrames;
 -(double) calculatedBitRate;
 -(void) updateAudioDataSource;
 -(BOOL) isDefinitelyCompatible:(AudioStreamBasicDescription*)basicDescription;
