@@ -55,7 +55,7 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {
-	NSURL* url = [NSURL URLWithString:@"http://my.halloo.com/audio/perfectly.wav"];
+	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
     
     STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
     
@@ -80,6 +80,15 @@
 	STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
 	
 	[audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
+}
+
+-(void) audioPlayerViewQueuePcmWaveFileSelected:(AudioPlayerView*)audioPlayerView
+{
+	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/perfectly.wav"];
+    
+    STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
+    
+	[audioPlayer queueDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }
 
 @end
