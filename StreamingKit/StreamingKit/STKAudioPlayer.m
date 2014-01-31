@@ -42,7 +42,7 @@
 #import "libkern/OSAtomic.h"
 
 #define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (10)
-#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0)
+#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0.1)
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (2048)
 
 #define STK_BUFFERS_NEEDED_TO_START (32)
@@ -2049,16 +2049,30 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     
     if (state == STKAudioPlayerInternalStateWaitingForData)
     {
+		int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+		
+		if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
+		{
+			framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued);
+		}
+		
         if (audioPlayer->currentlyPlayingEntry
             && audioPlayer->currentlyReadingEntry == audioPlayer->currentlyPlayingEntry
-            && audioPlayer->currentlyPlayingEntry->framesQueued < audioPlayer->framesRequiredToStartPlaying)
+            && audioPlayer->currentlyPlayingEntry->framesQueued < framesRequiredToStartPlaying)
         {
             waitForBuffer = YES;
         }
     }
     else if (state == STKAudioPlayerInternalStateRebuffering)
     {
-        if (used < audioPlayer->framesRequiredToPlayAfterRebuffering)
+		int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+		
+		if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
+		{
+			framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued - audioPlayer->currentlyPlayingEntry->framesQueued);
+		}
+		
+        if (used < framesRequiredToStartPlaying)
         {
             waitForBuffer = YES;
         }
@@ -2220,6 +2234,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
                     
                     extraFramesPlayedNotAssigned -= framesPlayedForCurrent;
                 }
+				else
+				{
+					break;
+				}
             }
         }
 
