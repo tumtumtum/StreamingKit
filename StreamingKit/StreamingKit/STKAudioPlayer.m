@@ -42,6 +42,7 @@
 
 #define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (15)
 #define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0)
+#define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (2048)
 
 #define STK_BUFFERS_NEEDED_TO_START (32)
 #define STK_BUFFERS_NEEDED_WHEN_UNDERUNNING (128)
@@ -469,8 +470,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 -(void) handlePropertyChangeForFileStream:(AudioFileStreamID)inAudioFileStream fileStreamPropertyID:(AudioFileStreamPropertyID)inPropertyID ioFlags:(UInt32*)ioFlags
 {
 	OSStatus error;
-    
-    NSLog(@"Handle property change");
     
     if (!currentlyReadingEntry)
     {
@@ -1017,7 +1016,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             
             self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
             [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES];
-
         }
         else if (self.internalState == STKAudioPlayerInternalStateStopped && (stopReason == AudioPlayerStopReasonUserAction))
         {
@@ -1247,8 +1245,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     int read = [currentlyReadingEntry.dataSource readIntoBuffer:readBuffer withSize:readBufferSize];
     
-    NSLog(@"dataAvailble read == %d", read);
-    
     if (read == 0)
     {
         return;
@@ -1341,15 +1337,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     {
         [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
     }];
-    
-    if (currentlyReadingEntry->framesQueued == 0)
-    {
-        NSLog(@"EOF A");
-    }
-    else
-    {
-        NSLog(@"EOF B");
-    }
     
     currentlyReadingEntry->lastFrameQueued = currentlyReadingEntry->framesQueued;
     
@@ -1721,8 +1708,6 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
 
 -(void) handleAudioPackets:(const void*)inputData numberBytes:(UInt32)numberBytes numberPackets:(UInt32)numberPackets packetDescriptions:(AudioStreamPacketDescription*)packetDescriptionsIn
 {
-    NSLog(@"handleAudio");
-    
     if (currentlyReadingEntry == nil)
     {
         return;
@@ -1754,9 +1739,11 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     convertInfo.audioBuffer.mDataByteSize = numberBytes;
     convertInfo.audioBuffer.mNumberChannels = audioConverterAudioStreamBasicDescription.mChannelsPerFrame;
 
-    if (currentlyReadingEntry->processedPacketsCount < 1024)
+    if (currentlyReadingEntry->processedPacketsCount < STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION)
     {
-        for (int i = 0; i < numberPackets && currentlyReadingEntry->processedPacketsCount < 1000; i++)
+        int count = MIN(numberPackets, STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION - currentlyReadingEntry->processedPacketsCount);
+        
+        for (int i = 0; i < count; i++)
         {
             SInt64 packetSize = packetDescriptionsIn[i].mDataByteSize;
             
@@ -1966,6 +1953,12 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
             waitForBuffer = YES;
         }
     }
+    else if (state == STKAudioPlayerInternalStatePendingNext)
+    {
+        OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
+        
+        return 0;
+    }
     
     OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
     
@@ -2079,7 +2072,7 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
                         framesPlayedForCurrent = MIN(newEntry->lastFrameQueued - newEntry->framesPlayed, framesPlayedForCurrent);
                     }
                     
-                    entry->framesPlayed += framesPlayedForCurrent;
+                    newEntry->framesPlayed += framesPlayedForCurrent;
                     
                     if (newEntry->framesPlayed == newEntry->lastFrameQueued)
                     {
