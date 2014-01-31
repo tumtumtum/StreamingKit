@@ -2036,47 +2036,49 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     UInt32 start = audioPlayer->pcmBufferFrameStartIndex;
     UInt32 end = (audioPlayer->pcmBufferFrameStartIndex + audioPlayer->pcmBufferUsedFrameCount) % audioPlayer->pcmBufferTotalFrameCount;
     BOOL signal = audioPlayer->waiting && used < audioPlayer->pcmBufferTotalFrameCount / 2;
-
+	NSArray* frameFilters = audioPlayer->frameFilters;
+    
     STKAudioPlayerInternalState state = audioPlayer.internalState;
     
-    if (state == STKAudioPlayerInternalStateWaitingForData)
-    {
-		int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
-		
-		if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
-		{
-			framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued);
-		}
-		
-        if (audioPlayer->currentlyPlayingEntry
-            && audioPlayer->currentlyReadingEntry == audioPlayer->currentlyPlayingEntry
-            && audioPlayer->currentlyPlayingEntry->framesQueued < framesRequiredToStartPlaying)
-        {
-            waitForBuffer = YES;
-        }
-    }
-    else if (state == STKAudioPlayerInternalStateRebuffering)
-    {
-		int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
-		
-		if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
-		{
-			framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued - audioPlayer->currentlyPlayingEntry->framesQueued);
-		}
-		
-        if (used < framesRequiredToStartPlaying)
-        {
-            waitForBuffer = YES;
-        }
-    }
-    else if (state == STKAudioPlayerInternalStatePendingNext)
+	if (state == STKAudioPlayerInternalStatePendingNext)
     {
         OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
         
         return 0;
     }
-	
-	NSArray* frameFilters = audioPlayer->frameFilters;
+
+	if (entry)
+	{
+		if (state == STKAudioPlayerInternalStateWaitingForData)
+		{
+			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+			
+			if (entry->lastFrameQueued >= 0)
+			{
+				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued);
+			}
+			
+			if (entry && audioPlayer->currentlyReadingEntry == entry
+				&& entry->framesQueued < framesRequiredToStartPlaying)
+			{
+				waitForBuffer = YES;
+			}
+		}
+		else if (state == STKAudioPlayerInternalStateRebuffering)
+		{
+			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+			
+			if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
+			{
+				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, entry->lastFrameQueued - entry->framesQueued);
+			}
+			
+			if (used < framesRequiredToStartPlaying)
+			{
+				waitForBuffer = YES;
+			}
+		}
+	}
     
     OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
     
@@ -2155,7 +2157,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 
 	if (frameFilters)
 	{
-		int count = frameFilters.count;
+		NSUInteger count = frameFilters.count;
 		AudioStreamBasicDescription asbd = audioPlayer->canonicalAudioStreamBasicDescription;
 		
 		for (int i = 0; i < count; i++)
