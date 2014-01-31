@@ -118,10 +118,13 @@ STKAudioPlayerOptions;
 
 @end
 
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, UInt32* frames);
+
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 
 @property (readonly) double duration;
 @property (readonly) double progress;
+@property (readonly) NSArray* frameFilters;
 @property (readwrite) STKAudioPlayerState state;
 @property (readonly) STKAudioPlayerOptions options;
 @property (readonly) STKAudioPlayerStopReason stopReason;
@@ -163,5 +166,8 @@ STKAudioPlayerOptions;
 -(void) dispose;
 /// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
+
+-(void) appendFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name;
+-(void) addFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName;
 
 @end

@@ -55,7 +55,7 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {
-	NSURL* url = [NSURL URLWithString:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+	NSURL* url = [NSURL URLWithString:@"http://my.halloo.com/audio/perfectly.wav"];
     
     STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
     

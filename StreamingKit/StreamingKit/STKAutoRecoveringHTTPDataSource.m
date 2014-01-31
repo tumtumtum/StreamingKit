@@ -208,6 +208,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         return;
     }
     
+	waitingForNetwork = NO;
+	
     NSRunLoop* runLoop = self.innerDataSource.eventsRunLoop;
     
     if (runLoop == nil)
@@ -226,6 +228,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(void) dataSourceEof:(STKDataSource*)dataSource
 {
+	NSLog(@"dataSourceEof");
+	
     if ([self position] != [self length])
     {
         [self processRetryOnError];

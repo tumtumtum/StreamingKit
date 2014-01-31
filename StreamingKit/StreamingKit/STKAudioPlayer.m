@@ -53,6 +53,27 @@
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
+@interface STKFrameFilterEntry : NSObject
+{
+@public
+	NSString* name;
+	STKFrameFilter filter;
+}
+@end
+
+@implementation STKFrameFilterEntry
+-(id) initWithFilter:(STKFrameFilter)filterIn andName:(NSString*)nameIn
+{
+	if (self = [super init])
+	{
+		self->filter = [filterIn copy];
+		self->name = nameIn;
+	}
+	
+	return self;
+}
+@end
+
 @interface STKAudioPlayer()
 {
     UInt8* readBuffer;
@@ -85,6 +106,7 @@
     AudioStreamBasicDescription audioConverterAudioStreamBasicDescription;
     
     BOOL discontinuous;
+	NSArray* frameFilters;
     NSThread* playbackThread;
     NSRunLoop* playbackThreadRunLoop;
     AudioFileStreamID audioFileStream;
@@ -584,7 +606,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
-            discontinuous = YES;
+			if (!audioConverterAudioStreamBasicDescription.mFormatID == kAudioFormatLinearPCM)
+			{
+				discontinuous = YES;
+			}
             
             break;
         }
@@ -1200,11 +1225,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
     
-    if (seekByteOffset > 0)
-    {
-        discontinuous = YES;
-    }
-    
     if (audioUnit)
     {
         [self resetPcmBuffers];
@@ -1674,7 +1694,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
     AURenderCallbackStruct callbackStruct;
     
-    callbackStruct.inputProc = playbackCallback;
+    callbackStruct.inputProc = OutputRenderCallback;
     callbackStruct.inputProcRefCon = (__bridge void*)self;
 
     status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, kOutputBus, &callbackStruct, sizeof(callbackStruct));
@@ -1795,11 +1815,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
         return;
     }
     
-    if (discontinuous)
-    {
-        discontinuous = NO;
-    }
-
+	discontinuous = NO;
+    
     OSStatus status;
     
     AudioConvertInfo convertInfo;
@@ -1811,14 +1828,16 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     convertInfo.audioBuffer.mDataByteSize = numberBytes;
     convertInfo.audioBuffer.mNumberChannels = audioConverterAudioStreamBasicDescription.mChannelsPerFrame;
 
-    if (currentlyReadingEntry->processedPacketsCount < STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION)
+    if (packetDescriptionsIn && currentlyReadingEntry->processedPacketsCount < STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION)
     {
         int count = MIN(numberPackets, STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION - currentlyReadingEntry->processedPacketsCount);
         
         for (int i = 0; i < count; i++)
         {
-            SInt64 packetSize = packetDescriptionsIn[i].mDataByteSize;
-            
+			SInt64 packetSize;
+			
+			packetSize = packetDescriptionsIn[i].mDataByteSize;
+			
             OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
             OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
         }
@@ -2011,7 +2030,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     }
 }
 
-static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
+static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
 {
     STKAudioPlayer* audioPlayer = (__bridge STKAudioPlayer*)inRefCon;
 
@@ -2050,6 +2069,8 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
         
         return 0;
     }
+	
+	NSArray* frameFilters = audioPlayer->frameFilters;
     
     OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
     
@@ -2125,13 +2146,27 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
             audioPlayer.internalState = STKAudioPlayerInternalStateRebuffering;
         }
     }
-    
+
+	if (frameFilters)
+	{
+		int count = frameFilters.count;
+		AudioStreamBasicDescription asbd = audioPlayer->canonicalAudioStreamBasicDescription;
+		
+		for (int i = 0; i < count; i++)
+		{
+			STKFrameFilterEntry* entry = [frameFilters objectAtIndex:i];
+			
+			entry->filter(asbd.mChannelsPerFrame, asbd.mBytesPerFrame, inNumberFrames, ioData->mBuffers[0].mData);
+		}
+	}
+	
     if (entry == nil)
     {
         return 0;
     }
     
     OSSpinLockLock(&entry->spinLock);
+	
     int64_t extraFramesPlayedNotAssigned = 0;
     int64_t framesPlayedForCurrent = totalFramesCopied;
 
@@ -2153,15 +2188,13 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
         
         if (lastFramePlayed && entry == audioPlayer->currentlyPlayingEntry)
         {
-            NSLog(@"Finished %@", [entry description]);
-            
             [audioPlayer audioQueueFinishedPlaying:entry];
             
             while (extraFramesPlayedNotAssigned > 0)
             {
                 STKQueueEntry* newEntry = audioPlayer->currentlyPlayingEntry;
                 
-                if (entry != nil)
+                if (newEntry != nil)
                 {
                     int64_t framesPlayedForCurrent = extraFramesPlayedNotAssigned;
                     
@@ -2195,6 +2228,47 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
     }
     
     return 0;
+}
+
+-(NSArray*) frameFilters
+{
+	return frameFilters;
+}
+
+-(void) appendFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name
+{
+	[self addFrameFilter:frameFilter withName:name afterFilterWithName:nil];
+}
+
+-(void) addFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName
+{
+	pthread_mutex_lock(&self->playerMutex);
+	
+	NSMutableArray* newFrameFilters = [[NSMutableArray alloc] initWithCapacity:frameFilters.count + 1];
+	
+	if (afterFilterWithName == nil)
+	{
+		[newFrameFilters addObjectsFromArray:frameFilters];
+		[newFrameFilters addObject:[[STKFrameFilterEntry alloc] initWithFilter:frameFilter andName:name]];
+	}
+	else
+	{
+		for (STKFrameFilterEntry* filterEntry in frameFilters)
+		{
+			[newFrameFilters addObject:filterEntry];
+			
+			if (afterFilterWithName != nil && [filterEntry->name isEqualToString:afterFilterWithName])
+			{
+				[newFrameFilters addObject:[[STKFrameFilterEntry alloc] initWithFilter:frameFilter andName:name]];
+			}
+		}
+	}
+	
+	OSSpinLockLock(&pcmBufferSpinLock);
+	frameFilters = [NSArray arrayWithArray:newFrameFilters];
+	OSSpinLockUnlock(&pcmBufferSpinLock);
+	
+	pthread_mutex_unlock(&self->playerMutex);
 }
 
 @end
