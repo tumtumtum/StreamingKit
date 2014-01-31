@@ -55,7 +55,6 @@ typedef enum
     /* Same as STKAudioPlayerInternalStateWaitingForData but isn't immediately raised as a buffering event */
     STKAudioPlayerInternalStateWaitingForDataAfterSeek = (1 << 5) | STKAudioPlayerInternalStateRunning,
     STKAudioPlayerInternalStatePaused = (1 << 6) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStateStopping = (1 << 8),
     STKAudioPlayerInternalStateStopped = (1 << 9),
     STKAudioPlayerInternalStatePendingNext = (1 << 10),
     STKAudioPlayerInternalStateDisposed = (1 << 30),
@@ -78,9 +77,9 @@ STKAudioPlayerState;
 
 typedef enum
 {
-	AudioPlayerStopReasonNoStop = 0,
-	AudioPlayerStopReasonEof,
-	AudioPlayerStopReasonUserAction
+	STKAudioPlayerStopReasonNoStop = 0,
+	STKAudioPlayerStopReasonEof,
+	STKAudioPlayerStopReasonUserAction
 }
 STKAudioPlayerStopReason;
 
@@ -89,12 +88,9 @@ typedef enum
 	STKAudioPlayerErrorNone = 0,
 	STKAudioPlayerErrorDataSource,
     STKAudioPlayerErrorStreamParseBytesFailed,
+    STKAudioPlayerErrorAudioSystemError,
+    STKAudioPlayerErrorCodecError,
     STKAudioPlayerErrorDataNotFound,
-    STKAudioPlayerErrorQueueStartFailed,
-    STKAudioPlayerErrorQueuePauseFailed,
-    STKAudioPlayerErrorUnknownBuffer,
-    STKAudioPlayerErrorQueueStopFailed,
-    STKAudioPlayerErrorQueueCreationFailed,
     STKAudioPlayerErrorOther = -1
 }
 STKAudioPlayerErrorCode;
@@ -125,20 +121,35 @@ STKAudioPlayerErrorCode;
 
 -(id) init;
 -(id) initWithReadBufferSize:(int)readBufferSizeIn;
--(STKDataSource*) dataSourceFromURL:(NSURL*)url;
+
++(STKDataSource*) dataSourceFromURL:(NSURL*)url;
+/// Plays an item from the given URL (all pending queued items are removed)
 -(void) play:(NSString*)urlString;
+/// Plays an item from the given URL (all pending queued items are removed)
 -(void) playWithURL:(NSURL*)url;
+/// Plays the given item (all pending queued items are removed)
 -(void) playWithDataSource:(STKDataSource*)dataSource;
+/// Queues a DataSource with the given Item ID for playback
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
+/// Plays the given item (all pending queued items are removed)
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
+/// Seeks to a specific time (in seconds)
 -(void) seekToTime:(double)value;
+/// Clears any upcoming items already queued for playback (does not stop the current item)
 -(void) clearQueue;
+/// Pauses playback
 -(void) pause;
+/// Resumes playback from pause
 -(void) resume;
+/// Stops playback of the current file, flushes all the buffers and removes any pending queued items
 -(void) stop;
+/// Mutes playback
 -(void) mute;
+/// Unmutes playback
 -(void) unmute;
+/// Disposes the STKAudioPlayer and frees up all resources before returning
 -(void) dispose;
+/// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
 
 @end

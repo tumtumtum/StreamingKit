@@ -19,12 +19,19 @@
     {
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
-        self.lastFrameIndex = -1;
-        self.lastByteIndex = -1;
         self->lastFrameQueued = -1;
     }
     
     return self;
+}
+
+-(void) reset
+{
+    OSSpinLockLock(&self->spinLock);
+    self->framesQueued = 0;
+    self->framesPlayed = 0;
+    self->lastFrameQueued = -1;
+    OSSpinLockUnlock(&self->spinLock);
 }
 
 -(double) calculatedBitRate
@@ -56,29 +63,6 @@
         audioDataSource.averageBitRate = calculatedBitrate;
         audioDataSource.audioDataOffset = audioDataOffset;
     }
-}
-
--(Float64) calculateProgressWithTotalFramesPlayed:(Float64)framesPlayedIn
-{
-    return (Float64)self.seekTime + ((framesPlayedIn - self.firstFrameIndex) / (Float64)self->audioStreamBasicDescription.mSampleRate);
-}
-
--(double) calculateProgressWithBytesPlayed:(Float64)bytesPlayed
-{
-    double retval = lastProgress;
-    
-    if (self->sampleRate > 0)
-    {
-        double calculatedBitrate = [self calculatedBitRate];
-        
-        retval = bytesPlayed / calculatedBitrate * 8;
-        
-        retval = self.seekTime + retval;
-        
-        [self updateAudioDataSource];
-    }
-    
-	return retval;
 }
 
 -(double) duration
@@ -127,29 +111,13 @@
     return (memcmp(&(self->audioStreamBasicDescription), basicDescription, sizeof(*basicDescription)) == 0);
 }
 
--(BOOL) isKnownToBeIncompatible:(AudioStreamBasicDescription*)basicDescription
-{
-    if (self->audioStreamBasicDescription.mSampleRate == 0)
-    {
-        return NO;
-    }
-    
-    return (memcmp(&(self->audioStreamBasicDescription), basicDescription, sizeof(*basicDescription)) != 0);
-}
-
--(BOOL) couldBeIncompatible:(AudioStreamBasicDescription*)basicDescription
-{
-    if (self->audioStreamBasicDescription.mSampleRate == 0)
-    {
-        return YES;
-    }
-    
-    return memcmp(&(self->audioStreamBasicDescription), basicDescription, sizeof(*basicDescription)) != 0;
-}
-
 -(Float64) progressInFrames
 {
-    return self.seekTime + self->framesPlayed;
+    OSSpinLockLock(&self->spinLock);
+    Float64 retval = self->seekTime + self->framesPlayed;
+    OSSpinLockUnlock(&self->spinLock);
+    
+    return retval;
 }
 
 -(NSString*) description

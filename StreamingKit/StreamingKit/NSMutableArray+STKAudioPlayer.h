@@ -11,6 +11,7 @@
 @interface NSMutableArray (STKAudioPlayer)
 -(void) enqueue:(id)obj;
 -(void) skipQueue:(id)obj;
+-(void) skipQueueWithQueue:(NSMutableArray*)queue;
 -(id) dequeue;
 -(id) peek;
 @end

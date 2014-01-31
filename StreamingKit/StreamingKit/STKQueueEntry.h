@@ -7,47 +7,40 @@
 //
 
 #import "STKDataSource.h"
+#import "libkern/OSAtomic.h"
 #import "AudioToolbox/AudioToolbox.h"
 
 @interface STKQueueEntry : NSObject
 {
 @public
+    OSSpinLock spinLock;
+    
     BOOL parsedHeader;
-    double sampleRate;
-    double lastProgress;
+    Float64 sampleRate;
     double packetDuration;
-    int framesQueued;
-    int framesPlayed;
-    Float64 lastFrameQueued;
     UInt64 audioDataOffset;
     UInt64 audioDataByteCount;
     UInt32 packetBufferSize;
-    volatile BOOL cancel;
-    volatile BOOL finished;
+    volatile Float64 seekTime;
+    volatile int64_t framesQueued;
+    volatile int64_t framesPlayed;
+    volatile int64_t lastFrameQueued;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
 }
 
+@property (readonly) UInt64 audioDataLengthInBytes;
 @property (readwrite, retain) NSObject* queueItemId;
 @property (readwrite, retain) STKDataSource* dataSource;
-@property (readwrite) Float64 seekTime;
-@property (readwrite) int bytesBuffered;
-@property (readwrite) int lastByteIndex;
-@property (readwrite) Float64 lastFrameIndex;
-@property (readwrite) Float64 timeWhenLastBufferReturned;
-@property (readwrite) Float64 firstFrameIndex;
-@property (readonly) UInt64 audioDataLengthInBytes;
 
+-(id) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
+
+-(void) reset;
 -(double) duration;
 -(Float64) progressInFrames;
 -(double) calculatedBitRate;
 -(void) updateAudioDataSource;
 -(BOOL) isDefinitelyCompatible:(AudioStreamBasicDescription*)basicDescription;
--(BOOL) isKnownToBeIncompatible:(AudioStreamBasicDescription*)basicDescription;
--(BOOL) couldBeIncompatible:(AudioStreamBasicDescription*)basicDescription;
--(Float64) calculateProgressWithTotalFramesPlayed:(Float64)framesPlayed;
-
--(id) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
 
 @end

@@ -181,8 +181,8 @@
 
 -(void) disposeButtonPressed
 {
-    [audioPlayer dispose];
-    audioPlayer = nil;
+    [audioPlayer stop];
+//    audioPlayer = nil;
 }
 
 -(void) playButtonPressed
@@ -283,7 +283,7 @@
 
         NSLog(@"Requeuing: %@", [queueId.url description]);
 
-        [self->audioPlayer queueDataSource:[self->audioPlayer dataSourceFromURL:queueId.url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:queueId.url andCount:queueId.count + 1]];
+        [self->audioPlayer queueDataSource:[STKAudioPlayer dataSourceFromURL:queueId.url] withQueueItemId:[[SampleQueueId alloc] initWithUrl:queueId.url andCount:queueId.count + 1]];
     }
 }
 

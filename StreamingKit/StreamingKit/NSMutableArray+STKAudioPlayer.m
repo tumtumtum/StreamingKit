@@ -20,6 +20,14 @@
     [self addObject:obj];
 }
 
+-(void) skipQueueWithQueue:(NSMutableArray*)queue
+{
+    for (id item in queue)
+    {
+        [self addObject:item];
+    }
+}
+
 -(id) dequeue
 {
     if ([self count] == 0)
@@ -37,16 +45,6 @@
 -(id) peek
 {
     return [self lastObject];
-}
-
--(id) peekRecent
-{
-    if (self.count == 0)
-    {
-        return nil;
-    }
-    
-    return [self objectAtIndex:0];
 }
 
 @end
