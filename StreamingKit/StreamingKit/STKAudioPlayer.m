@@ -497,11 +497,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     pthread_mutex_lock(&playerMutex);
     {
         [upcomingQueue enqueue:[[STKQueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
-        
-        if (self.internalState == STKAudioPlayerInternalStateStopped && stopReason == STKAudioPlayerStopReasonEof)
-        {
-            [self startAudioUnit];
-        }
     }
     pthread_mutex_unlock(&playerMutex);
     
@@ -1714,6 +1709,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 {
     OSStatus status;
     
+	[self resetPcmBuffers];
+	
     status = AudioOutputUnitStart(audioUnit);
     
     if (status)
