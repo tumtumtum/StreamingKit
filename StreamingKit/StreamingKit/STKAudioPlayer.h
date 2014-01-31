@@ -95,6 +95,13 @@ typedef enum
 }
 STKAudioPlayerErrorCode;
 
+typedef enum
+{
+	STKAudioPlayerOptionNone = 0,
+	STKAudioPlayerOptionDontFlushQueueOnSeek = 1
+}
+STKAudioPlayerOptions;
+
 @class STKAudioPlayer;
 
 @protocol STKAudioPlayerDelegate <NSObject>
@@ -116,11 +123,12 @@ STKAudioPlayerErrorCode;
 @property (readonly) double duration;
 @property (readonly) double progress;
 @property (readwrite) STKAudioPlayerState state;
+@property (readonly) STKAudioPlayerOptions options;
 @property (readonly) STKAudioPlayerStopReason stopReason;
 @property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
 
 -(id) init;
--(id) initWithReadBufferSize:(int)readBufferSizeIn;
+-(id) initWithReadBufferSize:(int)readBufferSizeIn andOptions:(STKAudioPlayerOptions)options;
 
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 /// Plays an item from the given URL (all pending queued items are removed)

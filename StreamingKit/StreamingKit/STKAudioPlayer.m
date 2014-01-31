@@ -40,7 +40,7 @@
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
 
-#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (65)
+#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (10)
 #define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0)
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (2048)
 
@@ -56,6 +56,8 @@
 {
     UInt8* readBuffer;
     int readBufferSize;
+    
+    STKAudioPlayerOptions options;
     
     AudioComponentInstance audioUnit;
     
@@ -131,6 +133,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 @implementation STKAudioPlayer
 @synthesize delegate, internalState, state;
+
+
+-(STKAudioPlayerOptions) options
+{
+    return options;
+}
 
 -(STKAudioPlayerInternalState) internalState
 {
@@ -222,13 +230,15 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(id) init
 {
-    return [self initWithReadBufferSize:STK_DEFAULT_READ_BUFFER_SIZE];
+    return [self initWithReadBufferSize:STK_DEFAULT_READ_BUFFER_SIZE andOptions:STKAudioPlayerOptionNone];
 }
 
--(id) initWithReadBufferSize:(int)readBufferSizeIn
+-(id) initWithReadBufferSize:(int)readBufferSizeIn andOptions:(STKAudioPlayerOptions)optionsIn
 {
     if (self = [super init])
     {
+        options = optionsIn;
+        
         canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
         canonicalAudioStreamBasicDescription.mFormatID = kAudioFormatLinearPCM;
         canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagsCanonical;
@@ -1032,10 +1042,18 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                 [currentlyReadingEntry.dataSource unregisterForEvents];
             }
             
-            [self requeueBufferingEntries];
-            
-            self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
-            [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES clearQueue:NO];
+            if (self->options & STKAudioPlayerOptionDontFlushQueueOnSeek)
+            {
+                [self requeueBufferingEntries];
+                
+                self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
+                [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES clearQueue:NO];
+            }
+            else
+            {
+                self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
+                [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES clearQueue:YES];
+            }
         }
         else if (currentlyReadingEntry == nil)
         {
@@ -1531,7 +1549,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 #define kOutputBus 0
 #define kInputBus 1
 
-BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc)
+static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* classDesc)
 {
     UInt32 size;
     
@@ -2010,11 +2028,11 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
     {
         if (state == STKAudioPlayerInternalStateWaitingForData)
         {
-            NSLog(@"Starting");
+            // Starting
         }
         else if (state == STKAudioPlayerInternalStateRebuffering)
         {
-            NSLog(@"Buffering resuming");
+            // Resuming from buffering
         }
         
         if (end > start)
@@ -2071,7 +2089,8 @@ static OSStatus playbackCallback(void* inRefCon, AudioUnitRenderActionFlags* ioA
         
         if (!(entry == nil || state == STKAudioPlayerInternalStateWaitingForDataAfterSeek || state == STKAudioPlayerInternalStateWaitingForData || state == STKAudioPlayerInternalStateRebuffering))
         {
-            NSLog(@"Buffering");
+            // Buffering
+            
             audioPlayer.internalState = STKAudioPlayerInternalStateRebuffering;
         }
     }
