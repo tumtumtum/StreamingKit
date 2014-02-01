@@ -58,6 +58,7 @@
     UIButton* queueShortFileButton;
 	UIButton* queuePcmWaveFileFromHTTPButton;
 	UIButton* playFromLocalFileButton;
+	UIView* meter;
 }
 
 @property (readwrite, retain) STKAudioPlayer* audioPlayer;

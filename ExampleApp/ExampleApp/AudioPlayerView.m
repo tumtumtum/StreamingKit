@@ -101,6 +101,11 @@
         statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 8, frame.size.width, 50)];
 		
         statusLabel.textAlignment = NSTextAlignmentCenter;
+		
+		
+		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 460, 0, 20)];
+		
+		meter.backgroundColor = [UIColor greenColor];
         
 		[self addSubview:slider];
 		[self addSubview:playButton];
@@ -112,6 +117,7 @@
         [self addSubview:label];
         [self addSubview:statusLabel];
         [self addSubview:stopButton];
+		[self addSubview:meter];
         
 		[self setupTimer];
 		[self updateControls];
@@ -134,7 +140,7 @@
 
 -(void) setupTimer
 {
-	timer = [NSTimer timerWithTimeInterval:0.05 target:self selector:@selector(tick) userInfo:nil repeats:YES];
+	timer = [NSTimer timerWithTimeInterval:0.01 target:self selector:@selector(tick) userInfo:nil repeats:YES];
 	
 	[[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
 }
@@ -168,6 +174,10 @@
     }
     
     statusLabel.text = audioPlayer.state == STKAudioPlayerStateBuffering ? @"buffering" : @"";
+	
+	CGFloat newWidth = 320 * (([audioPlayer peakPowerInDecibelsForChannel:1] + 60) / 60);
+	
+	meter.frame = CGRectMake(0, 460, newWidth, 20);
 }
 
 -(void) playFromHTTPButtonTouched

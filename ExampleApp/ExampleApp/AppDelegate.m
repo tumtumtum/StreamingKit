@@ -33,6 +33,8 @@
 	self.window.backgroundColor = [UIColor whiteColor];
     
 	audioPlayer = [[STKAudioPlayer alloc] init];
+	audioPlayer.meteringEnabled = YES;
+	
 	AudioPlayerView* audioPlayerView = [[AudioPlayerView alloc] initWithFrame:self.window.bounds];
     
 	audioPlayerView.delegate = self;

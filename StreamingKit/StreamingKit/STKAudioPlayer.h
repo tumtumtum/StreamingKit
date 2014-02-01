@@ -118,12 +118,13 @@ STKAudioPlayerOptions;
 
 @end
 
-typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, UInt32* frames);
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 
 @property (readonly) double duration;
 @property (readonly) double progress;
+@property (readwrite) BOOL meteringEnabled;
 @property (readonly) NSArray* frameFilters;
 @property (readwrite) STKAudioPlayerState state;
 @property (readonly) STKAudioPlayerOptions options;
@@ -167,7 +168,11 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
 
--(void) appendFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name;
--(void) addFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName;
+-(void) removeFrameFilterWithName:(NSString*)name;
+-(void) appendFrameFilterWithName:(NSString*)name block:(STKFrameFilter)block;
+-(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName block:(STKFrameFilter)block;
+
+-(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
+-(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 @end

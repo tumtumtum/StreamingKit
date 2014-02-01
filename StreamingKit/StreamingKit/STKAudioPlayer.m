@@ -41,6 +41,10 @@
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
 
+#define STK_DBMIN (-60)
+#define STK_DBOFFSET (-74.0)
+#define STK_LOWPASSFILTERTIMESLICE (0.0005)
+
 #define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (10)
 #define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0.1)
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (2048)
@@ -79,8 +83,11 @@
     UInt8* readBuffer;
     int readBufferSize;
     
+	Float32 peakPowerDb[2];
+	Float32 averagePowerDb[2];
+	
+	BOOL meteringEnabled;
     STKAudioPlayerOptions options;
-    
     AudioComponentInstance audioUnit;
     
     UInt32 framesRequiredToStartPlaying;
@@ -280,7 +287,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         pcmAudioBufferList.mBuffers[0].mDataByteSize = (canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS) * canonicalAudioStreamBasicDescription.mBytesPerFrame;
         pcmAudioBufferList.mBuffers[0].mData = (void*)calloc(pcmAudioBuffer->mDataByteSize, 1);
         pcmAudioBufferList.mBuffers[0].mNumberChannels = 2;
-        
+		
         pcmBufferFrameSizeInBytes = canonicalAudioStreamBasicDescription.mBytesPerFrame;
         pcmBufferTotalFrameCount = pcmAudioBuffer->mDataByteSize / pcmBufferFrameSizeInBytes;
         
@@ -304,6 +311,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         upcomingQueue = [[NSMutableArray alloc] init];
         bufferingQueue = [[NSMutableArray alloc] init];
+		
+		[self resetPcmBuffers];
         
         [self createAudioUnit];
         [self createPlaybackThread];
@@ -1415,6 +1424,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     self->pcmBufferFrameStartIndex = 0;
     self->pcmBufferUsedFrameCount = 0;
+	self->peakPowerDb[0] = STK_DBMIN;
+	self->peakPowerDb[1] = STK_DBMIN;
+	self->averagePowerDb[0] = STK_DBMIN;
+	self->averagePowerDb[1] = STK_DBMIN;
     
     OSSpinLockUnlock(&pcmBufferSpinLock);
 }
@@ -1734,6 +1747,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
     
     status = AudioOutputUnitStop(audioUnit);
+	
+	[self resetPcmBuffers];
     
     if (status)
     {
@@ -2237,14 +2252,162 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     return 0;
 }
 
+-(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber
+{
+	if (channelNumber >= canonicalAudioStreamBasicDescription.mChannelsPerFrame)
+	{
+		return 0;
+	}
+	
+	return peakPowerDb[channelNumber];
+}
+
+-(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber
+{
+	if (channelNumber >= canonicalAudioStreamBasicDescription.mChannelsPerFrame)
+	{
+		return 0;
+	}
+	
+	return averagePowerDb[channelNumber];
+}
+
+-(BOOL) meteringEnabled
+{
+	return self->meteringEnabled;
+}
+
+#define CALCULATE_METER(channel) \
+	Float32 currentFilteredValueOfSampleAmplitude##channel = STK_LOWPASSFILTERTIMESLICE * absoluteValueOfSampleAmplitude##channel + (1.0 - STK_LOWPASSFILTERTIMESLICE) * previousFilteredValueOfSampleAmplitude##channel; \
+	previousFilteredValueOfSampleAmplitude##channel = currentFilteredValueOfSampleAmplitude##channel; \
+	Float32 sampleDB##channel = 20.0 * log10(currentFilteredValueOfSampleAmplitude##channel) + STK_DBOFFSET; \
+	if ((sampleDB##channel == sampleDB##channel) && (sampleDB##channel != -DBL_MAX)) \
+	{ \
+		if(sampleDB##channel > peakValue##channel) \
+		{ \
+			peakValue##channel = MIN(sampleDB##channel, 0); \
+		} \
+		if (sampleDB##channel > -DBL_MAX) \
+		{ \
+			totalValue##channel += sampleDB##channel; \
+		} \
+		decibels##channel = peakValue##channel; \
+	};
+
+-(void) setMeteringEnabled:(BOOL)value
+{
+	if (self->meteringEnabled == value)
+	{
+		return;
+	}
+	
+	if (!value)
+	{
+		[self removeFrameFilterWithName:@"STKMeteringFilter"];
+		self->meteringEnabled = NO;
+	}
+	else
+	{
+		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
+		{
+			SInt16* samples = (SInt16*)frames;
+			Float32 decibelsLeft = STK_DBMIN;
+			Float32 peakValueLeft = STK_DBMIN;
+			Float64 totalValueLeft = STK_DBMIN;
+			Float32 previousFilteredValueOfSampleAmplitudeLeft = 0;
+			Float32 decibelsRight = STK_DBMIN;
+			Float32 peakValueRight = STK_DBMIN;
+			Float64 totalValueRight = STK_DBMIN;
+			Float32 previousFilteredValueOfSampleAmplitudeRight = 0;
+			
+			for (int i = 0; i < frameCount * 2; i++)
+			{
+				Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples[i]);
+				Float32 absoluteValueOfSampleAmplitudeRight = abs(samples[i]);
+				
+				CALCULATE_METER(Left);
+				CALCULATE_METER(Right);
+			}
+			
+			peakPowerDb[0] = MIN(MAX(decibelsLeft, -60), 0);
+			averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
+			peakPowerDb[1] = MIN(MAX(decibelsRight, -60), 0);
+			averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
+		}];
+	}
+}
+
 -(NSArray*) frameFilters
 {
 	return frameFilters;
 }
 
--(void) appendFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name
+-(void) appendFrameFilterWithName:(NSString*)name block:(STKFrameFilter)block
 {
-	[self addFrameFilter:frameFilter withName:name afterFilterWithName:nil];
+	[self addFrameFilterWithName:name afterFilterWithName:nil block:block];
+}
+
+-(void) removeFrameFilterWithName:(NSString*)name
+{
+	pthread_mutex_lock(&self->playerMutex);
+	
+	NSMutableArray* newFrameFilters = [[NSMutableArray alloc] initWithCapacity:frameFilters.count + 1];
+	
+	for (STKFrameFilterEntry* filterEntry in frameFilters)
+	{
+		if (![filterEntry->name isEqualToString:name])
+		{
+			[newFrameFilters addObject:filterEntry];
+		}
+	}
+	
+	NSArray* replacement = [NSArray arrayWithArray:newFrameFilters];
+	
+	OSSpinLockLock(&pcmBufferSpinLock);
+	if (newFrameFilters.count > 0)
+	{
+		frameFilters = replacement;
+	}
+	else
+	{
+		frameFilters = nil;
+	}
+	OSSpinLockUnlock(&pcmBufferSpinLock);
+	
+	pthread_mutex_unlock(&self->playerMutex);
+}
+
+-(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName block:(STKFrameFilter)block
+{
+	pthread_mutex_lock(&self->playerMutex);
+	
+	NSMutableArray* newFrameFilters = [[NSMutableArray alloc] initWithCapacity:frameFilters.count + 1];
+	
+	if (afterFilterWithName == nil)
+	{
+		[newFrameFilters addObject:[[STKFrameFilterEntry alloc] initWithFilter:block andName:name]];
+		[newFrameFilters addObjectsFromArray:frameFilters];
+	}
+	else
+	{
+		for (STKFrameFilterEntry* filterEntry in frameFilters)
+		{
+			if (afterFilterWithName != nil && [filterEntry->name isEqualToString:afterFilterWithName])
+			{
+				[newFrameFilters addObject:[[STKFrameFilterEntry alloc] initWithFilter:block andName:name]];
+			}
+			
+			[newFrameFilters addObject:filterEntry];
+		}
+	}
+	
+	NSArray* replacement = [NSArray arrayWithArray:newFrameFilters];
+	
+	OSSpinLockLock(&pcmBufferSpinLock);
+	frameFilters = replacement;
+	OSSpinLockUnlock(&pcmBufferSpinLock);
+	
+	pthread_mutex_unlock(&self->playerMutex);
 }
 
 -(void) addFrameFilter:(STKFrameFilter)frameFilter withName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName
@@ -2271,8 +2434,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}
 	}
 	
+	NSArray* replacement = [NSArray arrayWithArray:newFrameFilters];
+	
 	OSSpinLockLock(&pcmBufferSpinLock);
-	frameFilters = [NSArray arrayWithArray:newFrameFilters];
+	frameFilters = replacement;
 	OSSpinLockUnlock(&pcmBufferSpinLock);
 	
 	pthread_mutex_unlock(&self->playerMutex);
