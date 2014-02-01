@@ -396,7 +396,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     {
         retval = [[STKLocalFileDataSource alloc] initWithFilePath:url.path];
     }
-    else if ([url.scheme isEqualToString:@"http"] || [url.scheme isEqualToString:@"https"])
+    else if ([url.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame || [url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
     {
         retval = [[STKAutoRecoveringHTTPDataSource alloc] initWithHTTPDataSource:[[STKHTTPDataSource alloc] initWithURL:url]];
     }
