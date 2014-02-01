@@ -230,7 +230,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
 	NSLog(@"dataSourceEof");
 	
-    if ([self position] != [self length])
+    if ([self position] < [self length])
     {
         [self processRetryOnError];
         

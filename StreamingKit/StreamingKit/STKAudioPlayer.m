@@ -1205,9 +1205,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     }
     
     [currentEntry updateAudioDataSource];
-    
     [currentEntry reset];
-    
     [currentEntry.dataSource seekToOffset:seekByteOffset];
     
     self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
