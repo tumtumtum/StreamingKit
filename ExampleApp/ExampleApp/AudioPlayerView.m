@@ -99,7 +99,7 @@
         
         repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 180, size.width, size.height)];
 
-        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height, frame.size.width, 25)];
+        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 10, frame.size.width, 25)];
 		
         label.textAlignment = NSTextAlignmentCenter;
         
