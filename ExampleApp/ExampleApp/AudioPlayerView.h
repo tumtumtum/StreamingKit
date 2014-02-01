@@ -52,6 +52,7 @@
     UILabel* statusLabel;
 	UISlider* slider;
     UISwitch* repeatSwitch;
+	UIButton* muteButton;
 	UIButton* playButton;
     UIButton* stopButton;
 	UIButton* playFromHTTPButton;

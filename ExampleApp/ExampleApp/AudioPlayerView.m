@@ -75,7 +75,7 @@
 		[queuePcmWaveFileFromHTTPButton addTarget:self action:@selector(queuePcmWaveFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[queuePcmWaveFileFromHTTPButton setTitle:@"Queue PCM/WAVE from HTTP" forState:UIControlStateNormal];
         
-        size = CGSizeMake(90, 50);
+        size = CGSizeMake(90, 40);
         
 		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 		playButton.frame = CGRectMake(30, 380, size.width, size.height);
@@ -86,6 +86,11 @@
 		[stopButton addTarget:self action:@selector(stopButtonPressed) forControlEvents:UIControlEventTouchUpInside];
         [stopButton setTitle:@"Stop" forState:UIControlStateNormal];
 		
+		muteButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+		muteButton.frame = CGRectMake((320 - size.width) - 30, 410, size.width, size.height);
+		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
+		
 		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, 280, 20)];
 		slider.continuous = YES;
 		[slider addTarget:self action:@selector(sliderChanged) forControlEvents:UIControlEventValueChanged];
@@ -94,7 +99,7 @@
         
         repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 180, size.width, size.height)];
 
-        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height, frame.size.width, 50)];
+        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height, frame.size.width, 25)];
 		
         label.textAlignment = NSTextAlignmentCenter;
         
@@ -103,7 +108,7 @@
         statusLabel.textAlignment = NSTextAlignmentCenter;
 		
 		
-		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 460, 0, 20)];
+		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 450, 0, 20)];
 		
 		meter.backgroundColor = [UIColor greenColor];
         
@@ -118,6 +123,7 @@
         [self addSubview:statusLabel];
         [self addSubview:stopButton];
 		[self addSubview:meter];
+		[self addSubview:muteButton];
         
 		[self setupTimer];
 		[self updateControls];
@@ -198,6 +204,20 @@
 -(void) queuePcmWaveFileButtonTouched
 {
 	[self.delegate audioPlayerViewQueuePcmWaveFileSelected:self];
+}
+
+-(void) muteButtonPressed
+{
+	audioPlayer.muted = !audioPlayer.muted;
+	
+	if (audioPlayer.muted)
+	{
+		[muteButton setTitle:@"Unmute" forState:UIControlStateNormal];
+	}
+	else
+	{
+		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
+	}
 }
 
 -(void) stopButtonPressed

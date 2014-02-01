@@ -80,6 +80,8 @@
 
 @interface STKAudioPlayer()
 {
+	BOOL muted;
+	
     UInt8* readBuffer;
     int readBufferSize;
     
@@ -1509,14 +1511,24 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     }
 }
 
+-(BOOL) muted
+{
+	return self->muted;
+}
+
+-(void) setMuted:(BOOL)value
+{
+	self->muted = value;
+}
+
 -(void) mute
 {
-    // TODO
+    self.muted = YES;
 }
 
 -(void) unmute
 {
-    // TODO
+    self.muted = NO;
 }
 
 -(void) dispose
@@ -2039,7 +2051,8 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
     
     BOOL waitForBuffer = NO;
-    STKQueueEntry* entry = audioPlayer->currentlyPlayingEntry;
+	BOOL muted = audioPlayer->muted;
+	STKQueueEntry* entry = audioPlayer->currentlyPlayingEntry;
     AudioBuffer* audioBuffer = audioPlayer->pcmAudioBuffer;
     UInt32 frameSizeInBytes = audioPlayer->pcmBufferFrameSizeInBytes;
     UInt32 used = audioPlayer->pcmBufferUsedFrameCount;
@@ -2111,7 +2124,15 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
             
             ioData->mBuffers[0].mNumberChannels = 2;
             ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
-            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+			
+			if (muted)
+			{
+				memset(ioData->mBuffers[0].mData, 0, ioData->mBuffers[0].mDataByteSize);
+			}
+			else
+			{
+				memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+			}
             
             totalFramesCopied = framesToCopy;
             
@@ -2126,7 +2147,15 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
             
             ioData->mBuffers[0].mNumberChannels = 2;
             ioData->mBuffers[0].mDataByteSize = frameSizeInBytes * framesToCopy;
-            memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+			
+			if (muted)
+			{
+				memset(ioData->mBuffers[0].mData, 0, ioData->mBuffers[0].mDataByteSize);
+			}
+			else
+			{
+				memcpy(ioData->mBuffers[0].mData, audioBuffer->mData + (start * frameSizeInBytes), ioData->mBuffers[0].mDataByteSize);
+			}
             
             UInt32 moreFramesToCopy = 0;
             UInt32 delta = inNumberFrames - framesToCopy;
@@ -2137,7 +2166,15 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
                 
                 ioData->mBuffers[0].mNumberChannels = 2;
                 ioData->mBuffers[0].mDataByteSize += frameSizeInBytes * moreFramesToCopy;
-                memcpy(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), audioBuffer->mData, frameSizeInBytes * moreFramesToCopy);
+				
+				if (muted)
+				{
+					memset(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), 0, frameSizeInBytes * moreFramesToCopy);
+				}
+				else
+				{
+					memcpy(ioData->mBuffers[0].mData + (framesToCopy * frameSizeInBytes), audioBuffer->mData, frameSizeInBytes * moreFramesToCopy);
+				}
             }
             
             totalFramesCopied = framesToCopy + moreFramesToCopy;

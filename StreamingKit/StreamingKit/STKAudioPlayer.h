@@ -122,6 +122,7 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 
+@property (readwrite) BOOL muted;
 @property (readonly) double duration;
 @property (readonly) double progress;
 @property (readwrite) BOOL meteringEnabled;
