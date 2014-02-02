@@ -783,6 +783,7 @@
 				A1A49989189E744500E2A2E2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		A1A4998D189E744500E2A2E2 /* Build configuration list for PBXNativeTarget "StreamingKitMacTests" */ = {
 			isa = XCConfigurationList;
@@ -791,6 +792,7 @@
 				A1A4998B189E744500E2A2E2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		A1E7C4C3188D57F50010896F /* Build configuration list for PBXProject "StreamingKit" */ = {
 			isa = XCConfigurationList;

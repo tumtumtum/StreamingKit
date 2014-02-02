@@ -40,6 +40,7 @@
 #import "STKQueueEntry.h"
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
+#import <float.h>
 
 #define kOutputBus 0
 #define kInputBus 1
