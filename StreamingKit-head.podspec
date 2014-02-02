@@ -9,5 +9,5 @@ Pod::Spec.new do |s|
   s.platform     = :ios
   s.requires_arc = true
   s.source_files = 'StreamingKit/StreamingKit/*.{h,m}'
-  s.frameworks   = 'AVFoundation', 'SystemConfiguration', 'CFNetwork', 'CoreFoundation', 'AudioToolbox'
+  s.frameworks   = 'AVFoundation', 'SystemConfiguration', 'CFNetwork', 'CoreFoundation', 'AudioToolbox', 'AudioUnit'
 end

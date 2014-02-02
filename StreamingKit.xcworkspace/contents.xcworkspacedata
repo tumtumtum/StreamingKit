@@ -5,6 +5,9 @@
       location = "group:ExampleApp/ExampleApp.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:StreamingKit/../ExampleAppMac/ExampleAppMac.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:StreamingKit/StreamingKit.xcodeproj">
    </FileRef>
 </Workspace>
