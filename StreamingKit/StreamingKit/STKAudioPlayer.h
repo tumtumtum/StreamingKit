@@ -202,10 +202,12 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// If the given name is nil, the filter will be inserted at the beginning of the filter change
 -(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName block:(STKFrameFilter)block;
 
-/// Reads the peak power in decibals for the given channel (0 or 1)
+/// Reads the peak power in decibals for the given channel (0 or 1).
+/// Return values are between -60 (low) and 0 (high).
 -(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 /// Reads the average power in decibals for the given channel (0 or 1)
+/// Return values are between -60 (low) and 0 (high).
 -(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 @end

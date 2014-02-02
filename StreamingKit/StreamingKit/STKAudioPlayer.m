@@ -292,14 +292,16 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     if (self = [super init])
     {
         options = optionsIn;
-        
+
+        const int bytesPerSample = sizeof(AudioSampleType);
+		
         canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
         canonicalAudioStreamBasicDescription.mFormatID = kAudioFormatLinearPCM;
-        canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagsCanonical;
+        canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked;
         canonicalAudioStreamBasicDescription.mFramesPerPacket = 1;
         canonicalAudioStreamBasicDescription.mChannelsPerFrame = 2;
-        canonicalAudioStreamBasicDescription.mBytesPerFrame = sizeof(AudioSampleType) * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
-        canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * sizeof(AudioSampleType);
+        canonicalAudioStreamBasicDescription.mBytesPerFrame = bytesPerSample * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
+        canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * bytesPerSample;
         canonicalAudioStreamBasicDescription.mBytesPerPacket = canonicalAudioStreamBasicDescription.mBytesPerFrame * canonicalAudioStreamBasicDescription.mFramesPerPacket;
         
         framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING;
@@ -2393,10 +2395,11 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	{ \
 		if(sampleDB##channel > peakValue##channel) \
 		{ \
-			peakValue##channel = MIN(sampleDB##channel, 0); \
+			peakValue##channel = sampleDB##channel; \
 		} \
 		if (sampleDB##channel > -DBL_MAX) \
 		{ \
+			count##channel++; \
 			totalValue##channel += sampleDB##channel; \
 		} \
 		decibels##channel = peakValue##channel; \
@@ -2418,29 +2421,58 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	{
 		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
 		{
-			SInt16* samples = (SInt16*)frames;
+			SInt16* samples16 = (SInt16*)frames;
+			SInt32* samples32 = (SInt32*)frames;
+			UInt32 countLeft = 0;
+			UInt32 countRight = 0;
 			Float32 decibelsLeft = STK_DBMIN;
 			Float32 peakValueLeft = STK_DBMIN;
-			Float64 totalValueLeft = STK_DBMIN;
+			Float64 totalValueLeft = 0;
 			Float32 previousFilteredValueOfSampleAmplitudeLeft = 0;
 			Float32 decibelsRight = STK_DBMIN;
 			Float32 peakValueRight = STK_DBMIN;
-			Float64 totalValueRight = STK_DBMIN;
+			Float64 totalValueRight = 0;
 			Float32 previousFilteredValueOfSampleAmplitudeRight = 0;
 			
-			for (int i = 0; i < frameCount * 2; i++)
+			if (bytesPerFrame / channelsPerFrame == 2)
 			{
-				Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples[i]);
-				Float32 absoluteValueOfSampleAmplitudeRight = abs(samples[i]);
-				
-				CALCULATE_METER(Left);
-				CALCULATE_METER(Right);
+				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
+				{
+					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples16[i]);
+					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples16[i + 1]);
+					
+					CALCULATE_METER(Left);
+					CALCULATE_METER(Right);
+				}
+			}
+			else if (bytesPerFrame / channelsPerFrame == 4)
+			{
+				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
+				{
+					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples32[i]) / 32768.0;
+					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples32[i + 1]) / 32768.0;
+					
+					CALCULATE_METER(Left);
+					CALCULATE_METER(Right);
+				}
+			}
+			else
+			{
+				return;
 			}
 			
 			peakPowerDb[0] = MIN(MAX(decibelsLeft, -60), 0);
-			averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
 			peakPowerDb[1] = MIN(MAX(decibelsRight, -60), 0);
-			averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
+			
+			if (countLeft > 0)
+			{
+				averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
+			}
+			
+			if (countRight != 0)
+			{
+				averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
+			}
 		}];
 	}
 }

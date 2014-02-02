@@ -7,8 +7,9 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "STKAudioPlayer.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, STKAudioPlayerDelegate>
 
 @property (assign) IBOutlet NSWindow *window;
 

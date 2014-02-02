@@ -27,6 +27,7 @@
 		A1A499FA189E7A5600E2A2E2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499F1189E799400E2A2E2 /* AudioToolbox.framework */; };
 		A1A499FC189E7A6D00E2A2E2 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */; };
 		A1A499FD189E7BFC00E2A2E2 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499ED189E793700E2A2E2 /* AudioUnit.framework */; };
+		A1A49A01189E82EC00E2A2E2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,8 @@
 		A1A499F4189E79CB00E2A2E2 /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = System/Library/Frameworks/CoreAudioKit.framework; sourceTree = SDKROOT; };
 		A1A499F8189E7A3500E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; lastKnownFileType = file; name = libStreamingKitMac.a; path = ../StreamingKit/build/Debug/libStreamingKitMac.a; sourceTree = "<group>"; };
 		A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		A1A499FE189E82DD00E2A2E2 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1A49A01189E82EC00E2A2E2 /* QuartzCore.framework in Frameworks */,
 				A1A499FD189E7BFC00E2A2E2 /* AudioUnit.framework in Frameworks */,
 				A1A499FC189E7A6D00E2A2E2 /* SystemConfiguration.framework in Frameworks */,
 				A1A499FA189E7A5600E2A2E2 /* AudioToolbox.framework in Frameworks */,
@@ -120,6 +124,8 @@
 		A1A499A3189E765800E2A2E2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */,
+				A1A499FE189E82DD00E2A2E2 /* CoreGraphics.framework */,
 				A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */,
 				A1A499F8189E7A3500E2A2E2 /* libStreamingKitMac.a */,
 				A1A499F4189E79CB00E2A2E2 /* CoreAudioKit.framework */,

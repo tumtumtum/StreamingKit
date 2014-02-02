@@ -181,7 +181,7 @@
     
     statusLabel.text = audioPlayer.state == STKAudioPlayerStateBuffering ? @"buffering" : @"";
 	
-	CGFloat newWidth = 320 * (([audioPlayer peakPowerInDecibelsForChannel:1] + 60) / 60);
+	CGFloat newWidth = 320 * (([audioPlayer averagePowerInDecibelsForChannel:1] + 60) / 60);
 	
 	meter.frame = CGRectMake(0, 460, newWidth, 20);
 }
