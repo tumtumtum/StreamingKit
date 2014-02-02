@@ -27,7 +27,7 @@
     NSError* error;
     
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
-    
+
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     
 	self.window.backgroundColor = [UIColor whiteColor];

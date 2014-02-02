@@ -25,6 +25,7 @@
 		A111596F188D6DB100641365 /* SampleQueueId.m in Sources */ = {isa = PBXBuildFile; fileRef = A111596E188D6DB100641365 /* SampleQueueId.m */; };
 		A142571D189079BE005F0129 /* airplane.aac in Resources */ = {isa = PBXBuildFile; fileRef = A142571C18907861005F0129 /* airplane.aac */; };
 		A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */; };
+		A1F5E492189EB3F20070B03F /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F5E491189EB3F20070B03F /* AVFoundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +63,8 @@
 		A111596E188D6DB100641365 /* SampleQueueId.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SampleQueueId.m; sourceTree = "<group>"; };
 		A142571C18907861005F0129 /* airplane.aac */ = {isa = PBXFileReference; lastKnownFileType = file; path = airplane.aac; sourceTree = "<group>"; };
 		A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		A1F5E491189EB3F20070B03F /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F5E492189EB3F20070B03F /* AVFoundation.framework in Frameworks */,
 				A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */,
 				A1115964188D691500641365 /* libStreamingKit.a in Frameworks */,
 				A1115937188D686000641365 /* CoreGraphics.framework in Frameworks */,
@@ -112,6 +116,8 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1F5E491189EB3F20070B03F /* AVFoundation.framework */,
+				A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */,
 				A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */,
 				A1115963188D691500641365 /* libStreamingKit.a */,
 				A1115934188D686000641365 /* Foundation.framework */,
@@ -412,6 +418,7 @@
 				GCC_PREFIX_HEADER = "ExampleApp/ExampleApp-Prefix.pch";
 				INFOPLIST_FILE = "ExampleApp/ExampleApp-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				LLVM_LTO = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -428,6 +435,7 @@
 				GCC_PREFIX_HEADER = "ExampleApp/ExampleApp-Prefix.pch";
 				INFOPLIST_FILE = "ExampleApp/ExampleApp-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				LLVM_LTO = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
