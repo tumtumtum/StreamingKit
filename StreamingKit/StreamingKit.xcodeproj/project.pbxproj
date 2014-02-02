@@ -7,7 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1E7C4CC188D57F50010896F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4CB188D57F50010896F /* Foundation.framework */; };
+		A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
+		A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49974189E744500E2A2E2 /* StreamingKitMac.m */; };
+		A1A4997B189E744500E2A2E2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
+		A1A4997C189E744500E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
+		A1A4997F189E744500E2A2E2 /* libStreamingKitMac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */; };
+		A1A49985189E744500E2A2E2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1A49983189E744500E2A2E2 /* InfoPlist.strings */; };
+		A1A49987189E744500E2A2E2 /* StreamingKitMacTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49986189E744500E2A2E2 /* StreamingKitMacTests.m */; };
+		A1A4998E189E745900E2A2E2 /* STKAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4F2188D5E550010896F /* STKAudioPlayer.m */; };
+		A1A4998F189E745C00E2A2E2 /* STKAutoRecoveringHTTPDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4F4188D5E550010896F /* STKAutoRecoveringHTTPDataSource.m */; };
+		A1A49991189E746000E2A2E2 /* STKCoreFoundationDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4F6188D5E550010896F /* STKCoreFoundationDataSource.m */; };
+		A1A49992189E746300E2A2E2 /* STKDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4F8188D5E550010896F /* STKDataSource.m */; };
+		A1A49993189E746500E2A2E2 /* STKDataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FA188D5E550010896F /* STKDataSourceWrapper.m */; };
+		A1A49994189E746900E2A2E2 /* STKHTTPDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */; };
+		A1A49995189E746B00E2A2E2 /* STKLocalFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */; };
+		A1A49996189E746E00E2A2E2 /* STKQueueEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = A1BF65D1189A6582004DD08C /* STKQueueEntry.m */; };
+		A1A49997189E747000E2A2E2 /* NSMutableArray+STKAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */; };
+		A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = A1BF65D1189A6582004DD08C /* STKQueueEntry.m */; };
+		A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */; };
 		A1E7C4DA188D57F60010896F /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
 		A1E7C4DB188D57F60010896F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4CB188D57F50010896F /* Foundation.framework */; };
 		A1E7C4E0188D57F60010896F /* libStreamingKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4C8188D57F50010896F /* libStreamingKit.a */; };
@@ -20,10 +37,30 @@
 		A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FA188D5E550010896F /* STKDataSourceWrapper.m */; };
 		A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */; };
 		A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */; };
-		A1E7C508188D62D20010896F /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C507188D62D20010896F /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A1A4997D189E744500E2A2E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1E7C4C0188D57F50010896F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1A49968189E744400E2A2E2;
+			remoteInfo = StreamingKitMac;
+		};
+		A1A499E6189E769A00E2A2E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1A499E1189E769A00E2A2E2 /* ExampleAppMac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A499A1189E765800E2A2E2;
+			remoteInfo = ExampleAppMac;
+		};
+		A1A499E8189E769A00E2A2E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1A499E1189E769A00E2A2E2 /* ExampleAppMac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A499C2189E765800E2A2E2;
+			remoteInfo = ExampleAppMacTests;
+		};
 		A1E7C4DE188D57F60010896F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A1E7C4C0188D57F50010896F /* Project object */;
@@ -46,6 +83,25 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKitMac.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1A4996A189E744400E2A2E2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		A1A4996D189E744500E2A2E2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		A1A4996E189E744500E2A2E2 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		A1A4996F189E744500E2A2E2 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		A1A49972189E744500E2A2E2 /* StreamingKitMac-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "StreamingKitMac-Prefix.pch"; sourceTree = "<group>"; };
+		A1A49973189E744500E2A2E2 /* StreamingKitMac.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StreamingKitMac.h; sourceTree = "<group>"; };
+		A1A49974189E744500E2A2E2 /* StreamingKitMac.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StreamingKitMac.m; sourceTree = "<group>"; };
+		A1A4997A189E744500E2A2E2 /* StreamingKitMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingKitMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1A49982189E744500E2A2E2 /* StreamingKitMacTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "StreamingKitMacTests-Info.plist"; sourceTree = "<group>"; };
+		A1A49984189E744500E2A2E2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1A49986189E744500E2A2E2 /* StreamingKitMacTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StreamingKitMacTests.m; sourceTree = "<group>"; };
+		A1A499E1189E769A00E2A2E2 /* ExampleAppMac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ExampleAppMac.xcodeproj; path = ../ExampleAppMac/ExampleAppMac.xcodeproj; sourceTree = "<group>"; };
+		A1A499F6189E79EA00E2A2E2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		A1BF65D0189A6582004DD08C /* STKQueueEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKQueueEntry.h; sourceTree = "<group>"; };
+		A1BF65D1189A6582004DD08C /* STKQueueEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKQueueEntry.m; sourceTree = "<group>"; };
+		A1BF65D3189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableArray+STKAudioPlayer.h"; sourceTree = "<group>"; };
+		A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSMutableArray+STKAudioPlayer.m"; sourceTree = "<group>"; };
+		A1C9767618981BFE0057F881 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1E7C4C8188D57F50010896F /* libStreamingKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E7C4CB188D57F50010896F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		A1E7C4CF188D57F50010896F /* StreamingKit-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "StreamingKit-Prefix.pch"; sourceTree = "<group>"; };
@@ -72,12 +128,28 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A1A49966189E744400E2A2E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1A49977189E744500E2A2E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A4997C189E744500E2A2E2 /* Cocoa.framework in Frameworks */,
+				A1A4997B189E744500E2A2E2 /* XCTest.framework in Frameworks */,
+				A1A4997F189E744500E2A2E2 /* libStreamingKitMac.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1E7C4C5188D57F50010896F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1E7C508188D62D20010896F /* UIKit.framework in Frameworks */,
-				A1E7C4CC188D57F50010896F /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -94,13 +166,71 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A1A4996C189E744500E2A2E2 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A1A4996D189E744500E2A2E2 /* Foundation.framework */,
+				A1A4996E189E744500E2A2E2 /* CoreData.framework */,
+				A1A4996F189E744500E2A2E2 /* AppKit.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		A1A49970189E744500E2A2E2 /* StreamingKitMac */ = {
+			isa = PBXGroup;
+			children = (
+				A1A49973189E744500E2A2E2 /* StreamingKitMac.h */,
+				A1A49974189E744500E2A2E2 /* StreamingKitMac.m */,
+				A1A49971189E744500E2A2E2 /* Supporting Files */,
+			);
+			path = StreamingKitMac;
+			sourceTree = "<group>";
+		};
+		A1A49971189E744500E2A2E2 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				A1A49972189E744500E2A2E2 /* StreamingKitMac-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		A1A49980189E744500E2A2E2 /* StreamingKitMacTests */ = {
+			isa = PBXGroup;
+			children = (
+				A1A49986189E744500E2A2E2 /* StreamingKitMacTests.m */,
+				A1A49981189E744500E2A2E2 /* Supporting Files */,
+			);
+			path = StreamingKitMacTests;
+			sourceTree = "<group>";
+		};
+		A1A49981189E744500E2A2E2 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				A1A49982189E744500E2A2E2 /* StreamingKitMacTests-Info.plist */,
+				A1A49983189E744500E2A2E2 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		A1A499E2189E769A00E2A2E2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1A499E7189E769A00E2A2E2 /* ExampleAppMac.app */,
+				A1A499E9189E769A00E2A2E2 /* ExampleAppMacTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A1E7C4BF188D57F50010896F = {
 			isa = PBXGroup;
 			children = (
 				A1E7C4CD188D57F50010896F /* StreamingKit */,
 				A1E7C4E1188D57F60010896F /* StreamingKitTests */,
+				A1A49970189E744500E2A2E2 /* StreamingKitMac */,
+				A1A49980189E744500E2A2E2 /* StreamingKitMacTests */,
 				A1E7C4CA188D57F50010896F /* Frameworks */,
 				A1E7C4C9188D57F50010896F /* Products */,
+				A1A499E1189E769A00E2A2E2 /* ExampleAppMac.xcodeproj */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +239,8 @@
 			children = (
 				A1E7C4C8188D57F50010896F /* libStreamingKit.a */,
 				A1E7C4D8188D57F60010896F /* StreamingKitTests.xctest */,
+				A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */,
+				A1A4997A189E744500E2A2E2 /* StreamingKitMacTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,9 +248,13 @@
 		A1E7C4CA188D57F50010896F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1A499F6189E79EA00E2A2E2 /* AudioToolbox.framework */,
+				A1C9767618981BFE0057F881 /* AudioUnit.framework */,
 				A1E7C507188D62D20010896F /* UIKit.framework */,
 				A1E7C4CB188D57F50010896F /* Foundation.framework */,
 				A1E7C4D9188D57F60010896F /* XCTest.framework */,
+				A1A4996A189E744400E2A2E2 /* Cocoa.framework */,
+				A1A4996C189E744500E2A2E2 /* Other Frameworks */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -140,6 +276,10 @@
 				A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */,
 				A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */,
 				A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */,
+				A1BF65D0189A6582004DD08C /* STKQueueEntry.h */,
+				A1BF65D1189A6582004DD08C /* STKQueueEntry.m */,
+				A1BF65D3189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.h */,
+				A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */,
 				A1E7C4CE188D57F50010896F /* Supporting Files */,
 			);
 			path = StreamingKit;
@@ -173,7 +313,52 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		A1A49967189E744400E2A2E2 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
+		A1A49968189E744400E2A2E2 /* StreamingKitMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1A4998C189E744500E2A2E2 /* Build configuration list for PBXNativeTarget "StreamingKitMac" */;
+			buildPhases = (
+				A1A49965189E744400E2A2E2 /* Sources */,
+				A1A49966189E744400E2A2E2 /* Frameworks */,
+				A1A49967189E744400E2A2E2 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StreamingKitMac;
+			productName = StreamingKitMac;
+			productReference = A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		A1A49979189E744500E2A2E2 /* StreamingKitMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1A4998D189E744500E2A2E2 /* Build configuration list for PBXNativeTarget "StreamingKitMacTests" */;
+			buildPhases = (
+				A1A49976189E744500E2A2E2 /* Sources */,
+				A1A49977189E744500E2A2E2 /* Frameworks */,
+				A1A49978189E744500E2A2E2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1A4997E189E744500E2A2E2 /* PBXTargetDependency */,
+			);
+			name = StreamingKitMacTests;
+			productName = StreamingKitMacTests;
+			productReference = A1A4997A189E744500E2A2E2 /* StreamingKitMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A1E7C4C7188D57F50010896F /* StreamingKit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1E7C4EB188D57F60010896F /* Build configuration list for PBXNativeTarget "StreamingKit" */;
@@ -229,15 +414,48 @@
 			mainGroup = A1E7C4BF188D57F50010896F;
 			productRefGroup = A1E7C4C9188D57F50010896F /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = A1A499E2189E769A00E2A2E2 /* Products */;
+					ProjectRef = A1A499E1189E769A00E2A2E2 /* ExampleAppMac.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A1E7C4C7188D57F50010896F /* StreamingKit */,
 				A1E7C4D7188D57F60010896F /* StreamingKitTests */,
+				A1A49968189E744400E2A2E2 /* StreamingKitMac */,
+				A1A49979189E744500E2A2E2 /* StreamingKitMacTests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXReferenceProxy section */
+		A1A499E7189E769A00E2A2E2 /* ExampleAppMac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = ExampleAppMac.app;
+			remoteRef = A1A499E6189E769A00E2A2E2 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		A1A499E9189E769A00E2A2E2 /* ExampleAppMacTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = ExampleAppMacTests.xctest;
+			remoteRef = A1A499E8189E769A00E2A2E2 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
 /* Begin PBXResourcesBuildPhase section */
+		A1A49978189E744500E2A2E2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A49985189E744500E2A2E2 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1E7C4D6188D57F60010896F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -249,6 +467,31 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A1A49965189E744400E2A2E2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A4998F189E745C00E2A2E2 /* STKAutoRecoveringHTTPDataSource.m in Sources */,
+				A1A49994189E746900E2A2E2 /* STKHTTPDataSource.m in Sources */,
+				A1A49991189E746000E2A2E2 /* STKCoreFoundationDataSource.m in Sources */,
+				A1A49995189E746B00E2A2E2 /* STKLocalFileDataSource.m in Sources */,
+				A1A49997189E747000E2A2E2 /* NSMutableArray+STKAudioPlayer.m in Sources */,
+				A1A4998E189E745900E2A2E2 /* STKAudioPlayer.m in Sources */,
+				A1A49993189E746500E2A2E2 /* STKDataSourceWrapper.m in Sources */,
+				A1A49992189E746300E2A2E2 /* STKDataSource.m in Sources */,
+				A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */,
+				A1A49996189E746E00E2A2E2 /* STKQueueEntry.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1A49976189E744500E2A2E2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A49987189E744500E2A2E2 /* StreamingKitMacTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1E7C4C4188D57F50010896F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -256,9 +499,11 @@
 				A1E7C501188D5E550010896F /* STKCoreFoundationDataSource.m in Sources */,
 				A1E7C4FF188D5E550010896F /* STKAudioPlayer.m in Sources */,
 				A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */,
+				A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */,
 				A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */,
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,
+				A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */,
 				A1E7C500188D5E550010896F /* STKAutoRecoveringHTTPDataSource.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -274,6 +519,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A1A4997E189E744500E2A2E2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1A49968189E744400E2A2E2 /* StreamingKitMac */;
+			targetProxy = A1A4997D189E744500E2A2E2 /* PBXContainerItemProxy */;
+		};
 		A1E7C4DF188D57F60010896F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A1E7C4C7188D57F50010896F /* StreamingKit */;
@@ -282,6 +532,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		A1A49983189E744500E2A2E2 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1A49984189E744500E2A2E2 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 		A1E7C4E4188D57F60010896F /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -293,6 +551,86 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		A1A49988189E744500E2A2E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A1A49989189E744500E2A2E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A1A4998A189E744500E2A2E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "StreamingKitMacTests/StreamingKitMacTests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		A1A4998B189E744500E2A2E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
+				INFOPLIST_FILE = "StreamingKitMacTests/StreamingKitMacTests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
 		A1E7C4E9188D57F60010896F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -438,6 +776,22 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A1A4998C189E744500E2A2E2 /* Build configuration list for PBXNativeTarget "StreamingKitMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1A49988189E744500E2A2E2 /* Debug */,
+				A1A49989189E744500E2A2E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		A1A4998D189E744500E2A2E2 /* Build configuration list for PBXNativeTarget "StreamingKitMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1A4998A189E744500E2A2E2 /* Debug */,
+				A1A4998B189E744500E2A2E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		A1E7C4C3188D57F50010896F /* Build configuration list for PBXProject "StreamingKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

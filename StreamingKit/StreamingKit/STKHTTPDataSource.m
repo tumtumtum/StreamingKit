@@ -138,40 +138,61 @@
 
 -(void) dataAvailable
 {
-    if (fileLength < 0)
-    {
-        CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
+	if (self.httpStatusCode == 0)
+	{
+		CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
         
         httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
         
         self.httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
         
         CFRelease(response);
-        
-        if (self.httpStatusCode == 200)
-        {
-            if (seekStart == 0)
-            {
-                fileLength = (long long)[[httpHeaders objectForKey:@"Content-Length"] integerValue];
-            }
-            
-            NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
-            AudioFileTypeID typeIdFromMimeType = [STKHTTPDataSource audioFileTypeHintFromMimeType:contentType];
-            
-            if (typeIdFromMimeType != 0)
-            {
-                audioFileTypeHint = typeIdFromMimeType;
-            }
-        }
-        else
-        {
-            [self errorOccured];
-            
-            return;
-        }
-    }
-    
-    [super dataAvailable];
+		
+		if (self.httpStatusCode == 200)
+		{
+			if (seekStart == 0)
+			{
+				fileLength = (long long)[[httpHeaders objectForKey:@"Content-Length"] integerValue];
+			}
+			
+			NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
+			AudioFileTypeID typeIdFromMimeType = [STKHTTPDataSource audioFileTypeHintFromMimeType:contentType];
+			
+			if (typeIdFromMimeType != 0)
+			{
+				audioFileTypeHint = typeIdFromMimeType;
+			}
+		}
+		else if (self.httpStatusCode == 206)
+		{
+			NSString* contentRange = [httpHeaders objectForKey:@"Content-Range"];
+			NSArray* components = [contentRange componentsSeparatedByString:@"/"];
+			
+			if (components.count == 2)
+			{
+				fileLength = [[components objectAtIndex:1] integerValue];
+			}
+		}
+		else if (self.httpStatusCode == 416)
+		{
+			if (self.length >= 0)
+			{
+				seekStart = self.length;
+			}
+			
+			[self eof];
+			
+			return;
+		}
+		else if (self.httpStatusCode >= 300)
+		{
+			[self errorOccured];
+			
+			return;
+		}
+	}
+	
+	[super dataAvailable];
 }
 
 -(long long) position
@@ -196,7 +217,7 @@
         CFReadStreamClose(stream);
         CFRelease(stream);
     }
-    
+	
     NSAssert([NSRunLoop currentRunLoop] == eventsRunLoop, @"Seek called on wrong thread");
     
     stream = 0;
@@ -296,6 +317,8 @@
 
         [self reregisterForEvents];
         
+		self.httpStatusCode = 0;
+		
         // Open
 
         if (!CFReadStreamOpen(stream))

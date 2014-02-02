@@ -2,12 +2,12 @@
  AudioPlayer.m
  
  Created by Thong Nguyen on 14/05/2012.
- https://github.com/tumtumtum/audjustable
+ https://github.com/tumtumtum/StreamingKit
  
  Inspired by Matt Gallagher's AudioStreamer:
  https://github.com/mattgallagher/AudioStreamer
  
- Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
+ Copyright (c) 2012-2014 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -46,29 +46,10 @@
 
 typedef enum
 {
-	STKAudioPlayerInternalStateInitialised = 0,
-    STKAudioPlayerInternalStateRunning = 1,
-    STKAudioPlayerInternalStatePlaying = (1 << 1) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStateRebuffering = (1 << 2) | STKAudioPlayerInternalStateRunning,
-	STKAudioPlayerInternalStateStartingThread = (1 << 3) | STKAudioPlayerInternalStateRunning,
-	STKAudioPlayerInternalStateWaitingForData = (1 << 4) | STKAudioPlayerInternalStateRunning,
-    /* Same as STKAudioPlayerInternalStateWaitingForData but isn't immediately raised as a buffering event */
-    STKAudioPlayerInternalStateWaitingForDataAfterSeek = (1 << 5) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStatePaused = (1 << 6) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStateFlushingAndStoppingButStillPlaying = (1 << 7) | STKAudioPlayerInternalStateRunning,
-    STKAudioPlayerInternalStateStopping = (1 << 8),
-    STKAudioPlayerInternalStateStopped = (1 << 9),
-    STKAudioPlayerInternalStateDisposed = (1 << 10),
-    STKAudioPlayerInternalStateError = (1 << 31)
-}
-STKAudioPlayerInternalState;
-
-typedef enum
-{
     STKAudioPlayerStateReady,
     STKAudioPlayerStateRunning = 1,
     STKAudioPlayerStatePlaying = (1 << 1) | STKAudioPlayerStateRunning,
-    STKAudioPlayerStateBuffering = (1 << 2) | STKAudioPlayerStatePlaying,
+    STKAudioPlayerStateBuffering = (1 << 2) | STKAudioPlayerStateRunning,
     STKAudioPlayerStatePaused = (1 << 3) | STKAudioPlayerStateRunning,
     STKAudioPlayerStateStopped = (1 << 4),
     STKAudioPlayerStateError = (1 << 5),
@@ -78,10 +59,10 @@ STKAudioPlayerState;
 
 typedef enum
 {
-	AudioPlayerStopReasonNoStop = 0,
-	AudioPlayerStopReasonEof,
-	AudioPlayerStopReasonUserAction,
-    AudioPlayerStopReasonUserActionFlushStop
+	STKAudioPlayerStopReasonNone = 0,
+	STKAudioPlayerStopReasonEof,
+	STKAudioPlayerStopReasonUserAction,
+	STKAudioPlayerStopReasonError = 0xffff
 }
 STKAudioPlayerStopReason;
 
@@ -90,61 +71,143 @@ typedef enum
 	STKAudioPlayerErrorNone = 0,
 	STKAudioPlayerErrorDataSource,
     STKAudioPlayerErrorStreamParseBytesFailed,
+    STKAudioPlayerErrorAudioSystemError,
+    STKAudioPlayerErrorCodecError,
     STKAudioPlayerErrorDataNotFound,
-    STKAudioPlayerErrorQueueStartFailed,
-    STKAudioPlayerErrorQueuePauseFailed,
-    STKAudioPlayerErrorUnknownBuffer,
-    STKAudioPlayerErrorQueueStopFailed,
-    STKAudioPlayerErrorQueueCreationFailed,
-    STKAudioPlayerErrorOther = -1
+    STKAudioPlayerErrorOther = 0xffff
 }
 STKAudioPlayerErrorCode;
+
+typedef enum
+{
+	STKAudioPlayerOptionNone = 0,
+	STKAudioPlayerOptionFlushQueueOnSeek = 1
+}
+STKAudioPlayerOptions;
 
 @class STKAudioPlayer;
 
 @protocol STKAudioPlayerDelegate <NSObject>
 
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(STKAudioPlayerState)state;
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didEncounterError:(STKAudioPlayerErrorCode)errorCode;
+/// Raised when an item has started playing
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didStartPlayingQueueItemId:(NSObject*)queueItemId;
+/// Raised when an item has finished buffering (may or may not be the currently playing item)
+/// This event may be raised multiple times for the same item if seek is invoked on the player
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishBufferingSourceWithQueueItemId:(NSObject*)queueItemId;
+/// Raised when the state of the player has changed
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(STKAudioPlayerState)state previousState:(STKAudioPlayerState)previousState;
+/// Raised when an item has finished playing
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishPlayingQueueItemId:(NSObject*)queueItemId withReason:(STKAudioPlayerStopReason)stopReason andProgress:(double)progress andDuration:(double)duration;
+/// Raised when an unexpected and possibly unrecoverable error has occured (usually best to recreate the STKAudioPlauyer)
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer unexpectedError:(STKAudioPlayerErrorCode)errorCode;
 @optional
+/// Optionally implemented to get logging information from the STKAudioPlayer (used internally for debugging)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer logInfo:(NSString*)line;
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer internalStateChanged:(STKAudioPlayerInternalState)state;
+/// Raised when items queued items are cleared (usually because of a call to play, setDataSource or stop)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 
 @end
 
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
+
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 
+/// Gets or sets the player muted state
+@property (readwrite) BOOL muted;
+/// Gets the current item duration in seconds
 @property (readonly) double duration;
+/// Gets the current item progress in seconds
 @property (readonly) double progress;
-@property (readwrite) STKAudioPlayerState state;
-@property (readonly) STKAudioPlayerStopReason stopReason;
-@property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
+/// Enables or disables peak and average decibel meteting
 @property (readwrite) BOOL meteringEnabled;
+/// Returns an array of STKFrameFilterEntry objects representing the filters currently in use
+@property (readonly) NSArray* frameFilters;
+/// Returns the items pending to be played (includes buffering and upcoming items but does not include the current item)
+@property (readonly) NSArray* pendingQueue;
+/// The number of items pending to be played (includes buffering and upcoming items but does not include the current item)
+@property (readonly) NSUInteger pendingQueueCount;
+/// Gets the most recently queued item that is still pending to play
+@property (readonly) NSObject* mostRecentlyQueuedStillPendingItem;
+/// Gets the current state of the player
+@property (readwrite) STKAudioPlayerState state;
+/// Gets the options provided to the player on startup
+@property (readonly) STKAudioPlayerOptions options;
+/// Gets the reason why the player is stopped (if any)
+@property (readonly) STKAudioPlayerStopReason stopReason;
+/// Gets and sets the delegate used for receiving events from the STKAudioPlayer
+@property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
 
+/// Creates a datasource from a given URL.
+/// URLs with FILE schemes will return an STKLocalFileDataSource.
+/// URLs with HTTP schemes will return an STKHTTPDataSource wrapped within an STKAutoRecoveringHTTPDataSource.
+/// URLs with unrecognised schemes will return nil.
++(STKDataSource*) dataSourceFromURL:(NSURL*)url;
+
+/// Initializes a new STKAudioPlayer with the default options
 -(id) init;
--(id) initWithNumberOfAudioQueueBuffers:(int)numberOfAudioQueueBuffers andReadBufferSize:(int)readBufferSizeIn;
--(STKDataSource*) dataSourceFromURL:(NSURL*)url;
+
+/// Initializes a new STKAudioPlayer with the given options
+-(id) initWithOptions:(STKAudioPlayerOptions)optionsIn;
+
+/// Plays an item from the given URL (all pending queued items are removed)
 -(void) play:(NSString*)urlString;
+
+/// Plays an item from the given URL (all pending queued items are removed)
 -(void) playWithURL:(NSURL*)url;
+
+/// Plays the given item (all pending queued items are removed)
 -(void) playWithDataSource:(STKDataSource*)dataSource;
+
+/// Queues a DataSource with te given Item ID for playback
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
+
+/// Plays the given item (all pending queued items are removed)
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId;
+
+/// Seeks to a specific time (in seconds)
 -(void) seekToTime:(double)value;
+
+/// Clears any upcoming items already queued for playback (does not stop the current item).
+/// The didCancelItems event will be raised for the items removed from the queue.
 -(void) clearQueue;
+
+/// Pauses playback
 -(void) pause;
+
+/// Resumes playback from pause
 -(void) resume;
+
+/// Stops playback of the current file, flushes all the buffers and removes any pending queued items
 -(void) stop;
--(void) flushStop;
+
+/// Mutes playback
 -(void) mute;
+
+/// Unmutes playback
 -(void) unmute;
+
+/// Disposes the STKAudioPlayer and frees up all resources before returning
 -(void) dispose;
+
+/// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
--(void) updateMeters;
+
+/// Removes a frame filter with the given name
+-(void) removeFrameFilterWithName:(NSString*)name;
+
+/// Appends a frame filter with the given name and filter block to the end of the filter chain
+-(void) appendFrameFilterWithName:(NSString*)name block:(STKFrameFilter)block;
+
+/// Appends a frame filter with the given name and filter block just after the filter with the given name.
+/// If the given name is nil, the filter will be inserted at the beginning of the filter change
+-(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName block:(STKFrameFilter)block;
+
+/// Reads the peak power in decibals for the given channel (0 or 1).
+/// Return values are between -60 (low) and 0 (high).
 -(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
+
+/// Reads the average power in decibals for the given channel (0 or 1)
+/// Return values are between -60 (low) and 0 (high).
 -(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 @end

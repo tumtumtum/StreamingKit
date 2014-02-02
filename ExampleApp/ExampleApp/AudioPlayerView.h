@@ -41,6 +41,7 @@
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView*)audioPlayerView;
+-(void) audioPlayerViewQueuePcmWaveFileSelected:(AudioPlayerView*)audioPlayerView;
 @end
 
 @interface AudioPlayerView : UIView<STKAudioPlayerDelegate>
@@ -51,11 +52,14 @@
     UILabel* statusLabel;
 	UISlider* slider;
     UISwitch* repeatSwitch;
+	UIButton* muteButton;
 	UIButton* playButton;
-    UIButton* disposeButton;
+    UIButton* stopButton;
 	UIButton* playFromHTTPButton;
     UIButton* queueShortFileButton;
+	UIButton* queuePcmWaveFileFromHTTPButton;
 	UIButton* playFromLocalFileButton;
+	UIView* meter;
 }
 
 @property (readwrite, retain) STKAudioPlayer* audioPlayer;
