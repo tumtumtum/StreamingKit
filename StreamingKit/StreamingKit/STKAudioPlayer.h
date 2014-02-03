@@ -149,16 +149,40 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Initializes a new STKAudioPlayer with the given options
 -(id) initWithOptions:(STKAudioPlayerOptions)optionsIn;
 
-/// Plays an item from the given URL (all pending queued items are removed)
+/// Plays an item from the given URL string (all pending queued items are removed).
+/// The NSString is used as the queue item ID
 -(void) play:(NSString*)urlString;
 
 /// Plays an item from the given URL (all pending queued items are removed)
--(void) playWithURL:(NSURL*)url;
+-(void) play:(NSString*)urlString withQueueItemID:(NSObject*)queueItemId;
+
+/// Plays an item from the given URL (all pending queued items are removed)
+/// The NSURL is used as the queue item ID
+-(void) playURL:(NSURL*)url;
+
+/// Plays an item from the given URL (all pending queued items are removed)
+-(void) playURL:(NSURL*)url withQueueItemID:(NSObject*)queueItemId;
 
 /// Plays the given item (all pending queued items are removed)
--(void) playWithDataSource:(STKDataSource*)dataSource;
+/// The STKDataSource is used as the queue item ID
+-(void) playDataSource:(STKDataSource*)dataSource;
 
-/// Queues a DataSource with te given Item ID for playback
+/// Plays the given item (all pending queued items are removed)
+-(void) playDataSource:(STKDataSource*)dataSource withQueueItemID:(NSObject*)queueItemId;
+
+/// Queues the URL string for playback and uses the NSString as the queueItemID
+-(void) queue:(NSString*)urlString;
+
+/// Queues the URL string for playback with the given queueItemID
+-(void) queue:(NSString*)urlString withQueueItemId:(NSObject*)queueItemId;
+
+/// Queues the URL for playback and uses the NSURL as the queueItemID
+-(void) queueURL:(NSURL*)url;
+
+/// Queues the URL for playback with the given queueItemID
+-(void) queueURL:(NSURL*)url withQueueItemId:(NSObject*)queueItemId;
+
+/// Queues a DataSource with the given queueItemId
 -(void) queueDataSource:(STKDataSource*)dataSource withQueueItemId:(NSObject*)queueItemId;
 
 /// Plays the given item (all pending queued items are removed)

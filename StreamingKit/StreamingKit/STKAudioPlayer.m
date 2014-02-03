@@ -482,19 +482,34 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(void) play:(NSString*)urlString
 {
+	[self play:urlString withQueueItemID:urlString];
+}
+
+-(void) play:(NSString*)urlString withQueueItemID:(NSObject*)queueItemId
+{
     NSURL* url = [NSURL URLWithString:urlString];
     
-	[self setDataSource:[STKAudioPlayer dataSourceFromURL:url] withQueueItemId:urlString];
+	[self setDataSource:[STKAudioPlayer dataSourceFromURL:url] withQueueItemId:queueItemId];
 }
 
--(void) playWithURL:(NSURL*)url
+-(void) playURL:(NSURL*)url
 {
-	[self setDataSource:[STKAudioPlayer dataSourceFromURL:url] withQueueItemId:url];
+	[self playURL:url withQueueItemID:url];
 }
 
--(void) playWithDataSource:(STKDataSource*)dataSource
+-(void) playURL:(NSURL*)url withQueueItemID:(NSObject*)queueItemId
 {
-	[self setDataSource:dataSource withQueueItemId:dataSource];
+	[self setDataSource:[STKAudioPlayer dataSourceFromURL:url] withQueueItemId:queueItemId];
+}
+
+-(void) playDataSource:(STKDataSource*)dataSource
+{
+	[self playDataSource:dataSource withQueueItemID:dataSource];
+}
+
+-(void) playDataSource:(STKDataSource*)dataSource withQueueItemID:(NSObject *)queueItemId
+{
+	[self setDataSource:dataSource withQueueItemId:queueItemId];
 }
 
 -(void) setDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId
@@ -514,6 +529,26 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     pthread_mutex_unlock(&playerMutex);
     
     [self wakeupPlaybackThread];
+}
+
+-(void) queue:(NSString*)urlString
+{
+	return [self queueURL:[NSURL URLWithString:urlString] withQueueItemId:urlString];
+}
+
+-(void) queue:(NSString*)urlString withQueueItemId:(NSObject*)queueItemId
+{
+	[self queueURL:[NSURL URLWithString:urlString] withQueueItemId:queueItemId];
+}
+
+-(void) queueURL:(NSURL*)url
+{
+	[self queueURL:url withQueueItemId:url];
+}
+
+-(void) queueURL:(NSURL*)url withQueueItemId:(NSObject*)queueItemId
+{
+	[self queueDataSource:[STKAudioPlayer dataSourceFromURL:url] withQueueItemId:queueItemId];
 }
 
 -(void) queueDataSource:(STKDataSource*)dataSourceIn withQueueItemId:(NSObject*)queueItemId

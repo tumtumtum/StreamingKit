@@ -40,8 +40,8 @@ STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 ```objective-c
 STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 
-[audioPlayer queueDataSource:[STKAudioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"]];
-[audioPlayer queueDataSource:[STKAudioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/airplane.aac"]];
+[audioPlayer queue:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+[audioPlayer queue:@"http://fs.bloom.fm/oss/audiosamples/airplane.aac"];
 
 ```
 
