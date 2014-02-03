@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A17FFB6818A002BC00BAA7FF /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499ED189E793700E2A2E2 /* AudioUnit.framework */; };
 		A1A499A5189E765800E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499A4189E765800E2A2E2 /* Cocoa.framework */; };
 		A1A499AF189E765800E2A2E2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1A499AD189E765800E2A2E2 /* InfoPlist.strings */; };
 		A1A499B1189E765800E2A2E2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A499B0189E765800E2A2E2 /* main.m */; };
@@ -26,7 +27,6 @@
 		A1A499F9189E7A3500E2A2E2 /* libStreamingKitMac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499F8189E7A3500E2A2E2 /* libStreamingKitMac.a */; };
 		A1A499FA189E7A5600E2A2E2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499F1189E799400E2A2E2 /* AudioToolbox.framework */; };
 		A1A499FC189E7A6D00E2A2E2 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */; };
-		A1A499FD189E7BFC00E2A2E2 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A499ED189E793700E2A2E2 /* AudioUnit.framework */; };
 		A1A49A01189E82EC00E2A2E2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +41,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A17FFB6618A002AD00BAA7FF /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		A1A499A1189E765800E2A2E2 /* ExampleAppMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExampleAppMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A499A4189E765800E2A2E2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		A1A499A7189E765800E2A2E2 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -60,12 +61,12 @@
 		A1A499CA189E765800E2A2E2 /* ExampleAppMacTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ExampleAppMacTests-Info.plist"; sourceTree = "<group>"; };
 		A1A499CC189E765800E2A2E2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1A499CE189E765800E2A2E2 /* ExampleAppMacTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExampleAppMacTests.m; sourceTree = "<group>"; };
-		A1A499EA189E76BD00E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; lastKnownFileType = file; name = libStreamingKitMac.a; path = ../StreamingKit/build/Debug/libStreamingKitMac.a; sourceTree = "<group>"; };
+		A1A499EA189E76BD00E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libStreamingKitMac.a; path = ../StreamingKit/build/Debug/libStreamingKitMac.a; sourceTree = "<group>"; };
 		A1A499ED189E793700E2A2E2 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1A499EF189E793D00E2A2E2 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		A1A499F1189E799400E2A2E2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		A1A499F4189E79CB00E2A2E2 /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = System/Library/Frameworks/CoreAudioKit.framework; sourceTree = SDKROOT; };
-		A1A499F8189E7A3500E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; lastKnownFileType = file; name = libStreamingKitMac.a; path = ../StreamingKit/build/Debug/libStreamingKitMac.a; sourceTree = "<group>"; };
+		A1A499F8189E7A3500E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libStreamingKitMac.a; path = ../StreamingKit/build/Debug/libStreamingKitMac.a; sourceTree = "<group>"; };
 		A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		A1A499FE189E82DD00E2A2E2 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -76,8 +77,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A17FFB6818A002BC00BAA7FF /* AudioUnit.framework in Frameworks */,
 				A1A49A01189E82EC00E2A2E2 /* QuartzCore.framework in Frameworks */,
-				A1A499FD189E7BFC00E2A2E2 /* AudioUnit.framework in Frameworks */,
 				A1A499FC189E7A6D00E2A2E2 /* SystemConfiguration.framework in Frameworks */,
 				A1A499FA189E7A5600E2A2E2 /* AudioToolbox.framework in Frameworks */,
 				A1A499F9189E7A3500E2A2E2 /* libStreamingKitMac.a in Frameworks */,
@@ -124,6 +125,7 @@
 		A1A499A3189E765800E2A2E2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A17FFB6618A002AD00BAA7FF /* AVFoundation.framework */,
 				A1A49A00189E82EC00E2A2E2 /* QuartzCore.framework */,
 				A1A499FE189E82DD00E2A2E2 /* CoreGraphics.framework */,
 				A1A499FB189E7A6D00E2A2E2 /* SystemConfiguration.framework */,

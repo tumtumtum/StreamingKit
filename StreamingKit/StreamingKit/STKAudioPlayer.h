@@ -85,6 +85,13 @@ typedef enum
 }
 STKAudioPlayerOptions;
 
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
+
+@interface STKFrameFilterEntry : NSObject
+@property (readonly) NSString* name;
+@property (readonly) STKFrameFilter filter;
+@end
+
 @class STKAudioPlayer;
 
 @protocol STKAudioPlayerDelegate <NSObject>
@@ -107,8 +114,6 @@ STKAudioPlayerOptions;
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 
 @end
-
-typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
 

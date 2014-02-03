@@ -42,6 +42,8 @@
 #import "libkern/OSAtomic.h"
 #import <float.h>
 
+#pragma mark Defines
+
 #define kOutputBus 0
 #define kInputBus 1
 
@@ -75,10 +77,12 @@ typedef enum
 }
 STKAudioPlayerInternalState;
 
-@interface STKFrameFilterEntry : NSObject
+#pragma mark STKFrameFilterEntry
+
+@interface STKFrameFilterEntry()
 {
 @public
-	const NSString* name;
+	NSString* name;
 	STKFrameFilter filter;
 }
 @end
@@ -94,7 +98,19 @@ STKAudioPlayerInternalState;
 	
 	return self;
 }
+
+-(NSString*) name
+{
+	return self->name;
+}
+
+-(STKFrameFilter) filter
+{
+	return self->filter;
+}
 @end
+
+#pragma mark STKAudioPlayer
 
 @interface STKAudioPlayer()
 {
@@ -102,7 +118,8 @@ STKAudioPlayerInternalState;
 	
     UInt8* readBuffer;
     int readBufferSize;
-    
+    STKAudioPlayerInternalState internalState;
+	
 	Float32 peakPowerDb[2];
 	Float32 averagePowerDb[2];
 	
@@ -182,8 +199,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 }
 
 @implementation STKAudioPlayer
-@synthesize delegate, internalState, state;
-
 
 -(STKAudioPlayerOptions) options
 {
@@ -264,16 +279,16 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 {
     if ([NSThread currentThread].isMainThread)
     {
-        if ([self->delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
+        if ([self.delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
         {
-            [self->delegate audioPlayer:self logInfo:line];
+            [self.delegate audioPlayer:self logInfo:line];
         }
     }
     else
     {
-        if ([self->delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
+        if ([self.delegate respondsToSelector:@selector(audioPlayer:logInfo:)])
         {
-            [self->delegate audioPlayer:self logInfo:line];
+            [self.delegate audioPlayer:self logInfo:line];
         }
     }
 }
@@ -2512,6 +2527,8 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}];
 	}
 }
+
+#pragma mark Frame Filters
 
 -(NSArray*) frameFilters
 {
