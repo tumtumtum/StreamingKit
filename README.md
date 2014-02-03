@@ -6,16 +6,17 @@ The primary motivation of this project was to decouple the input data sources fr
 
 ## Main Features
 
-* Simple OOP API.
+* Free OSS.
+* Simple API.
 * Easy to read source.
-* Mostly asynchronous API.
+* Carefully multi-threaded to provide a responsive API that won't block your UI thread nor starve the audio buffers.
 * Buffered and gapless playback between all format types.
 * Easy to implement audio data sources (Local, HTTP, Auto Recovering HTTP DataSources are provided).
 * Easy to extend DataSource to support adaptive buffering, encryption, etc.
-* Optimised for low CPU/battery usage.
+* Optimised for low CPU/battery usage. (0% - 1% CPU usage when streaming)
 * Optimised for linear data sources. Random access sources are required only for seeking.
-* Example apps iOS and Mac OSX provided.
 * StreamingKit 0.2.0 uses the AudioUnit API rather than the slower AudioQueues API which allows real-time interception of the raw PCM data for features such as level metering, EQ, etc.
+* Example apps iOS and Mac OSX provided.
 
 ## Installation
 
@@ -28,12 +29,20 @@ There are two main classes.  The `STKDataSource` class which is the abstract bas
 ### Play an MP3 over HTTP
 
 
+```objective-c
+STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
+
+[audioPlayer play:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+```
+
+### Gapless playback
 
 ```objective-c
 STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
-audioPlayer.delegate = self;
 
-[audioPlayer play:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+[audioPlayer queueDataSource:[STKAudioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"]];
+[audioPlayer queueDataSource:[STKAudioPlayer dataSourceFromURL:@"http://fs.bloom.fm/oss/audiosamples/airplane.aac"]];
+
 ```
 
 
