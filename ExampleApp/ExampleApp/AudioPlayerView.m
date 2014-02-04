@@ -107,11 +107,10 @@
 		
         statusLabel.textAlignment = NSTextAlignmentCenter;
 		
-		
 		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 450, 0, 20)];
 		
 		meter.backgroundColor = [UIColor greenColor];
-        
+		
 		[self addSubview:slider];
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];

@@ -16,7 +16,7 @@ The primary motivation of this project was to decouple the input data sources fr
 * Optimised for low CPU/battery usage (0% - 1% CPU usage when streaming).
 * Optimised for linear data sources. Random access sources are required only for seeking.
 * StreamingKit 0.2.0 uses the AudioUnit API rather than the slower AudioQueues API which allows real-time interception of the raw PCM data for features such as level metering, EQ, etc.
-* Example apps iOS and Mac OSX provided.
+* Example apps for iOS and Mac OSX provided.
 
 ## Installation
 

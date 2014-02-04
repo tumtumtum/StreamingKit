@@ -59,6 +59,13 @@
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
+#define CHECK_STATUS_AND_RETURN(call) \
+	if ((call)) \
+	{ \
+		[self unexpectedError:STKAudioPlayerErrorAudioSystemError]; \
+		return; \
+	}
+
 typedef enum
 {
 	STKAudioPlayerInternalStateInitialised = 0,
@@ -120,13 +127,19 @@ STKAudioPlayerInternalState;
     int readBufferSize;
     STKAudioPlayerInternalState internalState;
 	
+	Float32 volume;
 	Float32 peakPowerDb[2];
 	Float32 averagePowerDb[2];
 	
 	BOOL meteringEnabled;
     STKAudioPlayerOptions options;
-    AudioComponentInstance audioUnit;
-    
+
+	AUGraph audioGraph;
+	AUNode mixerNode;
+    AUNode outputNode;
+	AudioComponentInstance mixerUnit;
+	AudioComponentInstance outputUnit;
+	
     UInt32 framesRequiredToStartPlaying;
     UInt32 framesRequiredToPlayAfterRebuffering;
     
@@ -308,6 +321,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     if (self = [super init])
     {
         options = optionsIn;
+		
+		self->volume = 1.0;
 
         const int bytesPerSample = sizeof(AudioSampleType);
 		
@@ -388,11 +403,13 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         AudioConverterDispose(audioConverterRef);
     }
     
-    if (audioUnit)
+    if (outputUnit)
     {
-        AudioComponentInstanceDispose(audioUnit);
+        AudioComponentInstanceDispose(outputUnit);
     }
     
+	AUGraphClose(audioGraph);
+	
     pthread_mutex_destroy(&playerMutex);
     pthread_mutex_destroy(&mainThreadSyncCallMutex);
     pthread_cond_destroy(&playerThreadReadyCondition);
@@ -732,7 +749,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(Float64) currentTimeInFrames
 {
-    if (audioUnit == nil)
+    if (audioGraph == nil)
     {
         return 0;
     }
@@ -1286,7 +1303,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
     
-    if (audioUnit)
+    if (audioGraph)
     {
         [self resetPcmBuffers];
     }
@@ -1430,10 +1447,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             self.stateBeforePaused = self.internalState;
             self.internalState = STKAudioPlayerInternalStatePaused;
             
-            if (audioUnit)
+            if (audioGraph)
             {
-                error = AudioOutputUnitStop(audioUnit);
-                
+                error = AUGraphStop(audioGraph);
+				
                 if (error)
                 {
                     [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
@@ -1465,9 +1482,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                 [self resetPcmBuffers];
             }
 
-            if (audioUnit != nil)
+            if (audioGraph != nil)
             {
-                error = AudioOutputUnitStart(audioUnit);
+                //error = AudioOutputUnitStart(outputAudiotUnit);
+				
+				error = AUGraphStart(audioGraph);
                 
                 if (error)
                 {
@@ -1738,21 +1757,83 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     desc.componentFlags = 0;
     desc.componentFlagsMask = 0;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
-    
-    AudioComponent component = AudioComponentFindNext(NULL, &desc);
-    
-    status = AudioComponentInstanceNew(component, &audioUnit);
-    
-    if (status)
+	
+	AudioComponentDescription mixerDescription;
+	
+	mixerDescription.componentType = kAudioUnitType_Mixer;
+	mixerDescription.componentSubType = kAudioUnitSubType_MultiChannelMixer;
+	mixerDescription.componentFlags = 0;
+    mixerDescription.componentFlagsMask = 0;
+    mixerDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
+	
+	status = NewAUGraph(&audioGraph);
+	
+	if (status)
+	{
+		[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+	}
+	
+	status = AUGraphAddNode(audioGraph, &desc, &outputNode);
+	
+	if (status)
     {
         [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
         
         return;
     }
+	
+	if (self.options & STKAudioPlayerOptionEnableVolumeMixer)
+	{
+		status = AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode);
+		
+		if (status)
+		{
+			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+			
+			return;
+		}
+	}
+	
+	status = AUGraphOpen(audioGraph);
+	
+	if (status)
+    {
+        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+        
+        return;
+    }
+	
+	status = AUGraphNodeInfo(audioGraph, outputNode, &desc, &outputUnit);
+	
+	if (self.options & STKAudioPlayerOptionEnableVolumeMixer)
+	{
+		status = AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit);
+		
+		if (status)
+		{
+			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+			
+			return;
+		}
+		
+		UInt32 busCount = 1;
+		
+		status = AudioUnitSetProperty (mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &busCount, sizeof(busCount));
+		
+		if (status)
+		{
+			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
+			
+			return;
+		}
+	}
     
 #if TARGET_OS_IPHONE
     UInt32 flag = 1;
-	status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
+	
+	status = AudioUnitSetProperty(outputUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
     
     if (status)
     {
@@ -1762,7 +1843,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
 #endif
     
-    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+    status = AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
     
     if (status)
     {
@@ -1770,30 +1851,63 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         return;
     }
-    
-    AURenderCallbackStruct callbackStruct;
+	
+	AURenderCallbackStruct callbackStruct;
     
     callbackStruct.inputProc = OutputRenderCallback;
     callbackStruct.inputProcRefCon = (__bridge void*)self;
-
-    status = AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, kOutputBus, &callbackStruct, sizeof(callbackStruct));
-    
-    if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
+	
+	if (self->mixerUnit)
+	{
+		Float64 graphSampleRate = 44100.0;
+		
+		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_SampleRate, kAudioUnitScope_Output, 0, &graphSampleRate, sizeof(graphSampleRate)));
+		
+		status = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+		
+		if (status)
+		{
+			AUNode convertNode;
+			AudioComponentInstance convertUnit;
+			AudioStreamBasicDescription format;
+			UInt32 size = sizeof(format);
+			AudioComponentDescription convertUnitDescription;
+			
+			convertUnitDescription.componentManufacturer  = kAudioUnitManufacturer_Apple;
+			convertUnitDescription.componentType          = kAudioUnitType_FormatConverter;
+			convertUnitDescription.componentSubType       = kAudioUnitSubType_AUConverter;
+			convertUnitDescription.componentFlags         = 0;
+			convertUnitDescription.componentFlagsMask     = 0;
+			
+			// Converter -> Mixer -> Output
+			
+			CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &format, &size));
+			CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &convertUnitDescription, &convertNode));
+			CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit));
+			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
+			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, sizeof(format)));
+			CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, convertNode, 0, &callbackStruct));
+			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, convertNode, 0, mixerNode, 0));
+			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
+			CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, &size));
+			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &format, sizeof(format)));
+			CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(mixerUnit, kMultiChannelMixerParam_Volume, kAudioUnitScope_Input, 0, 1.0, 0));
+		}
+		else
+		{
+			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
+			CHECK_STATUS_AND_RETURN(status = AUGraphSetNodeInputCallback(audioGraph, mixerNode, 0, &callbackStruct));
+		}
+	}
+	else
+	{
+		CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, outputNode, 0, &callbackStruct));
+	}
  
-    status = AudioUnitInitialize(audioUnit);
-    
-    if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
-    
+	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
+	
+	self.volume = self->volume;
+	
     pthread_mutex_unlock(&playerMutex);
 }
 
@@ -1803,7 +1917,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
 	[self resetPcmBuffers];
 	
-    status = AudioOutputUnitStart(audioUnit);
+    status = AUGraphStart(audioGraph);
     
     if (status)
     {
@@ -1811,7 +1925,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         return NO;
     }
-    
+	
     return YES;
 }
 
@@ -1819,7 +1933,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 {
 	OSStatus status;
 	
-	if (!audioUnit)
+	if (!audioGraph)
     {
         stopReason = stopReasonIn;
         self.internalState = STKAudioPlayerInternalStateStopped;
@@ -1827,7 +1941,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         return;
     }
     
-    status = AudioOutputUnitStop(audioUnit);
+    status = AUGraphStop(audioGraph);
 	
 	[self resetPcmBuffers];
     
@@ -2160,7 +2274,21 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		{
 			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
 			
-			if (audioPlayer->currentlyPlayingEntry->lastFrameQueued >= 0)
+			if (entry->lastFrameQueued >= 0)
+			{
+				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, entry->lastFrameQueued - entry->framesQueued);
+			}
+			
+			if (used < framesRequiredToStartPlaying)
+			{
+				waitForBuffer = YES;
+			}
+		}
+		else if (state == STKAudioPlayerInternalStateWaitingForDataAfterSeek)
+		{
+			int64_t framesRequiredToStartPlaying = inNumberFrames;
+			
+			if (entry->lastFrameQueued >= 0)
 			{
 				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, entry->lastFrameQueued - entry->framesQueued);
 			}
@@ -2634,6 +2762,34 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	OSSpinLockUnlock(&pcmBufferSpinLock);
 	
 	pthread_mutex_unlock(&self->playerMutex);
+}
+
+#pragma mark Volume
+
+-(void) setVolume:(Float32)value;
+{
+	self->volume = value;
+	
+#if (TARGET_OS_IPHONE)
+	if (self->mixerNode)
+	{
+		AudioUnitSetParameter(self->mixerUnit, kMultiChannelMixerParam_Volume, kAudioUnitScope_Output, 0, self->volume, 0);
+	}
+#else
+	if (self->mixerNode)
+	{
+		AudioUnitSetParameter(self->mixerUnit, kMultiChannelMixerParam_Volume, kAudioUnitScope_Output, 0, self->volume, 0);
+	}
+	else
+	{
+		AudioUnitSetParameter(outputUnit, kHALOutputParam_Volume, kAudioUnitScope_Output, kOutputBus, self->volume, 0);
+	}
+#endif
+}
+
+-(Float32) volume
+{
+	return self->volume;
 }
 
 @end

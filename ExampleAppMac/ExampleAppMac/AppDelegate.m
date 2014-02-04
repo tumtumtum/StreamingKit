@@ -43,6 +43,7 @@
 	audioPlayer = [[STKAudioPlayer alloc] init];
 	audioPlayer.delegate = self;
 	audioPlayer.meteringEnabled = YES;
+	audioPlayer.volume = 1.0;
 	
 	[NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
 }

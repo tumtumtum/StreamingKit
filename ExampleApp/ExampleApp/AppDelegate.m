@@ -32,8 +32,9 @@
     
 	self.window.backgroundColor = [UIColor whiteColor];
     
-	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:STKAudioPlayerOptionFlushQueueOnSeek];
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:STKAudioPlayerOptionFlushQueueOnSeek|STKAudioPlayerOptionEnableVolumeMixer];
 	audioPlayer.meteringEnabled = YES;
+	audioPlayer.volume = 1.0;
 	
 	AudioPlayerView* audioPlayerView = [[AudioPlayerView alloc] initWithFrame:self.window.bounds];
     
