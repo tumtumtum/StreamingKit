@@ -1533,8 +1533,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
             if (audioGraph != nil)
             {
-                //error = AudioOutputUnitStart(outputAudiotUnit);
-				
 				error = AUGraphStart(audioGraph);
                 
                 if (error)
@@ -1907,6 +1905,15 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     OSStatus status;
     
 	[self resetPcmBuffers];
+    
+    Boolean isRunning;
+    
+    status = AUGraphIsRunning(audioGraph, &isRunning);
+    
+    if (isRunning)
+    {
+        return NO;
+    }
 	
     status = AUGraphStart(audioGraph);
     
@@ -1929,6 +1936,15 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         stopReason = stopReasonIn;
         self.internalState = STKAudioPlayerInternalStateStopped;
         
+        return;
+    }
+    
+    Boolean isRunning;
+    
+    status = AUGraphIsRunning(audioGraph, &isRunning);
+    
+    if (!isRunning)
+    {
         return;
     }
     
@@ -2369,8 +2385,6 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         {
             return (state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused;
         }];
-        
-        audioPlayer.internalState = STKAudioPlayerInternalStatePlaying;
     }
     
     if (totalFramesCopied < inNumberFrames)
@@ -2383,9 +2397,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         {
             // Buffering
             
-            pthread_mutex_lock(&audioPlayer->playerMutex);
-            audioPlayer.internalState = STKAudioPlayerInternalStateRebuffering;
-            pthread_mutex_unlock(&audioPlayer->playerMutex);
+            [audioPlayer setInternalState:STKAudioPlayerInternalStateRebuffering ifInState:^BOOL(STKAudioPlayerInternalState state)
+            {
+                 return (state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused;
+            }];
         }
     }
 
