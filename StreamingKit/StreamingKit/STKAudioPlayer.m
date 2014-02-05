@@ -175,6 +175,7 @@ STKAudioPlayerInternalState;
     NSMutableArray* bufferingQueue;
     
     OSSpinLock pcmBufferSpinLock;
+    OSSpinLock internalStateLock;
     volatile UInt32 pcmBufferTotalFrameCount;
     volatile UInt32 pcmBufferFrameStartIndex;
     volatile UInt32 pcmBufferUsedFrameCount;
@@ -250,16 +251,14 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(void) setInternalState:(STKAudioPlayerInternalState)value
 {
-    if (value == internalState)
-    {
-        return;
-    }
-    
-    internalState = value;
-    
+    [self setInternalState:value ifInState:NULL];
+}
+
+-(void) setInternalState:(STKAudioPlayerInternalState)value ifInState:(BOOL(^)(STKAudioPlayerInternalState))ifInState
+{
     STKAudioPlayerState newState;
     
-    switch (internalState)
+    switch (value)
     {
         case STKAudioPlayerInternalStateInitialised:
             newState = STKAudioPlayerStateReady;
@@ -295,16 +294,43 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             break;
     }
     
+    OSSpinLockLock(&internalStateLock);
+    
+    if (value == internalState)
+    {
+        OSSpinLockUnlock(&internalStateLock);
+        
+        return;
+    }
+    
+    if (ifInState != NULL)
+    {
+        if (!ifInState(self->internalState))
+        {
+            OSSpinLockUnlock(&internalStateLock);
+            
+            return;
+        }
+    }
+    
+    internalState = value;
+    
 	STKAudioPlayerState previousState = self.state;
 	
     if (newState != previousState)
     {
         self.state = newState;
         
+        OSSpinLockUnlock(&internalStateLock);
+        
         dispatch_async(dispatch_get_main_queue(), ^
         {
             [self.delegate audioPlayer:self stateChanged:self.state previousState:previousState];
         });
+    }
+    else
+    {
+        OSSpinLockUnlock(&internalStateLock);
     }
 }
 
@@ -971,6 +997,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
         
         [self processFinishPlayingIfAnyAndPlayingNext:currentlyPlayingEntry withNext:entry];
+        
         [self startAudioGraph];
     }
     else
@@ -1472,7 +1499,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             if (audioGraph)
             {
                 error = AUGraphStop(audioGraph);
-				
+                
                 if (error)
                 {
                     [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
@@ -2204,19 +2231,11 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     UInt32 frameSizeInBytes = audioPlayer->pcmBufferFrameSizeInBytes;
     UInt32 used = audioPlayer->pcmBufferUsedFrameCount;
     UInt32 start = audioPlayer->pcmBufferFrameStartIndex;
+    STKAudioPlayerInternalState state = audioPlayer->internalState;
     UInt32 end = (audioPlayer->pcmBufferFrameStartIndex + audioPlayer->pcmBufferUsedFrameCount) % audioPlayer->pcmBufferTotalFrameCount;
     BOOL signal = audioPlayer->waiting && used < audioPlayer->pcmBufferTotalFrameCount / 2;
 	NSArray* frameFilters = audioPlayer->frameFilters;
     
-    STKAudioPlayerInternalState state = audioPlayer.internalState;
-    
-	if (state == STKAudioPlayerInternalStatePendingNext)
-    {
-        OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
-        
-        return 0;
-    }
-
 	if (entry)
 	{
 		if (state == STKAudioPlayerInternalStateWaitingForData)
@@ -2268,7 +2287,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     
     UInt32 totalFramesCopied = 0;
     
-    if (used > 0 && !waitForBuffer && entry != nil)
+    if (used > 0 && !waitForBuffer && entry != nil && ((state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused))
     {
         if (state == STKAudioPlayerInternalStateWaitingForData)
         {
@@ -2346,6 +2365,11 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
             OSSpinLockUnlock(&audioPlayer->pcmBufferSpinLock);
         }
         
+        [audioPlayer setInternalState:STKAudioPlayerInternalStatePlaying ifInState:^BOOL(STKAudioPlayerInternalState state)
+        {
+            return (state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused;
+        }];
+        
         audioPlayer.internalState = STKAudioPlayerInternalStatePlaying;
     }
     
@@ -2359,7 +2383,9 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         {
             // Buffering
             
+            pthread_mutex_lock(&audioPlayer->playerMutex);
             audioPlayer.internalState = STKAudioPlayerInternalStateRebuffering;
+            pthread_mutex_unlock(&audioPlayer->playerMutex);
         }
     }
 
