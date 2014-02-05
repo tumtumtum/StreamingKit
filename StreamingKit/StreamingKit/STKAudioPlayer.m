@@ -84,7 +84,7 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
 }
 
 #define CHECK_STATUS_AND_RETURN(call) \
-	if ((call)) \
+	if ((status = (call))) \
 	{ \
 		pthread_mutex_unlock(&playerMutex); \
 		[self unexpectedError:STKAudioPlayerErrorAudioSystemError]; \
@@ -144,6 +144,9 @@ STKAudioPlayerInternalState;
 
 #pragma mark STKAudioPlayer
 
+static AudioComponentDescription convertUnitDescription;
+static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
+
 @interface STKAudioPlayer()
 {
 	BOOL muted;
@@ -160,11 +163,15 @@ STKAudioPlayerInternalState;
     STKAudioPlayerOptions options;
 
 	AUGraph audioGraph;
+    AUNode eqNode;
 	AUNode mixerNode;
     AUNode outputNode;
+    AudioComponentInstance eqUnit;
 	AudioComponentInstance mixerUnit;
 	AudioComponentInstance outputUnit;
 	
+    UInt32 eqBandCount;
+    
     UInt32 framesRequiredToStartPlaying;
     UInt32 framesRequiredToPlayAfterRebuffering;
     
@@ -185,7 +192,6 @@ STKAudioPlayerInternalState;
     AudioBufferList pcmAudioBufferList;
     AudioConverterRef audioConverterRef;
 
-    AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     AudioStreamBasicDescription audioConverterAudioStreamBasicDescription;
     
     BOOL discontinuous;
@@ -239,6 +245,31 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 @implementation STKAudioPlayer
 
++(void) initialize
+{
+    convertUnitDescription = (AudioComponentDescription)
+    {
+        .componentManufacturer = kAudioUnitManufacturer_Apple,
+        .componentType = kAudioUnitType_FormatConverter,
+        .componentSubType = kAudioUnitSubType_AUConverter,
+        .componentFlags = 0,
+        .componentFlagsMask = 0
+	};
+    
+    const int bytesPerSample = sizeof(AudioSampleType);
+    
+    canonicalAudioStreamBasicDescription = (AudioStreamBasicDescription)
+    {
+        .mSampleRate = 44100.00,
+        .mFormatID = kAudioFormatLinearPCM,
+        .mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked,
+        .mFramesPerPacket = 1,
+        .mChannelsPerFrame = 2,
+        .mBytesPerFrame = bytesPerSample * 2 /*channelsPerFrame*/,
+        .mBitsPerChannel = 8 * bytesPerSample,
+        .mBytesPerPacket = (bytesPerSample * 2)
+    };
+}
 -(STKAudioPlayerOptions) options
 {
     return options;
@@ -371,17 +402,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		self->volume = 1.0;
 
         PopulateOptionsWithDefault(&options);
-        
-        const int bytesPerSample = sizeof(AudioSampleType);
-		
-        canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
-        canonicalAudioStreamBasicDescription.mFormatID = kAudioFormatLinearPCM;
-        canonicalAudioStreamBasicDescription.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked;
-        canonicalAudioStreamBasicDescription.mFramesPerPacket = 1;
-        canonicalAudioStreamBasicDescription.mChannelsPerFrame = 2;
-        canonicalAudioStreamBasicDescription.mBytesPerFrame = bytesPerSample * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
-        canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * bytesPerSample;
-        canonicalAudioStreamBasicDescription.mBytesPerPacket = canonicalAudioStreamBasicDescription.mBytesPerFrame * canonicalAudioStreamBasicDescription.mFramesPerPacket;
         
         framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlaying;
         framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlayingAfterBufferUnderun;
@@ -1841,6 +1861,43 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
     
+    if (self->options.equalizerBandFrequencies[0] != 0)
+    {
+        AudioComponentDescription eqDescription = (AudioComponentDescription)
+        {
+            .componentType = kAudioUnitType_Effect,
+            .componentSubType = kAudioUnitSubType_NBandEQ,
+            .componentManufacturer=kAudioUnitManufacturer_Apple
+        };
+        
+        CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
+        
+        CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &eqDescription, &eqNode));
+        CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, eqNode, NULL, &eqUnit));
+        
+        while (self->options.equalizerBandFrequencies[eqBandCount] != 0)
+        {
+            eqBandCount++;
+        }
+        
+        CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAUNBandEQProperty_NumberOfBands, kAudioUnitScope_Global, 0, &eqBandCount, sizeof(eqBandCount)));
+        
+        for (int i = 0; i < eqBandCount; i++)
+        {
+            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Frequency + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)self->options.equalizerBandFrequencies[i], 0));
+        }
+        
+        for (int i = 0; i < eqBandCount; i++)
+        {
+            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_BypassBand + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)0, 0));
+        }
+        
+        for (int i = 0; i < eqBandCount; i++)
+        {
+            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Gain + i, kAudioUnitScope_Global, -74, 0, 0));
+        }
+    }
+    
 	AURenderCallbackStruct callbackStruct;
     
     callbackStruct.inputProc = OutputRenderCallback;
@@ -1884,13 +1941,30 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 		}
 		else
 		{
+            if (eqUnit)
+            {
+                CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, eqNode, 0, &callbackStruct));
+                CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, eqNode, 0, mixerNode, 0));
+            }
+            else
+            {
+                CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, mixerNode, 0, &callbackStruct));
+            }
+            
 			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
-			CHECK_STATUS_AND_RETURN(status = AUGraphSetNodeInputCallback(audioGraph, mixerNode, 0, &callbackStruct));
 		}
 	}
 	else
 	{
-		CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, outputNode, 0, &callbackStruct));
+        if (eqUnit)
+        {
+            CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, eqNode, 0, &callbackStruct));
+            CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, eqNode, 0, outputNode, 0));
+        }
+        else
+        {
+            CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, outputNode, 0, &callbackStruct));
+        }
 	}
  
 	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
@@ -2407,7 +2481,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	if (frameFilters)
 	{
 		NSUInteger count = frameFilters.count;
-		AudioStreamBasicDescription asbd = audioPlayer->canonicalAudioStreamBasicDescription;
+		AudioStreamBasicDescription asbd = canonicalAudioStreamBasicDescription;
 		
 		for (int i = 0; i < count; i++)
 		{

@@ -84,6 +84,8 @@ typedef struct
     BOOL flushQueueOnSeek;
     /// If YES then volume control will be enabled on iOS
     BOOL enableVolumeMixer;
+    /// A pointer to a 0 terminated array of band frequencies (iOS 5.0 and later, OSX 10.9 and later)
+    Float32 equalizerBandFrequencies[24];
 	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
     UInt32 readBufferSize;
     /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)

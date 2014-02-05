@@ -31,7 +31,7 @@
     
 	self.window.backgroundColor = [UIColor whiteColor];
     
-	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .flushQueueOnSeek = YES, .enableVolumeMixer = YES}];
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .flushQueueOnSeek = YES, .enableVolumeMixer = NO, .equalizerBandFrequencies = { 0 } /*{50, 100, 200, 400, 800, 1600, 2600, 16000}*/ }];
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 1.0;
 	
