@@ -21,7 +21,6 @@
 
 @implementation AppDelegate
 
-
 -(BOOL) application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     NSError* error;
@@ -32,7 +31,7 @@
     
 	self.window.backgroundColor = [UIColor whiteColor];
     
-	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:STKAudioPlayerOptionFlushQueueOnSeek|STKAudioPlayerOptionEnableVolumeMixer];
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .flushQueueOnSeek = YES, .enableVolumeMixer = YES}];
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 1.0;
 	

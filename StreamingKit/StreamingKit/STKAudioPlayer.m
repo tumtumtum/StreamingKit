@@ -52,16 +52,41 @@
 #define STK_LOWPASSFILTERTIMESLICE (0.0005)
 
 #define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (10)
-#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (0.1)
+#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (1)
+#define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING_AFTER_BUFFER_UNDERRUN (7.5)
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (2048)
 #define STK_DEFAULT_READ_BUFFER_SIZE (64 * 1024)
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
+static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
+{
+    if (options->bufferSizeInSeconds == 0)
+    {
+        options->bufferSizeInSeconds = STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS;
+    }
+    
+    if (options->readBufferSize == 0)
+    {
+        options->readBufferSize = STK_DEFAULT_READ_BUFFER_SIZE;
+    }
+    
+    if (options->secondsRequiredToStartPlaying == 0)
+    {
+        options->secondsRequiredToStartPlaying = MIN(STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING, options->bufferSizeInSeconds);
+    }
+    
+    if (options->secondsRequiredToStartPlayingAfterBufferUnderun == 0)
+    {
+        options->secondsRequiredToStartPlayingAfterBufferUnderun = MIN(STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING_AFTER_BUFFER_UNDERRUN, options->bufferSizeInSeconds);
+    }
+}
+
 #define CHECK_STATUS_AND_RETURN(call) \
 	if ((call)) \
 	{ \
+		pthread_mutex_unlock(&playerMutex); \
 		[self unexpectedError:STKAudioPlayerErrorAudioSystemError]; \
 		return; \
 	}
@@ -308,15 +333,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(id) init
 {
-    return [self initWithReadBufferSize:STK_DEFAULT_READ_BUFFER_SIZE andOptions:STKAudioPlayerOptionNone];
+    return [self initWithOptions:(STKAudioPlayerOptions){}];
 }
 
 -(id) initWithOptions:(STKAudioPlayerOptions)optionsIn
-{
-	return [self initWithReadBufferSize:STK_DEFAULT_READ_BUFFER_SIZE andOptions:optionsIn];
-}
-
--(id) initWithReadBufferSize:(int)readBufferSizeIn andOptions:(STKAudioPlayerOptions)optionsIn
 {
     if (self = [super init])
     {
@@ -324,6 +344,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		
 		self->volume = 1.0;
 
+        PopulateOptionsWithDefault(&options);
+        
         const int bytesPerSample = sizeof(AudioSampleType);
 		
         canonicalAudioStreamBasicDescription.mSampleRate = 44100.00;
@@ -335,20 +357,20 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         canonicalAudioStreamBasicDescription.mBitsPerChannel = 8 * bytesPerSample;
         canonicalAudioStreamBasicDescription.mBytesPerPacket = canonicalAudioStreamBasicDescription.mBytesPerFrame * canonicalAudioStreamBasicDescription.mFramesPerPacket;
         
-        framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING;
-        framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS;
+        framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlaying;
+        framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlayingAfterBufferUnderun;
         
         pcmAudioBuffer = &pcmAudioBufferList.mBuffers[0];
         
         pcmAudioBufferList.mNumberBuffers = 1;
-        pcmAudioBufferList.mBuffers[0].mDataByteSize = (canonicalAudioStreamBasicDescription.mSampleRate * STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS) * canonicalAudioStreamBasicDescription.mBytesPerFrame;
+        pcmAudioBufferList.mBuffers[0].mDataByteSize = (canonicalAudioStreamBasicDescription.mSampleRate * options.bufferSizeInSeconds) * canonicalAudioStreamBasicDescription.mBytesPerFrame;
         pcmAudioBufferList.mBuffers[0].mData = (void*)calloc(pcmAudioBuffer->mDataByteSize, 1);
         pcmAudioBufferList.mBuffers[0].mNumberChannels = 2;
 		
         pcmBufferFrameSizeInBytes = canonicalAudioStreamBasicDescription.mBytesPerFrame;
         pcmBufferTotalFrameCount = pcmAudioBuffer->mDataByteSize / pcmBufferFrameSizeInBytes;
         
-        readBufferSize = readBufferSizeIn;
+        readBufferSize = options.readBufferSize;
         readBuffer = calloc(sizeof(UInt8), readBufferSize);
         
         pthread_mutexattr_t attr;
@@ -370,7 +392,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         bufferingQueue = [[NSMutableArray alloc] init];
 
 		[self resetPcmBuffers];
-        [self createAudioUnit];
+        [self createAudioGraph];
         [self createPlaybackThread];
     }
     
@@ -949,7 +971,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
         
         [self processFinishPlayingIfAnyAndPlayingNext:currentlyPlayingEntry withNext:entry];
-        [self startAudioUnit];
+        [self startAudioGraph];
     }
     else
     {
@@ -1128,7 +1150,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                 [currentlyReadingEntry.dataSource unregisterForEvents];
             }
             
-            if (self->options & STKAudioPlayerOptionFlushQueueOnSeek)
+            if (self->options.flushQueueOnSeek)
             {
                 self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
                 [self setCurrentlyReadingEntry:currentlyPlayingEntry andStartPlaying:YES clearQueue:YES];
@@ -1741,7 +1763,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
 }
 
--(void) createAudioUnit
+-(void) createAudioGraph
 {
     pthread_mutex_lock(&playerMutex);
     
@@ -1766,92 +1788,34 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     mixerDescription.componentFlagsMask = 0;
     mixerDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
 	
-	status = NewAUGraph(&audioGraph);
+    CHECK_STATUS_AND_RETURN(NewAUGraph(&audioGraph));
+	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &desc, &outputNode));
 	
-	if (status)
+	if (self.options.enableVolumeMixer)
 	{
-		[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
+		CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode));
 	}
 	
-	status = AUGraphAddNode(audioGraph, &desc, &outputNode);
+	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
+	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, outputNode, &desc, &outputUnit));
 	
-	if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
-	
-	if (self.options & STKAudioPlayerOptionEnableVolumeMixer)
+	if (self.options.enableVolumeMixer)
 	{
-		status = AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode);
-		
-		if (status)
-		{
-			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-			
-			return;
-		}
-	}
-	
-	status = AUGraphOpen(audioGraph);
-	
-	if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
-	
-	status = AUGraphNodeInfo(audioGraph, outputNode, &desc, &outputUnit);
-	
-	if (self.options & STKAudioPlayerOptionEnableVolumeMixer)
-	{
-		status = AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit);
-		
-		if (status)
-		{
-			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-			
-			return;
-		}
+		CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit));
 		
 		UInt32 busCount = 1;
 		
-		status = AudioUnitSetProperty (mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &busCount, sizeof(busCount));
-		
-		if (status)
-		{
-			[self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-			
-			return;
-		}
+		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &busCount, sizeof(busCount)));
 	}
     
 #if TARGET_OS_IPHONE
     UInt32 flag = 1;
 	
-	status = AudioUnitSetProperty(outputUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag));
-    
-    if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag)));
 #endif
     
-    status = AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+    CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
     
-    if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return;
-    }
-	
 	AURenderCallbackStruct callbackStruct;
     
     callbackStruct.inputProc = OutputRenderCallback;
@@ -1911,7 +1875,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     pthread_mutex_unlock(&playerMutex);
 }
 
--(BOOL) startAudioUnit
+-(BOOL) startAudioGraph
 {
     OSStatus status;
     
@@ -2272,7 +2236,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}
 		else if (state == STKAudioPlayerInternalStateRebuffering)
 		{
-			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToPlayAfterRebuffering;
 			
 			if (entry->lastFrameQueued >= 0)
 			{

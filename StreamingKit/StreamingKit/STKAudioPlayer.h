@@ -78,11 +78,20 @@ typedef enum
 }
 STKAudioPlayerErrorCode;
 
-typedef enum
+typedef struct
 {
-	STKAudioPlayerOptionNone = 0,
-	STKAudioPlayerOptionFlushQueueOnSeek = 1,
-	STKAudioPlayerOptionEnableVolumeMixer = 2
+    /// If YES then seeking a track will cause all pending items to be flushed from the queue
+    BOOL flushQueueOnSeek;
+    /// If YES then volume control will be enabled on iOS
+    BOOL enableVolumeMixer;
+	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
+    UInt32 readBufferSize;
+    /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)
+    UInt32 bufferSizeInSeconds;
+    /// Number of seconds of decompressed audio is required before playback first starts for each item (Default is 0.5 seconds. Must be larger than bufferSizeInSeconds)
+    Float32 secondsRequiredToStartPlaying;
+    /// Number of seconds of decompressed audio required before playback resumes after a buffer underrun (Default is 5 seconds. Must be larger than bufferSizeinSeconds)
+    Float32 secondsRequiredToStartPlayingAfterBufferUnderun;
 }
 STKAudioPlayerOptions;
 
