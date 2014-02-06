@@ -138,15 +138,22 @@
 
 -(void) dataAvailable
 {
+    if (stream == NULL) {
+        return;
+    }
+    
 	if (self.httpStatusCode == 0)
 	{
 		CFTypeRef response = CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
         
-        httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
-        
-        self.httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
-        
-        CFRelease(response);
+        if (response)
+        {
+            httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
+            
+            self.httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
+            
+            CFRelease(response);
+        }
 		
 		if (self.httpStatusCode == 200)
 		{
