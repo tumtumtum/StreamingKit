@@ -1947,15 +1947,41 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	}
 }
 
--(void) connectNode:(AUNode)srcNode destination:(AUNode)desNode
+-(void) connectNodes:(AUNode)srcNode desNode:(AUNode)desNode srcUnit:(AudioComponentInstance)srcUnit desUnit:(AudioComponentInstance)desUnit
 {
+    OSStatus status;
+    AudioStreamBasicDescription srcFormat, desFormat;
+    UInt32 size = sizeof(AudioStreamBasicDescription);
+    
+    CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(srcUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &srcFormat, &size));
+    CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(desUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &desFormat, &size));
+    
+    status = AudioUnitSetProperty(desUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat));
+    
+    if (status == 0)
+    {
+    }
+}
+
+#define CHECK_AND_CREATE_FIRST_UNIT(x, y) \
+{ \
+    if (firstNode == 0) \
+    { \
+        firstUnit = x; \
+        firstNode = y; \
+        CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(firstUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription))); \
+    } \
 }
 
 -(void) createAudioGraph
 {
     OSStatus status;
-	AUNode currentNode;
+    AUNode firstNode = 0;
+    AudioComponentInstance firstUnit = 0;
+	AUNode currentNode = 0;
 	AURenderCallbackStruct callbackStruct;
+    NSMutableArray* nodes = [[NSMutableArray alloc] init];
+    NSMutableArray* units = [[NSMutableArray alloc] init];
     
     callbackStruct.inputProc = OutputRenderCallback;
     callbackStruct.inputProcRefCon = (__bridge void*)self;
@@ -1966,29 +1992,40 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	[self createEqUnit];
 	[self createMixerUnit];
 	[self createOutputUnit];
-	
-	currentNode = outputNode;
-
-	if (mixerNode)
-	{
-		AUGraphConnectNodeInput(audioGraph, mixerOutputNode, 0, currentNode, 0);
-		
-		currentNode = mixerNode;
-	}
-	
-	if (eqNode)
-	{
-		AUGraphConnectNodeInput(audioGraph, eqNode, 0, currentNode, 0);
-		
-		currentNode = eqNode;
-	}
-	
-	if (currentNode != outputNode)
-	{
-		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, currentNode, 0, outputNode, 0));
-	}
-	
-	CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, currentNode, 0, &callbackStruct));
+    
+    if (eqNode)
+    {
+        [nodes addObject:@(eqNode)];
+        [units addObject:[NSValue valueWithPointer:eqUnit]];
+    }
+    
+    if (mixerNode)
+    {
+        [nodes addObject:@(mixerNode)];
+        [units addObject:[NSValue valueWithPointer:mixerUnit]];
+    }
+    
+    if (outputNode)
+    {
+        [nodes addObject:@(outputNode)];
+        [units addObject:[NSValue valueWithPointer:outputUnit]];
+    }
+    
+    firstNode = (AUNode)[[nodes objectAtIndex:0] intValue];
+    firstUnit = (AudioComponentInstance)[[nodes objectAtIndex:0] pointerValue];
+    CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, firstNode, 0, &callbackStruct));
+    
+    CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(firstUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
+    
+	for (int i = 0; i < nodes.count - 1; i++)
+    {
+        AUNode srcNode = [[nodes objectAtIndex:i] intValue];
+        AUNode desNode = [[nodes objectAtIndex:i + 1] intValue];
+        AudioComponentInstance srcUnit = (AudioComponentInstance)[[units objectAtIndex:i] pointerValue];
+        AudioComponentInstance desUnit = (AudioComponentInstance)[[units objectAtIndex:i + 1] pointerValue];
+        
+        [self connectNodes:srcNode desNode:desNode srcUnit:srcUnit desUnit:desUnit];
+    }
 	
 	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
 	
