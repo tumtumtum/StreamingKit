@@ -86,9 +86,7 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
 #define CHECK_STATUS_AND_RETURN(call) \
 	if ((status = (call))) \
 	{ \
-		pthread_mutex_unlock(&playerMutex); \
 		[self unexpectedError:STKAudioPlayerErrorAudioSystemError]; \
-		return; \
 	}
 
 typedef enum
@@ -144,6 +142,8 @@ STKAudioPlayerInternalState;
 
 #pragma mark STKAudioPlayer
 
+static AudioComponentDescription mixerDescription;
+static AudioComponentDescription outputUnitDescription;
 static AudioComponentDescription convertUnitDescription;
 static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
 
@@ -166,10 +166,16 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     AUNode eqNode;
 	AUNode mixerNode;
     AUNode outputNode;
+	
+	AUNode eqInputNode;
+	AUNode eqOutputNode;
+	AUNode mixerInputNode;
+	AUNode mixerOutputNode;
+	
     AudioComponentInstance eqUnit;
 	AudioComponentInstance mixerUnit;
 	AudioComponentInstance outputUnit;
-	
+		
     UInt32 eqBandCount;
     
     UInt32 framesRequiredToStartPlaying;
@@ -269,6 +275,28 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         .mBitsPerChannel = 8 * bytesPerSample,
         .mBytesPerPacket = (bytesPerSample * 2)
     };
+	
+	outputUnitDescription = (AudioComponentDescription)
+	{
+		.componentType = kAudioUnitType_Output,
+#if TARGET_OS_IPHONE
+		.componentSubType = kAudioUnitSubType_RemoteIO,
+#else
+		.componentSubType = kAudioUnitSubType_DefaultOutput,
+#endif
+		.componentFlags = 0,
+		.componentFlagsMask = 0,
+		.componentManufacturer = kAudioUnitManufacturer_Apple
+	};
+	
+	mixerDescription = (AudioComponentDescription)
+	{
+		.componentType = kAudioUnitType_Mixer,
+		.componentSubType = kAudioUnitSubType_MultiChannelMixer,
+		.componentFlags = 0,
+		.componentFlagsMask = 0,
+		.componentManufacturer = kAudioUnitManufacturer_Apple
+	};
 }
 -(STKAudioPlayerOptions) options
 {
@@ -1808,51 +1836,13 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
 }
 
--(void) createAudioGraph
+-(void) createOutputUnit
 {
-    pthread_mutex_lock(&playerMutex);
-    
-    OSStatus status;
-    AudioComponentDescription desc;
-    
-    desc.componentType = kAudioUnitType_Output;
-#if TARGET_OS_IPHONE
-    desc.componentSubType = kAudioUnitSubType_RemoteIO;
-#else
-	desc.componentSubType = kAudioUnitSubType_DefaultOutput;
-#endif
-    desc.componentFlags = 0;
-    desc.componentFlagsMask = 0;
-    desc.componentManufacturer = kAudioUnitManufacturer_Apple;
+	OSStatus status;
 	
-	AudioComponentDescription mixerDescription;
+	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &outputUnitDescription, &outputNode));
+	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, outputNode, &outputUnitDescription, &outputUnit));
 	
-	mixerDescription.componentType = kAudioUnitType_Mixer;
-	mixerDescription.componentSubType = kAudioUnitSubType_MultiChannelMixer;
-	mixerDescription.componentFlags = 0;
-    mixerDescription.componentFlagsMask = 0;
-    mixerDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
-	
-    CHECK_STATUS_AND_RETURN(NewAUGraph(&audioGraph));
-	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &desc, &outputNode));
-	
-	if (self.options.enableVolumeMixer)
-	{
-		CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode));
-	}
-	
-	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
-	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, outputNode, &desc, &outputUnit));
-	
-	if (self.options.enableVolumeMixer)
-	{
-		CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit));
-		
-		UInt32 busCount = 1;
-		
-		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &busCount, sizeof(busCount)));
-	}
-    
 #if TARGET_OS_IPHONE
     UInt32 flag = 1;
 	
@@ -1860,118 +1850,149 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 #endif
     
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
-    
-    if (self->options.equalizerBandFrequencies[0] != 0)
+}
+
+-(void) createMixerUnit
+{
+	OSStatus status;
+	
+	if (!self.options.enableVolumeMixer)
+	{
+		return;
+	}
+	
+	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode));
+	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit));
+	
+	UInt32 busCount = 1;
+	
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &busCount, sizeof(busCount)));
+	
+	Float64 graphSampleRate = 44100.0;
+	
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_SampleRate, kAudioUnitScope_Output, 0, &graphSampleRate, sizeof(graphSampleRate)));
+	
+	status = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
+	
+	if (status)
+	{
+		AUNode convertNode;
+		AudioComponentInstance convertUnit;
+		AudioStreamBasicDescription format;
+		UInt32 size = sizeof(format);
+		
+		// Converter -> Mixer -> Output
+		
+		CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &format, &size));
+		CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &convertUnitDescription, &convertNode));
+		CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit));
+		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
+		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, sizeof(format)));
+		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, convertNode, 0, mixerNode, 0));
+		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
+		CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, &size));
+		CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(mixerUnit, kMultiChannelMixerParam_Volume, kAudioUnitScope_Input, 0, 1.0, 0));
+		
+		mixerInputNode = convertNode;
+		mixerOutputNode = mixerNode;
+	}
+	else
+	{
+		mixerInputNode = mixerNode;
+		mixerOutputNode = mixerNode;
+	}
+}
+
+-(void) createEqUnit
+{
+	if (self->options.equalizerBandFrequencies[0] == 0)
     {
-        AudioComponentDescription eqDescription = (AudioComponentDescription)
-        {
-            .componentType = kAudioUnitType_Effect,
-            .componentSubType = kAudioUnitSubType_NBandEQ,
-            .componentManufacturer=kAudioUnitManufacturer_Apple
-        };
-        
-        CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
-        
-        CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &eqDescription, &eqNode));
-        CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, eqNode, NULL, &eqUnit));
-        
-        while (self->options.equalizerBandFrequencies[eqBandCount] != 0)
-        {
-            eqBandCount++;
-        }
-        
-        CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAUNBandEQProperty_NumberOfBands, kAudioUnitScope_Global, 0, &eqBandCount, sizeof(eqBandCount)));
-        
-        for (int i = 0; i < eqBandCount; i++)
-        {
-            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Frequency + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)self->options.equalizerBandFrequencies[i], 0));
-        }
-        
-        for (int i = 0; i < eqBandCount; i++)
-        {
-            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_BypassBand + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)0, 0));
-        }
-        
-        for (int i = 0; i < eqBandCount; i++)
-        {
-            CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Gain + i, kAudioUnitScope_Global, -74, 0, 0));
-        }
-    }
-    
+		return;
+	}
+	
+	OSStatus status;
+	
+	AudioComponentDescription eqDescription = (AudioComponentDescription)
+	{
+		.componentType = kAudioUnitType_Effect,
+		.componentSubType = kAudioUnitSubType_NBandEQ,
+		.componentManufacturer=kAudioUnitManufacturer_Apple
+	};
+	
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
+	
+	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &eqDescription, &eqNode));
+	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, eqNode, NULL, &eqUnit));
+	
+	while (self->options.equalizerBandFrequencies[eqBandCount] != 0)
+	{
+		eqBandCount++;
+	}
+	
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAUNBandEQProperty_NumberOfBands, kAudioUnitScope_Global, 0, &eqBandCount, sizeof(eqBandCount)));
+	
+	for (int i = 0; i < eqBandCount; i++)
+	{
+		CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Frequency + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)self->options.equalizerBandFrequencies[i], 0));
+	}
+	
+	for (int i = 0; i < eqBandCount; i++)
+	{
+		CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_BypassBand + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)0, 0));
+	}
+	
+	for (int i = 0; i < eqBandCount; i++)
+	{
+		CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Gain + i, kAudioUnitScope_Global, -74, 0, 0));
+	}
+}
+
+-(void) connectNode:(AUNode)srcNode destination:(AUNode)desNode
+{
+}
+
+-(void) createAudioGraph
+{
+    OSStatus status;
+	AUNode currentNode;
 	AURenderCallbackStruct callbackStruct;
     
     callbackStruct.inputProc = OutputRenderCallback;
     callbackStruct.inputProcRefCon = (__bridge void*)self;
+
+    CHECK_STATUS_AND_RETURN(NewAUGraph(&audioGraph));
+	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
 	
-	if (self->mixerUnit)
+	[self createEqUnit];
+	[self createMixerUnit];
+	[self createOutputUnit];
+	
+	currentNode = outputNode;
+
+	if (mixerNode)
 	{
-		Float64 graphSampleRate = 44100.0;
+		AUGraphConnectNodeInput(audioGraph, mixerOutputNode, 0, currentNode, 0);
 		
-		CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_SampleRate, kAudioUnitScope_Output, 0, &graphSampleRate, sizeof(graphSampleRate)));
-		
-		status = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription));
-		
-		if (status)
-		{
-			AUNode convertNode;
-			AudioComponentInstance convertUnit;
-			AudioStreamBasicDescription format;
-			UInt32 size = sizeof(format);
-			AudioComponentDescription convertUnitDescription;
-			
-			convertUnitDescription.componentManufacturer  = kAudioUnitManufacturer_Apple;
-			convertUnitDescription.componentType          = kAudioUnitType_FormatConverter;
-			convertUnitDescription.componentSubType       = kAudioUnitSubType_AUConverter;
-			convertUnitDescription.componentFlags         = 0;
-			convertUnitDescription.componentFlagsMask     = 0;
-			
-			// Converter -> Mixer -> Output
-			
-			CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &format, &size));
-			CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &convertUnitDescription, &convertNode));
-			CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit));
-			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
-			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, sizeof(format)));
-			CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, convertNode, 0, &callbackStruct));
-			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, convertNode, 0, mixerNode, 0));
-			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
-			CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(mixerUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &format, &size));
-			CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &format, sizeof(format)));
-			CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(mixerUnit, kMultiChannelMixerParam_Volume, kAudioUnitScope_Input, 0, 1.0, 0));
-		}
-		else
-		{
-            if (eqUnit)
-            {
-                CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, eqNode, 0, &callbackStruct));
-                CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, eqNode, 0, mixerNode, 0));
-            }
-            else
-            {
-                CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, mixerNode, 0, &callbackStruct));
-            }
-            
-			CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, mixerNode, 0, outputNode, 0));
-		}
+		currentNode = mixerNode;
 	}
-	else
+	
+	if (eqNode)
 	{
-        if (eqUnit)
-        {
-            CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, eqNode, 0, &callbackStruct));
-            CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, eqNode, 0, outputNode, 0));
-        }
-        else
-        {
-            CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, outputNode, 0, &callbackStruct));
-        }
+		AUGraphConnectNodeInput(audioGraph, eqNode, 0, currentNode, 0);
+		
+		currentNode = eqNode;
 	}
- 
+	
+	if (currentNode != outputNode)
+	{
+		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, currentNode, 0, outputNode, 0));
+	}
+	
+	CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, currentNode, 0, &callbackStruct));
+	
 	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
 	
 	self.volume = self->volume;
-	
-    pthread_mutex_unlock(&playerMutex);
 }
 
 -(BOOL) startAudioGraph
