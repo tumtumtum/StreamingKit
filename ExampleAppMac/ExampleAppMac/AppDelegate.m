@@ -40,7 +40,7 @@
 	[[self.window contentView] addSubview:playFromHTTPButton];
 	[[self.window contentView] addSubview:meter];
 	
-	audioPlayer = [[STKAudioPlayer alloc] init];
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){  .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000} } ];
 	audioPlayer.delegate = self;
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 1.0;
