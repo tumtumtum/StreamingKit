@@ -254,6 +254,7 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Return values are between -60 (low) and 0 (high).
 -(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
+/// Sets the gain value (from -96 low to +24 high) for an equalizer band (0 based index)
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;
 
 @end
