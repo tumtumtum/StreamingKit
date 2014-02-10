@@ -1892,6 +1892,9 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 
 -(void) createEqUnit
 {
+#if TARGET_OS_MAC && MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_9
+    return;
+#else
 	OSStatus status;
     
 	if (self->options.equalizerBandFrequencies[0] == 0)
@@ -1918,6 +1921,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	{
 		CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_BypassBand + i, kAudioUnitScope_Global, 0, (AudioUnitParameterValue)0, 0));
 	}
+#endif
 }
 
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex
