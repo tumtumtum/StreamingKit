@@ -84,6 +84,8 @@ typedef struct
     BOOL flushQueueOnSeek;
     /// If YES then volume control will be enabled on iOS
     BOOL enableVolumeMixer;
+    /// A pointer to a 0 terminated array of band frequencies (iOS 5.0 and later, OSX 10.9 and later)
+    Float32 equalizerBandFrequencies[24];
 	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
     UInt32 readBufferSize;
     /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)
@@ -251,5 +253,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Reads the average power in decibals for the given channel (0 or 1)
 /// Return values are between -60 (low) and 0 (high).
 -(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
+
+/// Sets the gain value (from -96 low to +24 high) for an equalizer band (0 based index)
+-(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;
 
 @end

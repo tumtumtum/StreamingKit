@@ -432,7 +432,7 @@
 					"$(SRCROOT)/../StreamingKit/StreamingKit",
 				);
 				INFOPLIST_FILE = "ExampleAppMac/ExampleAppMac-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -452,7 +452,7 @@
 					"$(SRCROOT)/../StreamingKit/StreamingKit",
 				);
 				INFOPLIST_FILE = "ExampleAppMac/ExampleAppMac-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
