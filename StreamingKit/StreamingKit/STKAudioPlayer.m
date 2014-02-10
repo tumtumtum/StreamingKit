@@ -150,6 +150,8 @@ STKAudioPlayerInternalState;
 
 #pragma mark STKAudioPlayer
 
+static UInt32 maxFramesPerSlice = 4096;
+
 static AudioComponentDescription mixerDescription;
 static AudioComponentDescription nbandUnitDescription;
 static AudioComponentDescription outputUnitDescription;
@@ -1863,6 +1865,10 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     UInt32 flag = 1;
 	
 	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag)));
+
+	flag = 0;
+	
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &flag, sizeof(flag)));
 #endif
     
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
@@ -1879,6 +1885,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	
 	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &mixerDescription, &mixerNode));
 	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, mixerNode, &mixerDescription, &mixerUnit));
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)));
 	
 	UInt32 busCount = 1;
 	
@@ -1901,9 +1908,10 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     {
 		return;
 	}
-
+	
 	CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &nbandUnitDescription, &eqNode));
 	CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, eqNode, NULL, &eqUnit));
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(eqUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)));
 	
 	while (self->options.equalizerBandFrequencies[eqBandCount] != 0)
 	{
@@ -1946,7 +1954,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	CHECK_STATUS_AND_RETURN_VALUE(status = AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit), 0);
 	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat)), 0);
   	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &desFormat, sizeof(desFormat)), 0);
-	
+	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)), 0);
+
 	return convertNode;
 }
 
@@ -2019,14 +2028,14 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     {
         [nodes addObject:@(eqNode)];
         [units addObject:[NSValue valueWithPointer:eqUnit]];
-    }
+	}
     
     if (mixerNode)
     {
         [nodes addObject:@(mixerNode)];
         [units addObject:[NSValue valueWithPointer:mixerUnit]];
     }
-    
+	
     if (outputNode)
     {
         [nodes addObject:@(outputNode)];
@@ -2057,6 +2066,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	[self resetPcmBuffers];
     
     Boolean isRunning;
+	
     
     status = AUGraphIsRunning(audioGraph, &isRunning);
     
