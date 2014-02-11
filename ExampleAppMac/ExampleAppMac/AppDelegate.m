@@ -40,12 +40,20 @@
 	[[self.window contentView] addSubview:playFromHTTPButton];
 	[[self.window contentView] addSubview:meter];
 	
-	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .enableVolumeMixer = NO, .equalizerBandFrequencies = {0, 50, 100, 200, 400, 800, 1600, 2600, 16000} } ];
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .enableVolumeMixer = NO, .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000} } ];
 	audioPlayer.delegate = self;
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 0.1;
     
+    [self performSelector:@selector(test) withObject:nil afterDelay:4];
+    [self performSelector:@selector(test) withObject:nil afterDelay:8];
+    
 	[NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
+}
+
+-(void) test
+{
+    audioPlayer.equalizerEnabled = !audioPlayer.equalizerEnabled;
 }
 
 -(void) playFromHTTP

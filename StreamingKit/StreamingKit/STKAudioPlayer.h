@@ -140,6 +140,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 @property (readonly) double progress;
 /// Enables or disables peak and average decibel meteting
 @property (readwrite) BOOL meteringEnabled;
+/// Enables or disables the EQ
+@property (readwrite) BOOL equalizerEnabled;
 /// Returns an array of STKFrameFilterEntry objects representing the filters currently in use
 @property (readonly) NSArray* frameFilters;
 /// Returns the items pending to be played (includes buffering and upcoming items but does not include the current item)

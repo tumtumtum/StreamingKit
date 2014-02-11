@@ -171,7 +171,11 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
 	Float32 averagePowerDb[2];
 	
 	BOOL meteringEnabled;
+    BOOL equalizerOn;
+    BOOL equalizerEnabled;
     STKAudioPlayerOptions options;
+
+    NSMutableArray* converterNodes;
 
 	AUGraph audioGraph;
     AUNode eqNode;
@@ -446,6 +450,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         options = optionsIn;
 		
 		self->volume = 1.0;
+        self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
 
         PopulateOptionsWithDefault(&options);
         
@@ -522,7 +527,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         AudioComponentInstanceDispose(outputUnit);
     }
     
-	AUGraphClose(audioGraph);
+    if (audioGraph)
+    {
+        AUGraphUninitialize(audioGraph);
+        AUGraphClose(audioGraph);
+    }
 	
     pthread_mutex_destroy(&playerMutex);
     pthread_mutex_destroy(&mainThreadSyncCallMutex);
@@ -1955,6 +1964,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat)), 0);
   	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &desFormat, sizeof(desFormat)), 0);
 	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)), 0);
+    
+    [converterNodes addObject:@(convertNode)];
 
 	return convertNode;
 }
@@ -1962,24 +1973,33 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 -(void) connectNodes:(AUNode)srcNode desNode:(AUNode)desNode srcUnit:(AudioComponentInstance)srcUnit desUnit:(AudioComponentInstance)desUnit
 {
     OSStatus status;
+    BOOL addConverter = NO;
     AudioStreamBasicDescription srcFormat, desFormat;
     UInt32 size = sizeof(AudioStreamBasicDescription);
     
     CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(srcUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &srcFormat, &size));
     CHECK_STATUS_AND_RETURN(AudioUnitGetProperty(desUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &desFormat, &size));
     
-    status = AudioUnitSetProperty(desUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat));
+    addConverter = memcmp(&srcFormat, &desFormat, sizeof(srcFormat)) != 0;
     
-    if (status)
+    if (addConverter)
     {
-		AUNode convertNode = [self createConverterNode:srcFormat desFormat:desFormat];
-
-		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, convertNode, 0, mixerNode, 0));
+        status = AudioUnitSetProperty(desUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat));
+        
+        addConverter = status != 0;
     }
-	else
-	{
+    
+    if (addConverter) 
+    {
+        AUNode convertNode = [self createConverterNode:srcFormat desFormat:desFormat];
+        
+        CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, srcNode, 0, convertNode, 0));
+		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, convertNode, 0, desNode, 0));
+    }
+    else
+    {
 		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, srcNode, 0, desNode, 0));
-	}
+    }
 }
 
 -(void) setOutputCallbackForFirstNode:(AUNode)firstNode firstUnit:(AudioComponentInstance)firstUnit
@@ -2014,8 +2034,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 -(void) createAudioGraph
 {
     OSStatus status;
-    NSMutableArray* nodes = [[NSMutableArray alloc] init];
-    NSMutableArray* units = [[NSMutableArray alloc] init];
+    converterNodes = [[NSMutableArray alloc] init];
     
 	CHECK_STATUS_AND_RETURN(NewAUGraph(&audioGraph));
 	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
@@ -2024,11 +2043,46 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	[self createMixerUnit];
 	[self createOutputUnit];
     
+    [self connectGraph];
+	
+	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
+	
+	self.volume = self->volume;
+}
+
+-(void) connectGraph
+{
+    OSStatus status;
+    NSMutableArray* nodes = [[NSMutableArray alloc] init];
+    NSMutableArray* units = [[NSMutableArray alloc] init];
+    
+    AUGraphClearConnections(audioGraph);
+    
+    for (NSNumber* converterNode in converterNodes)
+    {
+        status = AUGraphRemoveNode(audioGraph, (AUNode)converterNode.intValue);
+    }
+    
+    [converterNodes removeAllObjects];
+
     if (eqNode)
     {
-        [nodes addObject:@(eqNode)];
-        [units addObject:[NSValue valueWithPointer:eqUnit]];
+        if (self->equalizerEnabled)
+        {
+            [nodes addObject:@(eqNode)];
+            [units addObject:[NSValue valueWithPointer:eqUnit]];
+            
+            self->equalizerOn = YES;
+        }
+        else
+        {
+            self->equalizerOn = NO;
+        }
 	}
+    else
+    {
+        self->equalizerOn = NO;
+    }
     
     if (mixerNode)
     {
@@ -2041,7 +2095,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         [nodes addObject:@(outputNode)];
         [units addObject:[NSValue valueWithPointer:outputUnit]];
     }
-
+    
 	[self setOutputCallbackForFirstNode:(AUNode)[[nodes objectAtIndex:0] intValue] firstUnit:(AudioComponentInstance)[[units objectAtIndex:0] pointerValue]];
     
 	for (int i = 0; i < nodes.count - 1; i++)
@@ -2053,10 +2107,6 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         [self connectNodes:srcNode desNode:desNode srcUnit:srcUnit desUnit:desUnit];
     }
-	
-	CHECK_STATUS_AND_RETURN(AUGraphInitialize(audioGraph));
-	
-	self.volume = self->volume;
 }
 
 -(BOOL) startAudioGraph
@@ -2585,6 +2635,17 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 			entry->filter(asbd.mChannelsPerFrame, asbd.mBytesPerFrame, inNumberFrames, ioData->mBuffers[0].mData);
 		}
 	}
+    
+    if (audioPlayer->equalizerEnabled != audioPlayer->equalizerOn)
+    {
+        Boolean isUpdated;
+        
+        [audioPlayer connectGraph];
+        
+        AUGraphUpdate(audioPlayer->audioGraph, &isUpdated);
+        
+        isUpdated = isUpdated;
+    }
 	
     if (entry == nil)
     {
@@ -2965,5 +3026,16 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 {
 	return self->volume;
 }
+
+-(BOOL) equalizerEnabled
+{
+    return self->equalizerEnabled;
+}
+
+-(void) setEqualizerEnabled:(BOOL)value
+{
+    self->equalizerEnabled = value;
+}
+
 
 @end

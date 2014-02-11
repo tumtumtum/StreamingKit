@@ -51,6 +51,7 @@
     UILabel* label;
     UILabel* statusLabel;
 	UISlider* slider;
+    UISwitch* enableEqSwitch;
     UISwitch* repeatSwitch;
 	UIButton* muteButton;
 	UIButton* playButton;
@@ -64,5 +65,7 @@
 
 @property (readwrite, retain) STKAudioPlayer* audioPlayer;
 @property (readwrite, unsafe_unretained) id<AudioPlayerViewDelegate> delegate;
+
+- (id)initWithFrame:(CGRect)frame andAudioPlayer:(STKAudioPlayer*)audioPlayer;
 
 @end

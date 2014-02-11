@@ -47,12 +47,14 @@
 @implementation AudioPlayerView
 @synthesize audioPlayer, delegate;
 
-- (id)initWithFrame:(CGRect)frame
+- (id)initWithFrame:(CGRect)frame andAudioPlayer:(STKAudioPlayer*)audioPlayerIn
 {
     self = [super initWithFrame:frame];
 	
     if (self)
 	{
+        self.audioPlayer = audioPlayerIn;
+        
 		CGSize size = CGSizeMake(220, 50);
 		
 		playFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
@@ -97,7 +99,12 @@
         
         size = CGSizeMake(80, 50);
         
-        repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((320 - size.width) / 2, frame.size.height * 0.15 + 180, size.width, size.height)];
+        repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(30, frame.size.height * 0.15 + 180, size.width, size.height)];
+        
+        enableEqSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(320 - size.width - 30, frame.size.height * 0.15 + 180, size.width, size.height)];
+        enableEqSwitch.on = audioPlayer.equalizerEnabled;
+        
+        [enableEqSwitch addTarget:self action:@selector(onEnableEqSwitch) forControlEvents:UIControlEventAllTouchEvents];
 
         label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 10, frame.size.width, 25)];
 		
@@ -123,12 +130,18 @@
         [self addSubview:stopButton];
 		[self addSubview:meter];
 		[self addSubview:muteButton];
+        [self addSubview:enableEqSwitch];
         
 		[self setupTimer];
 		[self updateControls];
     }
 	
     return self;
+}
+
+-(void) onEnableEqSwitch
+{
+    audioPlayer.equalizerEnabled = self->enableEqSwitch.on;
 }
 
 -(void) sliderChanged
