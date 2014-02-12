@@ -42,6 +42,8 @@
     long long relativePosition;
     long long fileLength;
     int discontinuous;
+	int requestSerialNumber;
+
     NSURL* currentUrl;
     STKAsyncURLProvider asyncUrlProvider;
     NSDictionary* httpHeaders;
@@ -262,8 +264,18 @@
 
 -(void) openForSeek:(BOOL)forSeek
 {
+	int localRequestSerialNumber;
+	
+	requestSerialNumber++;
+	localRequestSerialNumber = requestSerialNumber;
+	
     asyncUrlProvider(self, forSeek, ^(NSURL* url)
     {
+		if (localRequestSerialNumber != self->requestSerialNumber)
+		{
+			return;
+		}
+		
         self->currentUrl = url;
 
         if (url == nil)
