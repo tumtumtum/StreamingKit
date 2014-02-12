@@ -148,10 +148,10 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 {
     eventsRunLoop = runLoop;
     
-    if (!stream)
+	if (!stream)
     {
-        [self open];
-        
+		// Will register when they open or seek
+		
         return YES;
     }
  
