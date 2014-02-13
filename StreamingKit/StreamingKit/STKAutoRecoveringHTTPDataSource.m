@@ -43,8 +43,8 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "STKAutoRecoveringHTTPDataSource.h"
 
-#define DEFAULT_WATCHDOG_PERIOD_SECONDS (5)
-#define DEFAULT_INACTIVE_PERIOD_BEFORE_RECONNECT_SECONDS (5)
+#define DEFAULT_WATCHDOG_PERIOD_SECONDS (8)
+#define DEFAULT_INACTIVE_PERIOD_BEFORE_RECONNECT_SECONDS (15)
 
 static uint64_t GetTickCount(void)
 {
@@ -165,6 +165,8 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
         timeoutTimer = nil;
     }
     
+	ticksWhenLastDataReceived = GetTickCount();
+	
     [self createTimeoutTimer];
     
     return YES;
@@ -242,6 +244,13 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
     }
     
     return NO;
+}
+
+-(void) seekToOffset:(long long)offset
+{
+	ticksWhenLastDataReceived = GetTickCount();
+	
+	[super seekToOffset:offset];
 }
 
 -(void) close
