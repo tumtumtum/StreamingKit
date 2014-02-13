@@ -2728,8 +2728,15 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	NSArray* retval;
 	NSMutableArray* mutableArray = [[NSMutableArray alloc] initWithCapacity:upcomingQueue.count + bufferingQueue.count];
 	
-	[mutableArray skipQueueWithQueue:upcomingQueue];
-	[mutableArray skipQueueWithQueue:bufferingQueue];
+    for (STKQueueEntry* entry in upcomingQueue)
+    {
+        [mutableArray addObject:[entry queueItemId]];
+    }
+    
+    for (STKQueueEntry* entry in bufferingQueue)
+    {
+        [mutableArray addObject:[entry queueItemId]];
+    }
 	
 	retval = [NSArray arrayWithArray:mutableArray];
 	
@@ -2755,7 +2762,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	
 	if (upcomingQueue.count > 0)
 	{
-		NSObject* retval = [upcomingQueue objectAtIndex:0];
+		NSObject* retval = [[upcomingQueue objectAtIndex:0] queueItemId];
 		
 		pthread_mutex_unlock(&playerMutex);
 		
@@ -2764,7 +2771,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	
 	if (bufferingQueue.count > 0)
 	{
-		NSObject* retval = [bufferingQueue objectAtIndex:0];
+		NSObject* retval = [[bufferingQueue objectAtIndex:0] queueItemId];
 		
 		pthread_mutex_unlock(&playerMutex);
 		
