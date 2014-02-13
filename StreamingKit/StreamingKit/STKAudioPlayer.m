@@ -931,7 +931,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         return requestedSeekTime;
     }
     
-    if (self.internalState == STKAudioPlayerInternalStatePendingNext)
+    if (self.internalState == STKAudioPlayerInternalStatePendingNext
+		|| self.internalState == STKAudioPlayerInternalStateStopped)
     {
         return 0;
     }
