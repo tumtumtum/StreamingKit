@@ -216,17 +216,12 @@
 
 -(void) seekToOffset:(long long)offset
 {
-    if (eventsRunLoop)
-    {
-        [self unregisterForEvents];
-    }
+    NSRunLoop* savedEventsRunLoop = eventsRunLoop;
     
-    if (stream)
-    {
-        CFReadStreamClose(stream);
-        CFRelease(stream);
-    }
-	
+    [self close];
+    
+    eventsRunLoop = savedEventsRunLoop;
+    
     NSAssert([NSRunLoop currentRunLoop] == eventsRunLoop, @"Seek called on wrong thread");
     
     stream = 0;

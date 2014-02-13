@@ -214,7 +214,9 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     
     if (runLoop == nil)
     {
-        [self performSelector:@selector(attemptReconnectWithSerial:) withObject:@(serial) afterDelay:waitSeconds];
+        // DataSource no longer used
+        
+        return;
     }
     else
     {

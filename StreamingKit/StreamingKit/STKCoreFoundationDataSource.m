@@ -101,6 +101,11 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 {
     if (stream)
     {
+        if (eventsRunLoop)
+        {
+            [self unregisterForEvents];
+        }
+        
         CFReadStreamClose(stream);
         CFRelease(stream);
         
@@ -127,6 +132,8 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     {
         CFReadStreamSetClient(stream, kCFStreamEventHasBytesAvailable | kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered, NULL, NULL);
         CFReadStreamUnscheduleFromRunLoop(stream, [eventsRunLoop getCFRunLoop], kCFRunLoopCommonModes);
+        
+        eventsRunLoop = nil;
     }
 }
 
