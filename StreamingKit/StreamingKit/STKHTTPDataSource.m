@@ -350,6 +350,8 @@
         {
             CFRelease(stream);
             CFRelease(message);
+            
+            stream = 0;
 
             [self errorOccured];
 
