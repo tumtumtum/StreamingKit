@@ -49,6 +49,9 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
         case kCFStreamEventHasBytesAvailable:
             [datasource dataAvailable];
             break;
+        case kCFStreamEventOpenCompleted:
+            [datasource openCompleted];
+            break;
         default:
             break;
     }
@@ -189,6 +192,10 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     }
     
     return 0;
+}
+
+-(void) openCompleted
+{
 }
 
 @end

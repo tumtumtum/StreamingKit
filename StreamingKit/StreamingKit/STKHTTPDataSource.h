@@ -50,5 +50,6 @@ typedef void(^STKAsyncURLProvider)(STKHTTPDataSource* dataSource, BOOL forSeek, 
 -(id) initWithURLProvider:(STKURLProvider)urlProvider;
 -(id) initWithAsyncURLProvider:(STKAsyncURLProvider)asyncUrlProvider;
 -(NSRunLoop*) eventsRunLoop;
+-(void) reconnect;
 
 @end

@@ -54,6 +54,7 @@
 -(BOOL) reregisterForEvents;
 
 -(void) open;
+-(void) openCompleted;
 -(void) dataAvailable;
 -(void) eof;
 -(void) errorOccured;

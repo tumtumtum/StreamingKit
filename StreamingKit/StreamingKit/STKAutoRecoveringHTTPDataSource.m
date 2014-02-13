@@ -38,18 +38,38 @@
 #import <arpa/inet.h>
 #import <ifaddrs.h>
 #import <netdb.h>
+#import "mach/mach_time.h"
 #import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "STKAutoRecoveringHTTPDataSource.h"
 
-#define MAX_IMMEDIATE_RECONNECT_ATTEMPTS (2)
+#define DEFAULT_WATCHDOG_PERIOD_SECONDS (5)
+#define DEFAULT_INACTIVE_PERIOD_BEFORE_RECONNECT_SECONDS (5)
+
+static uint64_t GetTickCount(void)
+{
+    static mach_timebase_info_data_t sTimebaseInfo;
+    uint64_t machTime = mach_absolute_time();
+    
+    if (sTimebaseInfo.denom == 0 )
+    {
+        (void) mach_timebase_info(&sTimebaseInfo);
+    }
+    
+    uint64_t millis = ((machTime / 1000000) * sTimebaseInfo.numer) / sTimebaseInfo.denom;
+    
+    return millis;
+}
 
 @interface STKAutoRecoveringHTTPDataSource()
 {
     int serial;
 	int waitSeconds;
+    NSTimer* timeoutTimer;
     BOOL waitingForNetwork;
+    uint64_t ticksWhenLastDataReceived;
     SCNetworkReachabilityRef reachabilityRef;
+    STKAutoRecoveringHTTPDataSourceOptions options;
 }
 
 -(void) reachabilityChanged;
@@ -63,6 +83,19 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         STKAutoRecoveringHTTPDataSource* dataSource = (__bridge STKAutoRecoveringHTTPDataSource*)info;
         
         [dataSource reachabilityChanged];
+    }
+}
+
+static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* options)
+{
+    if (options->watchdogPeriodSeconds == 0)
+    {
+        options->watchdogPeriodSeconds = DEFAULT_WATCHDOG_PERIOD_SECONDS;
+    }
+    
+    if (options->inactivePeriodBeforeReconnectSeconds == 0)
+    {
+        options->inactivePeriodBeforeReconnectSeconds = DEFAULT_INACTIVE_PERIOD_BEFORE_RECONNECT_SECONDS;
     }
 }
 
@@ -80,6 +113,11 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 -(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn
 {
+    return [self initWithHTTPDataSource:innerDataSourceIn andOptions:(STKAutoRecoveringHTTPDataSourceOptions){}];
+}
+
+-(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn andOptions:(STKAutoRecoveringHTTPDataSourceOptions)optionsIn
+{
     if (self = [super initWithDataSource:innerDataSourceIn])
     {
         self.innerDataSource.delegate = self;
@@ -89,6 +127,10 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
         bzero(&zeroAddress, sizeof(zeroAddress));
         zeroAddress.sin_len = sizeof(zeroAddress);
         zeroAddress.sin_family = AF_INET;
+        
+        PopulateOptionsWithDefault(&optionsIn);
+        
+        self->options = optionsIn;
         
         reachabilityRef = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, (const struct sockaddr*)&zeroAddress);
     }
@@ -117,14 +159,68 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     [super registerForEvents:runLoop];
     [self startNotifierOnRunLoop:runLoop];
     
+    if (timeoutTimer)
+    {
+        [timeoutTimer invalidate];
+        timeoutTimer = nil;
+    }
+    
+    [self createTimeoutTimer];
+    
     return YES;
 }
 
 -(void) unregisterForEvents
 {
     [super unregisterForEvents];
-    
     [self stopNotifier];
+    
+    [self destroyTimeoutTimer];
+}
+
+-(void) timeoutTimerTick:(NSTimer*)timer
+{
+    if (![self hasBytesAvailable])
+    {
+        if ([self hasGotNetworkConnection])
+        {
+            uint64_t currentTicks = GetTickCount();
+            
+            if (((currentTicks - ticksWhenLastDataReceived) / 1000) >= options.inactivePeriodBeforeReconnectSeconds)
+            {
+                serial++;
+                
+                NSLog(@"timeoutTimerTick %lld/%lld", self.position, self.length);
+                
+                [self attemptReconnectWithSerial:@(serial)];
+            }
+        }
+    }
+}
+
+-(void) createTimeoutTimer
+{
+    [self destroyTimeoutTimer];
+    
+    NSRunLoop* runLoop = self.innerDataSource.eventsRunLoop;
+    
+    if (runLoop == nil)
+    {
+        return;
+    }
+    
+    timeoutTimer = [NSTimer timerWithTimeInterval:options.watchdogPeriodSeconds target:self selector:@selector(timeoutTimerTick:) userInfo:@(serial) repeats:YES];
+    
+    [runLoop addTimer:timeoutTimer forMode:NSRunLoopCommonModes];
+}
+
+-(void) destroyTimeoutTimer
+{
+    if (timeoutTimer)
+    {
+        [timeoutTimer invalidate];
+        timeoutTimer = nil;
+    }
 }
 
 -(void) stopNotifier
@@ -148,6 +244,12 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     return NO;
 }
 
+-(void) close
+{
+    [self destroyTimeoutTimer];
+    [super close];
+}
+
 -(void) dealloc
 {
     NSLog(@"STKAutoRecoveringHTTPDataSource dealloc");
@@ -155,6 +257,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     self.innerDataSource.delegate = nil;
     
     [self stopNotifier];
+    [self destroyTimeoutTimer];
     
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
     
@@ -170,6 +273,10 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     {
         waitingForNetwork = NO;
         
+        NSLog(@"reachabilityChanged %lld/%lld", self.position, self.length);
+        
+        serial++;
+        
         [self attemptReconnectWithSerial:@(serial)];
     }
 }
@@ -178,7 +285,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
     serial++;
     waitSeconds = 1;
-
+    ticksWhenLastDataReceived = GetTickCount();
+    
     [super dataSourceDataAvailable:dataSource];
 }
 
@@ -191,7 +299,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     
     NSLog(@"attemptReconnect %lld/%lld", self.position, self.length);
     
-    [self seekToOffset:self.position];
+    [self.innerDataSource reconnect];
 }
 
 -(void) attemptReconnectWithTimer:(NSTimer*)timer
@@ -220,6 +328,8 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     }
     else
     {
+        serial++;
+        
         NSTimer* timer = [NSTimer timerWithTimeInterval:waitSeconds target:self selector:@selector(attemptReconnectWithTimer:) userInfo:@(serial) repeats:NO];
         
         [runLoop addTimer:timer forMode:NSRunLoopCommonModes];

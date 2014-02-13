@@ -36,6 +36,13 @@
 #import "STKHTTPDataSource.h"
 #import "STKDataSourceWrapper.h"
 
+typedef struct
+{
+    int watchdogPeriodSeconds;
+	int inactivePeriodBeforeReconnectSeconds;
+}
+STKAutoRecoveringHTTPDataSourceOptions;
+
 @interface STKAutoRecoveringHTTPDataSource : STKDataSourceWrapper
 
 -(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;

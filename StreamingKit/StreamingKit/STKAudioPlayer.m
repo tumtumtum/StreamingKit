@@ -42,7 +42,7 @@
 #import "libkern/OSAtomic.h"
 #import <float.h>
 
-#pragma mark Defines%
+#pragma mark Defines
 
 #define kOutputBus 0
 #define kInputBus 1
@@ -2728,15 +2728,8 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	NSArray* retval;
 	NSMutableArray* mutableArray = [[NSMutableArray alloc] initWithCapacity:upcomingQueue.count + bufferingQueue.count];
 	
-    for (STKQueueEntry* entry in upcomingQueue)
-    {
-        [mutableArray addObject:[entry queueItemId]];
-    }
-    
-    for (STKQueueEntry* entry in bufferingQueue)
-    {
-        [mutableArray addObject:[entry queueItemId]];
-    }
+	[mutableArray skipQueueWithQueue:upcomingQueue];
+	[mutableArray skipQueueWithQueue:bufferingQueue];
 	
 	retval = [NSArray arrayWithArray:mutableArray];
 	
@@ -2762,7 +2755,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	
 	if (upcomingQueue.count > 0)
 	{
-		NSObject* retval = [[upcomingQueue objectAtIndex:0] queueItemId];
+		NSObject* retval = [upcomingQueue objectAtIndex:0];
 		
 		pthread_mutex_unlock(&playerMutex);
 		
@@ -2771,7 +2764,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	
 	if (bufferingQueue.count > 0)
 	{
-		NSObject* retval = [[bufferingQueue objectAtIndex:0] queueItemId];
+		NSObject* retval = [bufferingQueue objectAtIndex:0];
 		
 		pthread_mutex_unlock(&playerMutex);
 		

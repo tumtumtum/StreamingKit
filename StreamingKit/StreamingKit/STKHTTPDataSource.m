@@ -214,6 +214,17 @@
     return fileLength >= 0 ? fileLength : 0;
 }
 
+-(void) reconnect
+{
+    NSRunLoop* savedEventsRunLoop = eventsRunLoop;
+    
+    [self close];
+    
+    eventsRunLoop = savedEventsRunLoop;
+    
+    [self seekToOffset:self.position];
+}
+
 -(void) seekToOffset:(long long)offset
 {
     NSRunLoop* savedEventsRunLoop = eventsRunLoop;
