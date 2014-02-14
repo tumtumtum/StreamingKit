@@ -83,6 +83,12 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
     }
 }
 
+#define CHECK_STATUS_AND_REPORT(call) \
+	if ((status = (call))) \
+	{ \
+		[self unexpectedError:STKAudioPlayerErrorAudioSystemError]; \
+	}
+
 #define CHECK_STATUS_AND_RETURN(call) \
 	if ((status = (call))) \
 	{ \
@@ -2039,7 +2045,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 		
         CHECK_STATUS_AND_RETURN(AUGraphSetNodeInputCallback(audioGraph, converterNode, 0, &callbackStruct));
 		
-		status = AUGraphConnectNodeInput(audioGraph, converterNode, 0, firstNode, 0);
+		CHECK_STATUS_AND_RETURN(AUGraphConnectNodeInput(audioGraph, converterNode, 0, firstNode, 0));
 	}
 	else
 	{
@@ -2076,7 +2082,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
     for (NSNumber* converterNode in converterNodes)
     {
-        status = AUGraphRemoveNode(audioGraph, (AUNode)converterNode.intValue);
+        CHECK_STATUS_AND_REPORT(AUGraphRemoveNode(audioGraph, (AUNode)converterNode.intValue));
     }
     
     [converterNodes removeAllObjects];

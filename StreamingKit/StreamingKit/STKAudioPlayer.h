@@ -38,7 +38,7 @@
 #import <Foundation/Foundation.h>
 #import <pthread.h>
 #import "STKDataSource.h"
-#include <AudioToolbox/AudioToolbox.h>
+#import <AudioToolbox/AudioToolbox.h>
 
 #if TARGET_OS_IPHONE
 #include "UIKit/UIApplication.h"
