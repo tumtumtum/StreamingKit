@@ -679,8 +679,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
         [upcomingQueue enqueue:[[STKQueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
         
-		[self stopAudioUnitWithReason:STKAudioPlayerStopReasonPendingNext];
-		
         self.internalState = STKAudioPlayerInternalStatePendingNext;
     }
     pthread_mutex_unlock(&playerMutex);
@@ -931,8 +929,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         return requestedSeekTime;
     }
     
-    if (self.internalState == STKAudioPlayerInternalStatePendingNext
-		|| self.internalState == STKAudioPlayerInternalStateStopped)
+    if (self.internalState == STKAudioPlayerInternalStatePendingNext)
     {
         return 0;
     }
@@ -1064,7 +1061,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     OSSpinLockUnlock(&currentEntryReferencesLock);
     
     currentlyReadingEntry.dataSource.delegate = self;
-	[currentlyReadingEntry.dataSource close];
     [currentlyReadingEntry.dataSource registerForEvents:[NSRunLoop currentRunLoop]];
     [currentlyReadingEntry.dataSource seekToOffset:0];
     
@@ -1176,6 +1172,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		pthread_mutex_unlock(&mainThreadSyncCallMutex);
 	});
 
+    pthread_mutex_lock(&mainThreadSyncCallMutex);
+
 	while (true)
 	{
 		if (disposeWasRequested)
@@ -1188,10 +1186,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 			break;
 		}
 
-		pthread_mutex_lock(&mainThreadSyncCallMutex);
 		pthread_cond_wait(&mainThreadSyncCallReadyCondition, &mainThreadSyncCallMutex);
-		pthread_mutex_unlock(&mainThreadSyncCallMutex);
 	}
+    
+    pthread_mutex_unlock(&mainThreadSyncCallMutex);
 }
 
 -(void) playbackThreadQueueMainThreadSyncBlock:(void(^)())block
@@ -1230,7 +1228,13 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 {
     pthread_mutex_lock(&playerMutex);
     {
-        if (self.internalState == STKAudioPlayerInternalStatePaused)
+        if (disposeWasRequested)
+        {
+            pthread_mutex_unlock(&playerMutex);
+            
+            return NO;
+        }
+        else if (self.internalState == STKAudioPlayerInternalStatePaused)
         {
             pthread_mutex_unlock(&playerMutex);
             
@@ -1287,13 +1291,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                     [self stopAudioUnitWithReason:STKAudioPlayerStopReasonEof];
                 }
             }
-        }
-        
-        if (disposeWasRequested)
-        {
-            pthread_mutex_unlock(&playerMutex);
-            
-            return NO;
         }
         
         if (currentlyPlayingEntry && currentlyPlayingEntry->parsedHeader)
@@ -1711,18 +1708,22 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         [self invokeOnPlaybackThread:^
         {
+            NSLog(@"disposeWasRequested");
+            
             disposeWasRequested = YES;
+            
+            CFRunLoopStop(CFRunLoopGetCurrent());
         }];
         
         pthread_mutex_lock(&playerMutex);
+        disposeWasRequested = YES;
         pthread_cond_signal(&playerThreadReadyCondition);
         pthread_mutex_unlock(&playerMutex);
 
         pthread_mutex_lock(&mainThreadSyncCallMutex);
+        disposeWasRequested = YES;
         pthread_cond_signal(&mainThreadSyncCallReadyCondition);
         pthread_mutex_unlock(&mainThreadSyncCallMutex);
-        
-        CFRunLoopStop([runLoop getCFRunLoop]);
     }
     
     if (wait)
