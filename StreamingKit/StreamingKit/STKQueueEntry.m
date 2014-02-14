@@ -9,7 +9,8 @@
 #import "STKQueueEntry.h"
 #import "STKDataSource.h"
 
-#define STK_BIT_RATE_ESTIMATION_MIN_PACKETS (64)
+#define STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MIN (4)
+#define STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MAX (64)
 
 @implementation STKQueueEntry
 
@@ -38,7 +39,9 @@
 {
     double retval;
     
-    if (packetDuration && processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS)
+    if (packetDuration &&
+        (processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MAX || (audioStreamBasicDescription.mBytesPerFrame == 0
+			&& processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MIN)))
 	{
 		double averagePacketByteSize = processedPacketsSizeTotal / processedPacketsCount;
         
