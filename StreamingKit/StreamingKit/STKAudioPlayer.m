@@ -1470,6 +1470,17 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
     }
     
+    if (read < 0)
+    {
+        // iOS will shutdown network connections if the app is backgrounded (i.e. device is locked when player is paused)
+        // We try to reopen -- should probably add a back-off protocol in the future
+        
+        long long position = currentlyReadingEntry.dataSource.position;
+        [currentlyReadingEntry.dataSource seekToOffset:position];
+        
+        return;
+    }
+    
     int flags = 0;
     
     if (discontinuous)
