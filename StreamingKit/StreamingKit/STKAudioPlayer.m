@@ -351,13 +351,13 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 			stopReason = STKAudioPlayerStopReasonNone;
             break;
         case STKAudioPlayerInternalStateRunning:
-        case STKAudioPlayerInternalStatePendingNext:
         case STKAudioPlayerInternalStateStartingThread:
         case STKAudioPlayerInternalStatePlaying:
-        case STKAudioPlayerInternalStateWaitingForDataAfterSeek:
             newState = STKAudioPlayerStatePlaying;
 			stopReason = STKAudioPlayerStopReasonNone;
             break;
+		case STKAudioPlayerInternalStatePendingNext:
+		case STKAudioPlayerInternalStateWaitingForDataAfterSeek:
         case STKAudioPlayerInternalStateRebuffering:
         case STKAudioPlayerInternalStateWaitingForData:
             newState = STKAudioPlayerStateBuffering;
