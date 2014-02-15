@@ -229,10 +229,8 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     AudioFileStreamID audioFileStream;
     NSConditionLock* threadStartedLock;
     NSConditionLock* threadFinishedCondLock;
-    
-#if TARGET_OS_IPHONE
-	UIBackgroundTaskIdentifier backgroundTaskId;
-#endif
+	
+	void(^stopBackBackgroundTaskBlock)();
     
     int32_t seekVersion;
     OSSpinLock seekLock;
@@ -565,30 +563,32 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 -(void) startSystemBackgroundTask
 {
 #if TARGET_OS_IPHONE
-	if (backgroundTaskId != UIBackgroundTaskInvalid)
-	{
-		pthread_mutex_unlock(&playerMutex);
-		
-		return;
-	}
+	__block UIBackgroundTaskIdentifier backgroundTaskId = UIBackgroundTaskInvalid;
 	
-	__block UIBackgroundTaskIdentifier identifier;
-	
-	identifier = backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
+	backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
 	{
 		[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
+		backgroundTaskId = UIBackgroundTaskInvalid;
 	}];
+	
+	stopBackBackgroundTaskBlock = [^
+	{
+		if (backgroundTaskId != UIBackgroundTaskInvalid)
+		{
+			[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
+			backgroundTaskId = UIBackgroundTaskInvalid;
+		}
+	} copy];
 #endif
 }
 
 -(void) stopSystemBackgroundTask
 {
 #if TARGET_OS_IPHONE
-	if (backgroundTaskId != UIBackgroundTaskInvalid)
+	if (stopBackBackgroundTaskBlock != NULL)
 	{
-		[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
-		
-		backgroundTaskId = UIBackgroundTaskInvalid;
+		stopBackBackgroundTaskBlock();
+		stopBackBackgroundTaskBlock = NULL;
 	}
 #endif
 }
