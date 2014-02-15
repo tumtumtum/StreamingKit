@@ -221,6 +221,7 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
 
     AudioStreamBasicDescription audioConverterAudioStreamBasicDescription;
     
+	BOOL deallocating;
     BOOL discontinuous;
 	NSArray* frameFilters;
     NSThread* playbackThread;
@@ -404,7 +405,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
 	STKAudioPlayerState previousState = self.state;
 	
-    if (newState != previousState)
+    if (newState != previousState && !deallocating)
     {
         self.state = newState;
         
@@ -502,43 +503,57 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return self;
 }
 
--(void) dealloc
+-(void) destroyAudioResources
 {
-    if (currentlyReadingEntry)
+	if (currentlyReadingEntry)
     {
         currentlyReadingEntry.dataSource.delegate = nil;
         [currentlyReadingEntry.dataSource unregisterForEvents];
+		
+		currentlyReadingEntry = nil;
     }
     
     if (currentlyPlayingEntry)
     {
         currentlyPlayingEntry.dataSource.delegate = nil;
         [currentlyReadingEntry.dataSource unregisterForEvents];
+		currentlyPlayingEntry = nil;
     }
     
-    [self stopAudioUnitWithReason:STKAudioPlayerStopReasonEof];
-
+    [self stopAudioUnitWithReason:STKAudioPlayerStopReasonDisposed];
+	
+	[self clearQueue];
+	
     if (audioFileStream)
     {
         AudioFileStreamClose(audioFileStream);
+		audioFileStream = nil;
     }
     
     if (audioConverterRef)
     {
         AudioConverterDispose(audioConverterRef);
-    }
-    
-    if (outputUnit)
-    {
-        AudioComponentInstanceDispose(outputUnit);
+		audioConverterRef = nil;
     }
     
     if (audioGraph)
     {
-        AUGraphUninitialize(audioGraph);
-        AUGraphClose(audioGraph);
+		AUGraphUninitialize(audioGraph);
+		AUGraphClose(audioGraph);
+		DisposeAUGraph(audioGraph);
+		
+		audioGraph = nil;
     }
+}
+
+-(void) dealloc
+{
+	NSLog(@"STKAudioPlayer dealloc");
 	
+	deallocating = YES;
+	
+	[self destroyAudioResources];
+    
     pthread_mutex_destroy(&playerMutex);
     pthread_mutex_destroy(&mainThreadSyncCallMutex);
     pthread_cond_destroy(&playerThreadReadyCondition);
@@ -550,37 +565,31 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 -(void) startSystemBackgroundTask
 {
 #if TARGET_OS_IPHONE
-	pthread_mutex_lock(&playerMutex);
+	if (backgroundTaskId != UIBackgroundTaskInvalid)
 	{
-		if (backgroundTaskId != UIBackgroundTaskInvalid)
-		{
-            pthread_mutex_unlock(&playerMutex);
-            
-			return;
-		}
+		pthread_mutex_unlock(&playerMutex);
 		
-		backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
-        {
-            [self stopSystemBackgroundTask];
-        }];
+		return;
 	}
-    pthread_mutex_unlock(&playerMutex);
+	
+	__block UIBackgroundTaskIdentifier identifier;
+	
+	identifier = backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^
+	{
+		[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
+	}];
 #endif
 }
 
 -(void) stopSystemBackgroundTask
 {
 #if TARGET_OS_IPHONE
-	pthread_mutex_lock(&playerMutex);
+	if (backgroundTaskId != UIBackgroundTaskInvalid)
 	{
-		if (backgroundTaskId != UIBackgroundTaskInvalid)
-		{
-			[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
-			
-			backgroundTaskId = UIBackgroundTaskInvalid;
-		}
+		[[UIApplication sharedApplication] endBackgroundTask:backgroundTaskId];
+		
+		backgroundTaskId = UIBackgroundTaskInvalid;
 	}
-    pthread_mutex_unlock(&playerMutex);
 #endif
 }
 
@@ -679,7 +688,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     {
         LOGINFO(([NSString stringWithFormat:@"Playing: %@", [queueItemId description]]));
         
-        [self startSystemBackgroundTask];
+		if (![self audioGraphIsRunning])
+		{
+			[self startSystemBackgroundTask];
+		}
         
         [self clearQueue];
 
@@ -716,7 +728,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 {
     pthread_mutex_lock(&playerMutex);
     {
-		[self startSystemBackgroundTask];
+		if (![self audioGraphIsRunning])
+		{
+			[self startSystemBackgroundTask];
+		}
         
         [upcomingQueue enqueue:[[STKQueueEntry alloc] initWithDataSource:dataSourceIn andQueueItemId:queueItemId]];
     }
@@ -1338,8 +1353,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 	{
 		playbackThreadRunLoop = [NSRunLoop currentRunLoop];
 		NSThread.currentThread.threadPriority = 1;
-        
-        [threadStartedLock lockWhenCondition:0];
+		
+		[threadStartedLock lockWhenCondition:0];
         [threadStartedLock unlockWithCondition:1];
 		
 		[playbackThreadRunLoop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
@@ -1361,6 +1376,9 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		disposeWasRequested = NO;
 		seekToTimeWasRequested = NO;
 		
+		[currentlyReadingEntry.dataSource unregisterForEvents];
+		[currentlyPlayingEntry.dataSource unregisterForEvents];
+		
 		currentlyReadingEntry.dataSource.delegate = nil;
 		currentlyPlayingEntry.dataSource.delegate = nil;
 		
@@ -1373,6 +1391,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		
 		self.internalState = STKAudioPlayerInternalStateDisposed;
 		
+		playbackThreadRunLoop = nil;
+
 		[threadFinishedCondLock lock];
 		[threadFinishedCondLock unlockWithCondition:1];
 	}
@@ -1714,8 +1734,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         [self invokeOnPlaybackThread:^
         {
-            NSLog(@"disposeWasRequested");
-            
             disposeWasRequested = YES;
             
             CFRunLoopStop(CFRunLoopGetCurrent());
@@ -1737,6 +1755,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         [threadFinishedCondLock lockWhenCondition:1];
         [threadFinishedCondLock unlockWithCondition:0];
     }
+	
+	[self destroyAudioResources];
+	
+	runLoop = nil;
+	playbackThread = nil;
+	playbackThreadRunLoop = nil;
 }
 
 -(BOOL) muted
@@ -2131,25 +2155,28 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
 }
 
+-(BOOL) audioGraphIsRunning
+{
+	OSStatus status;
+	Boolean isRunning;
+    
+    status = AUGraphIsRunning(audioGraph, &isRunning);
+
+	if (status)
+	{
+		return NO;
+	}
+	
+	return isRunning;
+}
+
 -(BOOL) startAudioGraph
 {
     OSStatus status;
     
 	[self resetPcmBuffers];
     
-    Boolean isRunning;
-	
-    
-    status = AUGraphIsRunning(audioGraph, &isRunning);
-    
-    if (status)
-    {
-        [self unexpectedError:STKAudioPlayerErrorAudioSystemError];
-        
-        return NO;
-    }
-    
-    if (isRunning)
+    if ([self audioGraphIsRunning])
     {
         return NO;
     }
@@ -2162,6 +2189,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         return NO;
     }
+	
+	[self stopSystemBackgroundTask];
 	
     return YES;
 }

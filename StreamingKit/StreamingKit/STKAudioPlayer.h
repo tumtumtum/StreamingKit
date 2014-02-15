@@ -63,6 +63,7 @@ typedef enum
 	STKAudioPlayerStopReasonEof,
 	STKAudioPlayerStopReasonUserAction,
 	STKAudioPlayerStopReasonPendingNext,
+	STKAudioPlayerStopReasonDisposed,
 	STKAudioPlayerStopReasonError = 0xffff
 }
 STKAudioPlayerStopReason;
