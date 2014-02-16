@@ -976,6 +976,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     OSSpinLockLock(&entry->spinLock);
     double retval = entry->seekTime + (entry->framesPlayed / canonicalAudioStreamBasicDescription.mSampleRate);
     OSSpinLockUnlock(&entry->spinLock);
+	
+	if (retval == 0)
+	{
+		NSLog(@"");
+	}
     
     return retval;
 }
@@ -1325,7 +1330,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             }
         }
         
-        if (currentlyPlayingEntry && currentlyPlayingEntry->parsedHeader)
+        if (currentlyPlayingEntry && currentlyPlayingEntry->parsedHeader && [currentlyPlayingEntry calculatedBitRate] > 0.0)
         {
             int32_t originalSeekVersion;
             BOOL originalSeekToTimeRequested;
@@ -2292,7 +2297,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
         return;
     }
     
-    if (seekToTimeWasRequested || disposeWasRequested)
+    if ((seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0) || disposeWasRequested)
     {
         return;
     }
@@ -2358,7 +2363,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                 }
                 
                 if  (disposeWasRequested
-                     || seekToTimeWasRequested
+                     || (seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0)
                      || self.internalState == STKAudioPlayerInternalStateStopped
                      || self.internalState == STKAudioPlayerInternalStateDisposed
                      || self.internalState == STKAudioPlayerInternalStatePendingNext)

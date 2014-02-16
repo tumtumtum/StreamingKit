@@ -221,7 +221,7 @@
     [self close];
     
     eventsRunLoop = savedEventsRunLoop;
-    
+	
     [self seekToOffset:self.position];
 }
 
@@ -232,7 +232,7 @@
     [self close];
     
     eventsRunLoop = savedEventsRunLoop;
-    
+	
     NSAssert([NSRunLoop currentRunLoop] == eventsRunLoop, @"Seek called on wrong thread");
     
     stream = 0;
