@@ -977,6 +977,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     double retval = entry->seekTime + (entry->framesPlayed / canonicalAudioStreamBasicDescription.mSampleRate);
     OSSpinLockUnlock(&entry->spinLock);
 	
+	if (retval == 0)
+	{
+		NSLog(@"");
+	}
+    
     return retval;
 }
 
@@ -2291,17 +2296,24 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     {
         return;
     }
-    
-    if ((seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0) || disposeWasRequested)
-    {
-        return;
-    }
+	
+	if (disposeWasRequested)
+	{
+		return;
+	}
     
     if (audioConverterRef == nil)
     {
         return;
     }
     
+    if ((seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0))
+    {
+		[self wakeupPlaybackThread];
+		
+        return;
+    }
+	
 	discontinuous = NO;
     
     OSStatus status;
@@ -2358,7 +2370,6 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                 }
                 
                 if  (disposeWasRequested
-                     || (seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0)
                      || self.internalState == STKAudioPlayerInternalStateStopped
                      || self.internalState == STKAudioPlayerInternalStateDisposed
                      || self.internalState == STKAudioPlayerInternalStatePendingNext)
@@ -2367,6 +2378,15 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                     
                     return;
                 }
+				
+				if (seekToTimeWasRequested && [currentlyPlayingEntry calculatedBitRate] > 0.0)
+				{
+					pthread_mutex_unlock(&playerMutex);
+					
+					[self wakeupPlaybackThread];
+					
+					return;
+				}
                 
                 waiting = YES;
 
