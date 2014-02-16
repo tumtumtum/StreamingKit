@@ -94,6 +94,8 @@ typedef struct
     UInt32 bufferSizeInSeconds;
     /// Number of seconds of decompressed audio is required before playback first starts for each item (Default is 0.5 seconds. Must be larger than bufferSizeInSeconds)
     Float32 secondsRequiredToStartPlaying;
+	/// Seconds after a seek is performed before data needs to come in (after which the state will change to playing/buffering)
+    Float32 gracePeriodAfterSeekInSeconds;
     /// Number of seconds of decompressed audio required before playback resumes after a buffer underrun (Default is 5 seconds. Must be larger than bufferSizeinSeconds)
     Float32 secondsRequiredToStartPlayingAfterBufferUnderun;
 }

@@ -57,7 +57,7 @@
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (4096)
 #define STK_DEFAULT_READ_BUFFER_SIZE (64 * 1024)
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
-#define STK_CYCLES_REQUIRED_BEFORE_SEEK_BECOMES_PLAYING (6)
+#define STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS (0.5)
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
@@ -81,6 +81,11 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
     if (options->secondsRequiredToStartPlayingAfterBufferUnderun == 0)
     {
         options->secondsRequiredToStartPlayingAfterBufferUnderun = MIN(STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING_AFTER_BUFFER_UNDERRUN, options->bufferSizeInSeconds);
+    }
+	
+	if (options->gracePeriodAfterSeekInSeconds == 0)
+    {
+        options->gracePeriodAfterSeekInSeconds = MIN(STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS, options->bufferSizeInSeconds);
     }
 }
 
@@ -199,10 +204,11 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
 	AudioComponentInstance outputUnit;
 		
     UInt32 eqBandCount;
-    int32_t waitingForDataAfterSeekCycleCount;
+    int32_t waitingForDataAfterSeekFrameCount;
 	
     UInt32 framesRequiredToStartPlaying;
     UInt32 framesRequiredToPlayAfterRebuffering;
+	UInt32 framesRequiredBeforeWaitingForDataAfterSeekBecomesPlaying;
     
     STKQueueEntry* volatile currentlyPlayingEntry;
     STKQueueEntry* volatile currentlyReadingEntry;
@@ -384,11 +390,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 	
     OSSpinLockLock(&internalStateLock);
 	
-	if (internalState != STKAudioPlayerInternalStateWaitingForDataAfterSeek)
-	{
-		waitingForDataAfterSeekCycleCount = 0;
-	}
-    
+	waitingForDataAfterSeekFrameCount = 0;
+	
     if (value == internalState)
     {
         OSSpinLockUnlock(&internalStateLock);
@@ -468,6 +471,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlaying;
         framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlayingAfterBufferUnderun;
+		framesRequiredBeforeWaitingForDataAfterSeekBecomesPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.gracePeriodAfterSeekInSeconds;
         
         pcmAudioBuffer = &pcmAudioBufferList.mBuffers[0];
         
@@ -1459,6 +1463,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     [currentEntry reset];
     [currentEntry.dataSource seekToOffset:seekByteOffset];
     
+	self->waitingForDataAfterSeekFrameCount = 0;
+	
     self.internalState = STKAudioPlayerInternalStateWaitingForDataAfterSeek;
     
     if (audioGraph)
@@ -2562,7 +2568,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}
 		else if (state == STKAudioPlayerInternalStateWaitingForDataAfterSeek)
 		{
-			int64_t framesRequiredToStartPlaying = inNumberFrames;
+			int64_t framesRequiredToStartPlaying = 1024;
 			
 			if (entry->lastFrameQueued >= 0)
 			{
@@ -2681,14 +2687,21 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         }
 		else if (state == STKAudioPlayerInternalStateWaitingForDataAfterSeek)
 		{
-			OSAtomicIncrement32(&audioPlayer->waitingForDataAfterSeekCycleCount);
-			
-			if (audioPlayer->waitingForDataAfterSeekCycleCount > STK_CYCLES_REQUIRED_BEFORE_SEEK_BECOMES_PLAYING)
+			if (totalFramesCopied == 0)
 			{
-				[audioPlayer setInternalState:STKAudioPlayerInternalStatePlaying ifInState:^BOOL(STKAudioPlayerInternalState state)
+				OSAtomicAdd32(inNumberFrames - totalFramesCopied, &audioPlayer->waitingForDataAfterSeekFrameCount);
+				
+				if (audioPlayer->waitingForDataAfterSeekFrameCount > audioPlayer->framesRequiredBeforeWaitingForDataAfterSeekBecomesPlaying)
 				{
-					return (state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused;
-				}];
+					[audioPlayer setInternalState:STKAudioPlayerInternalStatePlaying ifInState:^BOOL(STKAudioPlayerInternalState state)
+					{
+						return (state & STKAudioPlayerInternalStateRunning) && state != STKAudioPlayerInternalStatePaused;
+					}];
+				}
+			}
+			else
+			{
+				audioPlayer->waitingForDataAfterSeekFrameCount = 0;
 			}
 		}
     }
