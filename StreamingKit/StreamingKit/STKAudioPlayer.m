@@ -977,11 +977,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     double retval = entry->seekTime + (entry->framesPlayed / canonicalAudioStreamBasicDescription.mSampleRate);
     OSSpinLockUnlock(&entry->spinLock);
 	
-	if (retval == 0)
-	{
-		NSLog(@"");
-	}
-    
     return retval;
 }
 
