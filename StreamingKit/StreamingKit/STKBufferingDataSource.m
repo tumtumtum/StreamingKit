@@ -37,7 +37,11 @@
 @interface STKBufferingDataSource()
 {
 @private
-    int bufferSize;
+    int bufferStartIndex;
+    int bufferStartFileOffset;
+    int bufferBytesUsed;
+    int bufferBytesTotal;
+    SInt64 position;
     uint8_t* buffer;
     STKDataSource* dataSource;
 }
@@ -45,12 +49,12 @@
 
 @implementation STKBufferingDataSource
 
--(id) initWithDataSource:(STKDataSource*)dataSourceIn withBufferSize:(int)bufferSizeIn;
+-(id) initWithDataSource:(STKDataSource*)dataSourceIn withMaxSize:(int)maxSizeIn
 {
     if (self = [super init])
     {
-        self->bufferSize = bufferSizeIn;
         self->dataSource = dataSourceIn;
+        self->bufferBytesTotal = maxSizeIn;
         
         self->dataSource.delegate = self.delegate;
     }
@@ -69,9 +73,10 @@
 {
     if (self->buffer == nil)
     {
-        if (self->bufferSize == 0)
-        {
-        }
+        self->bufferBytesTotal = MIN((int)self.length, self->bufferBytesTotal);
+        self->bufferBytesTotal = MAX(self->bufferBytesTotal, 1024);
+        
+        self->buffer = malloc(self->bufferBytesTotal);
     }
 }
 
@@ -84,20 +89,63 @@
 {
 }
 
--(void) dataSourceDataAvailable:(STKDataSource*)dataSource
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSourceIn
 {
-    [self.delegate dataSourceDataAvailable:self];
+    if (self->buffer == nil)
+    {
+    	[self createBuffer];
+    }
+
+    UInt32 start = (bufferStartIndex + bufferBytesUsed) % bufferBytesTotal;
+    UInt32 end = (position - bufferStartFileOffset + bufferStartIndex) % bufferBytesTotal;
+    
+    if (start >= end)
+    {
+        int bytesRead;
+        int bytesToRead = bufferBytesTotal - start;
+        
+        if (bytesToRead > 0)
+        {
+            bytesRead = [dataSource readIntoBuffer:self->buffer + bufferStartIndex withSize:bytesToRead];
+        }
+        else
+        {
+            bytesToRead = start;
+            
+            bytesRead = [dataSource readIntoBuffer:self->buffer withSize:bytesToRead];
+        }
+        
+        if (bytesRead < 0)
+        {
+            return;
+        }
+        
+        bufferStartIndex += bytesRead;
+        bufferBytesUsed += bytesRead;
+    }
+    else
+    {
+        int bytesToRead = end - start;
+        
+        int bytesRead = [dataSource readIntoBuffer:self->buffer + start withSize:bytesToRead];
+        
+        if (bytesToRead < 0)
+        {
+            return;
+        }
+        
+    	bufferStartIndex += bytesRead;
+        bufferBytesUsed += bytesRead;
+    }
 }
 
--(void) dataSourceErrorOccured:(STKDataSource*)dataSource
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSourceIn
 {
     [self.delegate dataSourceErrorOccured:self];
 }
 
--(void) dataSourceEof:(STKDataSource*)dataSource
+-(void) dataSourceEof:(STKDataSource*)dataSourceIn
 {
-    [self.delegate dataSourceEof:self];
 }
-
 
 @end

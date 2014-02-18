@@ -39,5 +39,6 @@
 @property (readonly) SInt64 position;
 @property (readonly) SInt64 length;
 
--(id) initWithDataSource:(STKDataSource*)dataSourceIn withBufferSize:(int)bufferSize;
+-(id) initWithDataSource:(STKDataSource*)dataSourceIn withMaxSize:(int)maxSizeIn;
+
 @end

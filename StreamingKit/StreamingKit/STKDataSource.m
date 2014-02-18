@@ -66,7 +66,7 @@
 }
 
 -(void) close
-{
+{    
 }
 
 -(BOOL) hasBytesAvailable

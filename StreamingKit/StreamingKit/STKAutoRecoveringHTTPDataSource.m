@@ -292,6 +292,11 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
 
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSource
 {
+    if (![self.innerDataSource hasBytesAvailable])
+    {
+        return;
+    }
+    
     serial++;
     waitSeconds = 1;
     ticksWhenLastDataReceived = GetTickCount();
