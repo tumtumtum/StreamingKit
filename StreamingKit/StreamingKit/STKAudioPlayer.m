@@ -772,8 +772,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             currentlyReadingEntry->parsedHeader = YES;
             currentlyReadingEntry->audioDataOffset = offset;
             
-            [currentlyReadingEntry updateAudioDataSource];
-            
             break;
         }
         case kAudioFileStreamProperty_FileFormat:
@@ -825,8 +823,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                     entryToUpdate->packetBufferSize = packetBufferSize;
                 }
                 
-                [entryToUpdate updateAudioDataSource];
-                
                 [self createAudioConverter:&currentlyReadingEntry->audioStreamBasicDescription];
                 
                 pthread_mutex_unlock(&playerMutex);
@@ -842,8 +838,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             AudioFileStreamGetProperty(inAudioFileStream, kAudioFileStreamProperty_AudioDataByteCount, &byteCountSize, &audioDataByteCount);
             
             currentlyReadingEntry->audioDataByteCount = audioDataByteCount;
-            
-            [currentlyReadingEntry updateAudioDataSource];
             
             break;
         }
@@ -1421,7 +1415,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         return;
     }
     
-    long long seekByteOffset = currentEntry->audioDataOffset + (requestedSeekTime / self.duration) * (currentlyReadingEntry.audioDataLengthInBytes);
+    SInt64 seekByteOffset = currentEntry->audioDataOffset + (requestedSeekTime / self.duration) * (currentlyReadingEntry.audioDataLengthInBytes);
     
     if (seekByteOffset > currentEntry.dataSource.length - (2 * currentEntry->packetBufferSize))
     {
@@ -1459,7 +1453,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         AudioConverterReset(audioConverterRef);
     }
     
-    [currentEntry updateAudioDataSource];
     [currentEntry reset];
     [currentEntry.dataSource seekToOffset:seekByteOffset];
     
@@ -1511,7 +1504,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         // iOS will shutdown network connections if the app is backgrounded (i.e. device is locked when player is paused)
         // We try to reopen -- should probably add a back-off protocol in the future
         
-        long long position = currentlyReadingEntry.dataSource.position;
+        SInt64 position = currentlyReadingEntry.dataSource.position;
+        
         [currentlyReadingEntry.dataSource seekToOffset:position];
         
         return;
@@ -2554,7 +2548,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	{
 		if (state == STKAudioPlayerInternalStateWaitingForData)
 		{
-			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
+			SInt64 framesRequiredToStartPlaying = audioPlayer->framesRequiredToStartPlaying;
 			
 			if (entry->lastFrameQueued >= 0)
 			{
@@ -2569,7 +2563,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}
 		else if (state == STKAudioPlayerInternalStateRebuffering)
 		{
-			int64_t framesRequiredToStartPlaying = audioPlayer->framesRequiredToPlayAfterRebuffering;
+			SInt64 framesRequiredToStartPlaying = audioPlayer->framesRequiredToPlayAfterRebuffering;
 			
 			if (entry->lastFrameQueued >= 0)
 			{
@@ -2583,7 +2577,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 		}
 		else if (state == STKAudioPlayerInternalStateWaitingForDataAfterSeek)
 		{
-			int64_t framesRequiredToStartPlaying = 1024;
+			SInt64 framesRequiredToStartPlaying = 1024;
 			
 			if (entry->lastFrameQueued >= 0)
 			{
@@ -2752,8 +2746,8 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     
     OSSpinLockLock(&entry->spinLock);
 	
-    int64_t extraFramesPlayedNotAssigned = 0;
-    int64_t framesPlayedForCurrent = totalFramesCopied;
+    SInt64 extraFramesPlayedNotAssigned = 0;
+    SInt64 framesPlayedForCurrent = totalFramesCopied;
 
     if (entry->lastFrameQueued >= 0)
     {
@@ -2781,7 +2775,7 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
                 
                 if (newEntry != nil)
                 {
-                    int64_t framesPlayedForCurrent = extraFramesPlayedNotAssigned;
+                    SInt64 framesPlayedForCurrent = extraFramesPlayedNotAssigned;
                     
                     OSSpinLockLock(&newEntry->spinLock);
                     

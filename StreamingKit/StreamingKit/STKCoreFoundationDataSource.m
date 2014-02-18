@@ -120,7 +120,7 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
 {
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(SInt64)offset
 {
 }
 

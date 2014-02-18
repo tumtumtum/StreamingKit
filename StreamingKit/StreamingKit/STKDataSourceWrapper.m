@@ -62,12 +62,12 @@
     self.innerDataSource.delegate = nil;
 }
 
--(long long) length
+-(SInt64) length
 {
     return self.innerDataSource.length;
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(SInt64)offset
 {
     return [self.innerDataSource seekToOffset:offset];
 }
@@ -77,7 +77,7 @@
     return [self.innerDataSource readIntoBuffer:buffer withSize:size];
 }
 
--(long long) position
+-(SInt64) position
 {
     return self.innerDataSource.position;
 }

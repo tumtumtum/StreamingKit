@@ -1,10 +1,10 @@
 /**********************************************************************************
- AudioPlayer.m
+ STKBufferingDataSource.m
  
- Created by Thong Nguyen on 14/05/2012.
+ Created by Thong Nguyen on 16/10/2012.
  https://github.com/tumtumtum/audjustable
  
- Copyright (c) 2012 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
+ Copyright (c) 2012-2014 Thong Nguyen (tumtumtum@gmail.com). All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,32 +30,74 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**********************************************************************************/
+ **********************************************************************************/
 
-#import <Foundation/Foundation.h>
-#include <AudioToolbox/AudioToolbox.h>
+#import "STKBufferingDataSource.h"
 
-@class STKDataSource;
-
-@protocol STKDataSourceDelegate<NSObject>
--(void) dataSourceDataAvailable:(STKDataSource*)dataSource;
--(void) dataSourceErrorOccured:(STKDataSource*)dataSource;
--(void) dataSourceEof:(STKDataSource*)dataSource;
+@interface STKBufferingDataSource()
+{
+@private
+    int bufferSize;
+    uint8_t* buffer;
+    STKDataSource* dataSource;
+}
 @end
 
-@interface STKDataSource : NSObject
+@implementation STKBufferingDataSource
 
-@property (readonly) SInt64 position;
-@property (readonly) SInt64 length;
-@property (readonly) BOOL hasBytesAvailable;
-@property (readwrite, unsafe_unretained) id<STKDataSourceDelegate> delegate;
+-(id) initWithDataSource:(STKDataSource*)dataSourceIn withBufferSize:(int)bufferSizeIn;
+{
+    if (self = [super init])
+    {
+        self->bufferSize = bufferSizeIn;
+        self->dataSource = dataSourceIn;
+        
+        self->dataSource.delegate = self.delegate;
+    }
+    
+    return self;
+}
 
--(BOOL) registerForEvents:(NSRunLoop*)runLoop;
--(void) unregisterForEvents;
--(void) close;
+-(void) dealloc
+{
+	self->dataSource.delegate = nil;
+    
+    free(self->buffer);
+}
 
--(void) seekToOffset:(SInt64)offset;
--(int) readIntoBuffer:(UInt8*)buffer withSize:(int)size;
--(AudioFileTypeID) audioFileTypeHint;
+-(void) createBuffer
+{
+    if (self->buffer == nil)
+    {
+        if (self->bufferSize == 0)
+        {
+        }
+    }
+}
+
+-(SInt64) length
+{
+    return self->dataSource.length;
+}
+
+-(void) seekToOffset:(SInt64)offset
+{
+}
+
+-(void) dataSourceDataAvailable:(STKDataSource*)dataSource
+{
+    [self.delegate dataSourceDataAvailable:self];
+}
+
+-(void) dataSourceErrorOccured:(STKDataSource*)dataSource
+{
+    [self.delegate dataSourceErrorOccured:self];
+}
+
+-(void) dataSourceEof:(STKDataSource*)dataSource
+{
+    [self.delegate dataSourceEof:self];
+}
+
 
 @end

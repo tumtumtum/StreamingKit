@@ -36,8 +36,8 @@
 
 @interface STKLocalFileDataSource()
 {
-    long long position;
-    long long length;
+    SInt64 position;
+    SInt64 length;
     AudioFileTypeID audioFileTypeHint;
 }
 @property (readwrite, copy) NSString* filePath;
@@ -153,12 +153,12 @@
     CFReadStreamOpen(stream);
 }
 
--(long long) position
+-(SInt64) position
 {
     return position;
 }
 
--(long long) length
+-(SInt64) length
 {
     return length;
 }
@@ -181,7 +181,7 @@
     return retval;
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(SInt64)offset
 {
     CFStreamStatus status = kCFStreamStatusClosed;
     

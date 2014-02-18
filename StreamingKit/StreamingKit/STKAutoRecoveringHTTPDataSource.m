@@ -246,7 +246,7 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
     return NO;
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(int64_t)offset
 {
 	ticksWhenLastDataReceived = GetTickCount();
 	

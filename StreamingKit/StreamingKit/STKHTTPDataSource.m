@@ -38,9 +38,9 @@
 @interface STKHTTPDataSource()
 {
 @private
-    long long seekStart;
-    long long relativePosition;
-    long long fileLength;
+    SInt64 seekStart;
+    SInt64 relativePosition;
+    SInt64 fileLength;
     int discontinuous;
 	int requestSerialNumber;
 
@@ -161,7 +161,7 @@
 		{
 			if (seekStart == 0)
 			{
-				fileLength = (long long)[[httpHeaders objectForKey:@"Content-Length"] integerValue];
+				fileLength = (SInt64)[[httpHeaders objectForKey:@"Content-Length"] longLongValue];
 			}
 			
 			NSString* contentType = [httpHeaders objectForKey:@"Content-Type"];
@@ -204,12 +204,12 @@
 	[super dataAvailable];
 }
 
--(long long) position
+-(SInt64) position
 {
     return seekStart + relativePosition;
 }
 
--(long long) length
+-(SInt64) length
 {
     return fileLength >= 0 ? fileLength : 0;
 }
@@ -225,7 +225,7 @@
     [self seekToOffset:self.position];
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(SInt64)offset
 {
     NSRunLoop* savedEventsRunLoop = eventsRunLoop;
     

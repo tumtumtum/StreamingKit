@@ -37,12 +37,12 @@
 @implementation STKDataSource
 @synthesize delegate;
 
--(long long) length
+-(SInt64) length
 {
     return 0;
 }
 
--(void) seekToOffset:(long long)offset
+-(void) seekToOffset:(SInt64)offset
 {
 }
 
@@ -51,7 +51,7 @@
     return -1;
 }
 
--(long long) position
+-(SInt64) position
 {
     return 0;
 }

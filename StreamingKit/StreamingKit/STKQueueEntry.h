@@ -22,9 +22,9 @@
     UInt64 audioDataByteCount;
     UInt32 packetBufferSize;
     volatile Float64 seekTime;
-    volatile int64_t framesQueued;
-    volatile int64_t framesPlayed;
-    volatile int64_t lastFrameQueued;
+    volatile SInt64 framesQueued;
+    volatile SInt64 framesPlayed;
+    volatile SInt64 lastFrameQueued;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
@@ -40,7 +40,6 @@
 -(double) duration;
 -(Float64) progressInFrames;
 -(double) calculatedBitRate;
--(void) updateAudioDataSource;
 -(BOOL) isDefinitelyCompatible:(AudioStreamBasicDescription*)basicDescription;
 
 @end

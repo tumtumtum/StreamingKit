@@ -56,19 +56,6 @@
     return retval;
 }
 
--(void) updateAudioDataSource
-{
-    if ([self.dataSource conformsToProtocol:@protocol(AudioDataSource)])
-    {
-        double calculatedBitrate = [self calculatedBitRate];
-        
-        id<AudioDataSource> audioDataSource = (id<AudioDataSource>)self.dataSource;
-        
-        audioDataSource.averageBitRate = calculatedBitrate;
-        audioDataSource.audioDataOffset = audioDataOffset;
-    }
-}
-
 -(double) duration
 {
     if (self->sampleRate <= 0)
