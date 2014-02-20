@@ -37,6 +37,7 @@
 @interface STKBufferingDataSource()
 {
 @private
+    NSRunLoop* runLoop;
     int bufferStartIndex;
     int bufferStartFileOffset;
     int bufferBytesUsed;
@@ -47,7 +48,63 @@
 }
 @end
 
+@interface STKBufferingDataSourceThread : NSThread
+{
+@private
+    NSRunLoop* runLoop;
+    NSConditionLock* threadStartedLock;
+}
+@end
+
+@implementation STKBufferingDataSourceThread
+
+-(id) init
+{
+    if (self = [super init])
+    {
+        threadStartedLock = [[NSConditionLock alloc] initWithCondition:0];
+    }
+    
+    return self;
+}
+
+-(NSRunLoop*) runLoop
+{
+    [threadStartedLock lockWhenCondition:1];
+    [threadStartedLock unlockWithCondition:0];
+    
+    return self->runLoop;
+}
+
+-(void) main
+{
+    runLoop = [NSRunLoop currentRunLoop];
+    
+    [threadStartedLock lockWhenCondition:0];
+    [threadStartedLock unlockWithCondition:1];
+    
+    [runLoop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
+    
+    while (true)
+    {
+        NSDate* date = [[NSDate alloc] initWithTimeIntervalSinceNow:10];
+        
+        [runLoop runMode:NSDefaultRunLoopMode beforeDate:date];
+    }
+}
+
+@end
+
+static STKBufferingDataSourceThread* thread;
+
 @implementation STKBufferingDataSource
+
++(void) initialize
+{
+    thread = [[STKBufferingDataSourceThread alloc] init];
+    
+    [thread start];
+}
 
 -(id) initWithDataSource:(STKDataSource*)dataSourceIn withMaxSize:(int)maxSizeIn
 {
@@ -57,6 +114,8 @@
         self->bufferBytesTotal = maxSizeIn;
         
         self->dataSource.delegate = self.delegate;
+        
+        [self->dataSource registerForEvents:[thread runLoop]];
     }
     
     return self;
@@ -89,6 +148,55 @@
 {
 }
 
+-(BOOL) hasBytesAvailable
+{
+    return bufferBytesUsed > 0;
+}
+
+-(int) readIntoBuffer:(UInt8*)bufferIn withSize:(int)size
+{
+    SInt64 bytesAlreadyReadInBuffer = (position - bufferStartFileOffset);
+    SInt64 bytesAvailable = bufferBytesUsed - bytesAlreadyReadInBuffer;
+    
+    if (bytesAvailable < 0)
+    {
+        return 0;
+    }
+    
+    int start = (bufferStartIndex + bytesAlreadyReadInBuffer) % bufferBytesTotal;
+    int end = (start + bufferBytesUsed) % bufferBytesTotal;
+    int bytesToRead = MIN(end - start, size);
+
+    memcpy(self->buffer, bufferIn, bytesToRead);
+    
+    self->bufferBytesUsed -= bytesToRead;
+    self->bufferStartFileOffset += bytesToRead;
+    
+    return bytesToRead;
+}
+
+-(BOOL) registerForEvents:(NSRunLoop*)runLoopIn
+{
+    runLoop = runLoopIn;
+    
+    [dataSource registerForEvents:[thread runLoop]];
+    
+    return YES;
+}
+
+-(void) unregisterForEvents
+{
+    runLoop = nil;
+    
+    [dataSource unregisterForEvents];
+}
+
+-(void) close
+{
+    [dataSource unregisterForEvents];
+    [dataSource close];
+}
+
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSourceIn
 {
     if (self->buffer == nil)
@@ -102,6 +210,7 @@
     if (start >= end)
     {
         int bytesRead;
+        int bufferStartFileOffsetDelta = 0;
         int bytesToRead = bufferBytesTotal - start;
         
         if (bytesToRead > 0)
@@ -110,9 +219,11 @@
         }
         else
         {
-            bytesToRead = start;
+            bytesToRead = end;
             
             bytesRead = [dataSource readIntoBuffer:self->buffer withSize:bytesToRead];
+            
+            bufferStartFileOffsetDelta = bytesRead - bufferStartIndex;
         }
         
         if (bytesRead < 0)
@@ -120,8 +231,8 @@
             return;
         }
         
-        bufferStartIndex += bytesRead;
         bufferBytesUsed += bytesRead;
+        bufferStartFileOffset += bufferStartFileOffsetDelta;
     }
     else
     {
@@ -134,8 +245,11 @@
             return;
         }
         
+        int bufferStartFileOffsetDelta = (bytesRead + start) - bufferStartIndex;
+        
     	bufferStartIndex += bytesRead;
         bufferBytesUsed += bytesRead;
+        bufferStartFileOffset += bufferStartFileOffsetDelta;
     }
 }
 

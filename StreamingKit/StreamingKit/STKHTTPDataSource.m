@@ -38,6 +38,7 @@
 @interface STKHTTPDataSource()
 {
 @private
+    UInt32 httpStatusCode;
     SInt64 seekStart;
     SInt64 relativePosition;
     SInt64 fileLength;
@@ -152,7 +153,7 @@
         {
             httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
             
-            self.httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
+            self->httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
             
             CFRelease(response);
         }
@@ -342,7 +343,7 @@
 
         [self reregisterForEvents];
         
-		self.httpStatusCode = 0;
+		self->httpStatusCode = 0;
 		
         // Open
 
@@ -362,6 +363,11 @@
         
         CFRelease(message);
     });
+}
+
+-(UInt32) httpStatusCode
+{
+    return self->httpStatusCode;
 }
 
 -(NSRunLoop*) eventsRunLoop
