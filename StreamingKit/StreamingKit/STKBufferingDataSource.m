@@ -33,17 +33,22 @@
  **********************************************************************************/
 
 #import "STKBufferingDataSource.h"
+#import "STKBufferChunk.h"
+#import <pthread.h>
+
+#define STK_BUFFER_CHUNK_SIZE (128 * 1024)
 
 @interface STKBufferingDataSource()
 {
 @private
     NSRunLoop* runLoop;
-    int bufferStartIndex;
-    int bufferStartFileOffset;
-    int bufferBytesUsed;
-    int bufferBytesTotal;
+    SInt32 maxSize;
+    UInt32 chunkSize;
+    UInt32 chunkCount;
     SInt64 position;
-    uint8_t* buffer;
+    pthread_mutex_t mutex;
+    pthread_cond_t condition;
+    STKBufferChunk* __strong * bufferChunks;
     STKDataSource* dataSource;
 }
 @end
@@ -63,7 +68,7 @@
     if (self = [super init])
     {
         threadStartedLock = [[NSConditionLock alloc] initWithCondition:0];
-    }
+	}
     
     return self;
 }
@@ -110,12 +115,21 @@ static STKBufferingDataSourceThread* thread;
 {
     if (self = [super init])
     {
+        self->maxSize = maxSizeIn;
         self->dataSource = dataSourceIn;
-        self->bufferBytesTotal = maxSizeIn;
+        self->chunkSize = STK_BUFFER_CHUNK_SIZE;
         
         self->dataSource.delegate = self.delegate;
         
         [self->dataSource registerForEvents:[thread runLoop]];
+        
+        pthread_mutexattr_t attr;
+        
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+
+        pthread_mutex_init(&self->mutex, &attr);
+        pthread_cond_init(&self->condition, NULL);
     }
     
     return self;
@@ -125,18 +139,38 @@ static STKBufferingDataSourceThread* thread;
 {
 	self->dataSource.delegate = nil;
     
-    free(self->buffer);
+    for (int i = 0; i < self->chunkCount; i++)
+    {
+        self->bufferChunks[i] = nil;
+    }
+    
+    free(self->bufferChunks);
+    
+    pthread_mutex_destroy(&self->mutex);
+    pthread_cond_destroy(&self->condition);
 }
 
 -(void) createBuffer
 {
-    if (self->buffer == nil)
+    if (self->bufferChunks == nil)
     {
-        self->bufferBytesTotal = MIN((int)self.length, self->bufferBytesTotal);
-        self->bufferBytesTotal = MAX(self->bufferBytesTotal, 1024);
+        int length = (int)MIN(self.length == 0? 1024 * 1024 : self.length, self->maxSize);
         
-        self->buffer = malloc(self->bufferBytesTotal);
+        self->chunkCount = (int)((length / self->chunkSize) + 1);
+        self->bufferChunks = (__strong STKBufferChunk**)calloc(sizeof(STKBufferChunk*), self->chunkCount);
     }
+}
+
+-(STKBufferChunk*) chunkForPosition:(SInt64)positionIn createIfNotExist:(BOOL)createIfNotExist
+{
+    int chunkIndex = (int)(positionIn / chunkCount);
+    
+    if (self->bufferChunks[chunkIndex] == nil && createIfNotExist)
+    {
+        self->bufferChunks[chunkIndex] = [[STKBufferChunk alloc] initWithBufferSize:STK_BUFFER_CHUNK_SIZE];
+    }
+    
+    return self->bufferChunks[chunkIndex];
 }
 
 -(SInt64) length
@@ -146,33 +180,21 @@ static STKBufferingDataSourceThread* thread;
 
 -(void) seekToOffset:(SInt64)offset
 {
+    pthread_mutex_lock(&mutex);
+    
+    [self seekToNextGap];
+    
+    pthread_mutex_unlock(&mutex);
 }
 
 -(BOOL) hasBytesAvailable
 {
-    return bufferBytesUsed > 0;
+    return NO;
 }
 
 -(int) readIntoBuffer:(UInt8*)bufferIn withSize:(int)size
 {
-    SInt64 bytesAlreadyReadInBuffer = (position - bufferStartFileOffset);
-    SInt64 bytesAvailable = bufferBytesUsed - bytesAlreadyReadInBuffer;
-    
-    if (bytesAvailable < 0)
-    {
-        return 0;
-    }
-    
-    int start = (bufferStartIndex + bytesAlreadyReadInBuffer) % bufferBytesTotal;
-    int end = (start + bufferBytesUsed) % bufferBytesTotal;
-    int bytesToRead = MIN(end - start, size);
-
-    memcpy(self->buffer, bufferIn, bytesToRead);
-    
-    self->bufferBytesUsed -= bytesToRead;
-    self->bufferStartFileOffset += bytesToRead;
-    
-    return bytesToRead;
+    return 0;
 }
 
 -(BOOL) registerForEvents:(NSRunLoop*)runLoopIn
@@ -197,60 +219,50 @@ static STKBufferingDataSourceThread* thread;
     [dataSource close];
 }
 
+-(void) seekToNextGap
+{
+}
+
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSourceIn
 {
-    if (self->buffer == nil)
+    if (![dataSourceIn hasBytesAvailable])
+    {
+        return;
+    }
+    
+    pthread_mutex_lock(&mutex);
+    
+    if (self->bufferChunks == nil)
     {
     	[self createBuffer];
     }
-
-    UInt32 start = (bufferStartIndex + bufferBytesUsed) % bufferBytesTotal;
-    UInt32 end = (position - bufferStartFileOffset + bufferStartIndex) % bufferBytesTotal;
     
-    if (start >= end)
+    SInt64 sourcePosition = dataSourceIn.position;
+    
+    STKBufferChunk* chunk = [self chunkForPosition:sourcePosition createIfNotExist:YES];
+    
+    if (chunk->position >= chunk->size)
     {
-        int bytesRead;
-        int bufferStartFileOffsetDelta = 0;
-        int bytesToRead = bufferBytesTotal - start;
+        [self seekToNextGap];
         
-        if (bytesToRead > 0)
-        {
-            bytesRead = [dataSource readIntoBuffer:self->buffer + bufferStartIndex withSize:bytesToRead];
-        }
-        else
-        {
-            bytesToRead = end;
-            
-            bytesRead = [dataSource readIntoBuffer:self->buffer withSize:bytesToRead];
-            
-            bufferStartFileOffsetDelta = bytesRead - bufferStartIndex;
-        }
-        
-        if (bytesRead < 0)
-        {
-            return;
-        }
-        
-        bufferBytesUsed += bytesRead;
-        bufferStartFileOffset += bufferStartFileOffsetDelta;
+        return;
     }
-    else
+    
+    int offset = dataSourceIn.position % self->chunkSize;
+    
+    if (offset > chunk->position)
     {
-        int bytesToRead = end - start;
+        [self seekToNextGap];
         
-        int bytesRead = [dataSource readIntoBuffer:self->buffer + start withSize:bytesToRead];
-        
-        if (bytesToRead < 0)
-        {
-            return;
-        }
-        
-        int bufferStartFileOffsetDelta = (bytesRead + start) - bufferStartIndex;
-        
-    	bufferStartIndex += bytesRead;
-        bufferBytesUsed += bytesRead;
-        bufferStartFileOffset += bufferStartFileOffsetDelta;
+        return;
     }
+    
+    int bytesToRead = self->chunkSize - offset;
+    int bytesRead = [dataSourceIn readIntoBuffer:(chunk->buffer + offset) withSize:bytesToRead];
+    
+    chunk->position = offset + bytesRead;
+    
+    pthread_mutex_unlock(&mutex);
 }
 
 -(void) dataSourceErrorOccured:(STKDataSource*)dataSourceIn
