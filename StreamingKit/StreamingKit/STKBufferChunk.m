@@ -27,4 +27,14 @@
     free(self->buffer);
 }
 
+-(UInt32) absoluteStart
+{
+	return self->index * self->size;
+}
+
+-(UInt32) absolutePosition
+{
+	return self.absoluteStart + self->position;
+}
+
 @end

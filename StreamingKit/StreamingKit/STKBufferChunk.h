@@ -11,11 +11,14 @@
 @interface STKBufferChunk : NSObject
 {
 @public
-    UInt32 key;
+    UInt32 index;
     UInt32 size;
     UInt32 position;
     UInt8* buffer;
 }
+
+@property (readonly) UInt32 absoluteStart;
+@property (readonly) UInt32 absolutePosition;
 
 -(id) initWithBufferSize:(UInt32)sizeIn;
 

@@ -197,6 +197,26 @@ static STKBufferingDataSourceThread* thread;
     return 0;
 }
 
+-(void) invokeBlockOnEventsRunLoop:(void(^)())block
+{
+    if (!runLoop)
+    {
+        return;
+    }
+    
+    block = [block copy];
+    
+    CFRunLoopPerformBlock(runLoop.getCFRunLoop, NSRunLoopCommonModes, ^
+    {
+        if ([self hasBytesAvailable])
+        {
+            block();
+        }
+    });
+    
+    CFRunLoopWakeUp(runLoop.getCFRunLoop);
+}
+
 -(BOOL) registerForEvents:(NSRunLoop*)runLoopIn
 {
     runLoop = runLoopIn;
@@ -221,6 +241,28 @@ static STKBufferingDataSourceThread* thread;
 
 -(void) seekToNextGap
 {
+    int startChunkIndex = (int)(self->position / chunkCount);
+    
+    for (int i = 0; i < self->chunkCount; i++)
+    {
+        int chunkIndex = (i + startChunkIndex) % self->chunkCount;
+        
+        STKBufferChunk* chunk = self->bufferChunks[chunkIndex];
+        
+        if (chunk == nil)
+        {
+            chunk = [[STKBufferChunk alloc] initWithBufferSize:STK_BUFFER_CHUNK_SIZE];
+            
+            chunk->index = chunkIndex;
+            
+            self->bufferChunks[chunkIndex] = chunk;
+        }
+        
+        if (chunk->position < chunk->size)
+        {
+            [dataSource seekToOffset:(self->chunkSize * chunk->index) + chunk->position];
+        }
+    }
 }
 
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSourceIn
@@ -250,7 +292,7 @@ static STKBufferingDataSourceThread* thread;
     
     int offset = dataSourceIn.position % self->chunkSize;
     
-    if (offset > chunk->position)
+    if (offset >= chunk->position)
     {
         [self seekToNextGap];
         
