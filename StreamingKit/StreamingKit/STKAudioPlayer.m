@@ -2013,7 +2013,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	AudioComponentInstance convertUnit;
 	
 	CHECK_STATUS_AND_RETURN_VALUE(AUGraphAddNode(audioGraph, &convertUnitDescription, &convertNode), 0);
-	CHECK_STATUS_AND_RETURN_VALUE(status = AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit), 0);
+	CHECK_STATUS_AND_RETURN_VALUE(AUGraphNodeInfo(audioGraph, convertNode, &mixerDescription, &convertUnit), 0);
 	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &srcFormat, sizeof(srcFormat)), 0);
   	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &desFormat, sizeof(desFormat)), 0);
 	CHECK_STATUS_AND_RETURN_VALUE(AudioUnitSetProperty(convertUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)), 0);

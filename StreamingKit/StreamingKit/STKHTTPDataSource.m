@@ -153,7 +153,7 @@
         {
             httpHeaders = (__bridge_transfer NSDictionary*)CFHTTPMessageCopyAllHeaderFields((CFHTTPMessageRef)response);
             
-            self->httpStatusCode = CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
+            self->httpStatusCode = (UInt32)CFHTTPMessageGetResponseStatusCode((CFHTTPMessageRef)response);
             
             CFRelease(response);
         }
