@@ -42,6 +42,10 @@
 #import "libkern/OSAtomic.h"
 #import <float.h>
 
+#ifndef DBL_MAX
+#define DBL_MAX 1.7976931348623157e+308
+#endif
+
 #pragma mark Defines
 
 #define kOutputBus 0
@@ -1347,7 +1351,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
     }
     pthread_mutex_unlock(&playerMutex);
-
     
     return YES;
 }
@@ -1398,6 +1401,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		
 		playbackThreadRunLoop = nil;
 
+		[self destroyAudioResources];
+		
 		[threadFinishedCondLock lock];
 		[threadFinishedCondLock unlockWithCondition:1];
 	}

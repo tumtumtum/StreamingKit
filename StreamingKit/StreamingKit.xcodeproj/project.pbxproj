@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1682FA318B3903900F29FEC /* STKBufferingDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1682FA218B3903900F29FEC /* STKBufferingDataSource.m */; };
-		A168C6F118BB67DC003D170D /* STKBufferChunk.m in Sources */ = {isa = PBXBuildFile; fileRef = A168C6F018BB67DC003D170D /* STKBufferChunk.m */; };
 		A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
 		A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49974189E744500E2A2E2 /* StreamingKitMac.m */; };
 		A1A4997B189E744500E2A2E2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
@@ -85,10 +83,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A1682FA118B3903900F29FEC /* STKBufferingDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKBufferingDataSource.h; sourceTree = "<group>"; };
-		A1682FA218B3903900F29FEC /* STKBufferingDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKBufferingDataSource.m; sourceTree = "<group>"; };
-		A168C6EF18BB67DC003D170D /* STKBufferChunk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKBufferChunk.h; sourceTree = "<group>"; };
-		A168C6F018BB67DC003D170D /* STKBufferChunk.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKBufferChunk.m; sourceTree = "<group>"; };
 		A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKitMac.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A4996A189E744400E2A2E2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		A1A4996D189E744500E2A2E2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -272,10 +266,6 @@
 				A1E7C4F2188D5E550010896F /* STKAudioPlayer.m */,
 				A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */,
 				A1E7C4F4188D5E550010896F /* STKAutoRecoveringHTTPDataSource.m */,
-				A168C6EF18BB67DC003D170D /* STKBufferChunk.h */,
-				A168C6F018BB67DC003D170D /* STKBufferChunk.m */,
-				A1682FA118B3903900F29FEC /* STKBufferingDataSource.h */,
-				A1682FA218B3903900F29FEC /* STKBufferingDataSource.m */,
 				A1E7C4F5188D5E550010896F /* STKCoreFoundationDataSource.h */,
 				A1E7C4F6188D5E550010896F /* STKCoreFoundationDataSource.m */,
 				A1E7C4F7188D5E550010896F /* STKDataSource.h */,
@@ -411,7 +401,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = STK;
-				LastUpgradeCheck = 0500;
+				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Thong Nguyen";
 			};
 			buildConfigurationList = A1E7C4C3188D57F50010896F /* Build configuration list for PBXProject "StreamingKit" */;
@@ -512,9 +502,7 @@
 				A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */,
 				A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */,
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
-				A1682FA318B3903900F29FEC /* STKBufferingDataSource.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,
-				A168C6F118BB67DC003D170D /* STKBufferChunk.m in Sources */,
 				A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */,
 				A1E7C500188D5E550010896F /* STKAutoRecoveringHTTPDataSource.m in Sources */,
 			);
@@ -647,7 +635,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -685,7 +672,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -716,7 +702,6 @@
 		A1E7C4EC188D57F60010896F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/StreamingKit.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -733,7 +718,6 @@
 		A1E7C4ED188D57F60010896F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/StreamingKit.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -750,7 +734,6 @@
 		A1E7C4EF188D57F60010896F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -771,7 +754,6 @@
 		A1E7C4F0188D57F60010896F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
