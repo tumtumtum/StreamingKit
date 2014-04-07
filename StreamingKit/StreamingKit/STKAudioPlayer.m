@@ -2537,11 +2537,15 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 {
     STKAudioPlayer* audioPlayer = (__bridge STKAudioPlayer*)inRefCon;
 
+    OSSpinLockLock(&audioPlayer->currentEntryReferencesLock);
+	STKQueueEntry* entry = audioPlayer->currentlyPlayingEntry;
+    STKQueueEntry* currentlyReadingEntry = audioPlayer->currentlyReadingEntry;
+    OSSpinLockUnlock(&audioPlayer->currentEntryReferencesLock);
+    
     OSSpinLockLock(&audioPlayer->pcmBufferSpinLock);
     
     BOOL waitForBuffer = NO;
 	BOOL muted = audioPlayer->muted;
-	STKQueueEntry* entry = audioPlayer->currentlyPlayingEntry;
     AudioBuffer* audioBuffer = audioPlayer->pcmAudioBuffer;
     UInt32 frameSizeInBytes = audioPlayer->pcmBufferFrameSizeInBytes;
     UInt32 used = audioPlayer->pcmBufferUsedFrameCount;
@@ -2559,10 +2563,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 			
 			if (entry->lastFrameQueued >= 0)
 			{
-				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, audioPlayer->currentlyPlayingEntry->lastFrameQueued);
+				framesRequiredToStartPlaying = MIN(framesRequiredToStartPlaying, entry->lastFrameQueued);
 			}
 			
-			if (entry && audioPlayer->currentlyReadingEntry == entry
+			if (entry && currentlyReadingEntry == entry
 				&& entry->framesQueued < framesRequiredToStartPlaying)
 			{
 				waitForBuffer = YES;
@@ -2772,13 +2776,19 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     {
         pthread_mutex_lock(&audioPlayer->playerMutex);
         
-        if (lastFramePlayed && entry == audioPlayer->currentlyPlayingEntry)
+        OSSpinLockLock(&audioPlayer->currentEntryReferencesLock);
+        STKQueueEntry* currentlyPlayingEntry = audioPlayer->currentlyPlayingEntry;
+        OSSpinLockUnlock(&audioPlayer->currentEntryReferencesLock);
+       
+        if (lastFramePlayed && entry == currentlyPlayingEntry)
         {
             [audioPlayer audioQueueFinishedPlaying:entry];
             
             while (extraFramesPlayedNotAssigned > 0)
             {
+                OSSpinLockLock(&audioPlayer->currentEntryReferencesLock);
                 STKQueueEntry* newEntry = audioPlayer->currentlyPlayingEntry;
+                OSSpinLockUnlock(&audioPlayer->currentEntryReferencesLock);
                 
                 if (newEntry != nil)
                 {

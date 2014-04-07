@@ -200,6 +200,18 @@
         [self open];
     }
     
+    if (stream == 0)
+    {
+        CFRunLoopPerformBlock(eventsRunLoop.getCFRunLoop, NSRunLoopCommonModes, ^
+        {
+            [self errorOccured];
+        });
+        
+        CFRunLoopWakeUp(eventsRunLoop.getCFRunLoop);
+        
+        return;
+    }
+    
     if (CFReadStreamSetProperty(stream, kCFStreamPropertyFileCurrentOffset, (__bridge CFTypeRef)[NSNumber numberWithLongLong:offset]) != TRUE)
     {
         position = 0;
