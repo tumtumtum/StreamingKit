@@ -18,6 +18,8 @@
 {
     if (self = [super init])
     {
+        self->spinLock = OS_SPINLOCK_INIT;
+        
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
         self->lastFrameQueued = -1;

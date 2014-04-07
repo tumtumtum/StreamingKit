@@ -530,7 +530,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     {
         currentlyPlayingEntry.dataSource.delegate = nil;
         [currentlyReadingEntry.dataSource unregisterForEvents];
+        
+        OSSpinLockLock(&currentEntryReferencesLock);
+        
 		currentlyPlayingEntry = nil;
+        
+        OSSpinLockUnlock(&currentEntryReferencesLock);
     }
     
     [self stopAudioUnitWithReason:STKAudioPlayerStopReasonDisposed];
@@ -928,20 +933,15 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     }
     
     OSSpinLockLock(&currentEntryReferencesLock);
-    
     STKQueueEntry* entry = currentlyPlayingEntry;
+	OSSpinLockUnlock(&currentEntryReferencesLock);
     
     if (entry == nil)
     {
-		OSSpinLockUnlock(&currentEntryReferencesLock);
-        
-        return 0;
+		return 0;
     }
     
     double retval = [entry duration];
-    
-	OSSpinLockUnlock(&currentEntryReferencesLock);
-    
     double progress = [self progress];
     
     if (retval < progress && retval > 0)
@@ -964,7 +964,9 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         return 0;
     }
     
+    OSSpinLockLock(&currentEntryReferencesLock);
     STKQueueEntry* entry = currentlyPlayingEntry;
+    OSSpinLockUnlock(&currentEntryReferencesLock);
     
     if (entry == nil)
     {
