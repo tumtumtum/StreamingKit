@@ -146,6 +146,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 @property (readwrite) BOOL meteringEnabled;
 /// Enables or disables the EQ
 @property (readwrite) BOOL equalizerEnabled;
+/// Enables or disables the spectrum analyzer (fft)
+@property (readwrite) BOOL spectrumAnalyzerEnabled;
 /// Returns an array of STKFrameFilterEntry objects representing the filters currently in use
 @property (readonly) NSArray* frameFilters;
 /// Returns the items pending to be played (includes buffering and upcoming items but does not include the current item)

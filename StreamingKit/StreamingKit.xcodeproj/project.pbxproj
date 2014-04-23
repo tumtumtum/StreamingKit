@@ -37,6 +37,8 @@
 		A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FA188D5E550010896F /* STKDataSourceWrapper.m */; };
 		A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */; };
 		A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */; };
+		A1F341041908183300CA7755 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F341031908183300CA7755 /* Accelerate.framework */; };
+		A1F341081908183A00CA7755 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F341071908183A00CA7755 /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,6 +127,8 @@
 		A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKLocalFileDataSource.h; sourceTree = "<group>"; };
 		A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKLocalFileDataSource.m; sourceTree = "<group>"; };
 		A1E7C507188D62D20010896F /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		A1F341031908183300CA7755 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		A1F341071908183A00CA7755 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/System/Library/Frameworks/Accelerate.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +136,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F341081908183A00CA7755 /* Accelerate.framework in Frameworks */,
 				A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -150,6 +155,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F341041908183300CA7755 /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,6 +254,8 @@
 		A1E7C4CA188D57F50010896F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1F341071908183A00CA7755 /* Accelerate.framework */,
+				A1F341031908183300CA7755 /* Accelerate.framework */,
 				A1A499F6189E79EA00E2A2E2 /* AudioToolbox.framework */,
 				A1C9767618981BFE0057F881 /* AudioUnit.framework */,
 				A1E7C507188D62D20010896F /* UIKit.framework */,

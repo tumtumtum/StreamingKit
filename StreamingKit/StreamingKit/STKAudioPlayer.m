@@ -40,6 +40,7 @@
 #import "STKQueueEntry.h"
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
+#include <Accelerate/Accelerate.h>
 #import <float.h>
 
 #ifndef DBL_MAX
@@ -189,6 +190,7 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
 	BOOL meteringEnabled;
     BOOL equalizerOn;
     BOOL equalizerEnabled;
+    BOOL spectrumAnalyzerEnabled;
     STKAudioPlayerOptions options;
 
     NSMutableArray* converterNodes;
@@ -252,6 +254,12 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     pthread_cond_t playerThreadReadyCondition;
     pthread_mutex_t mainThreadSyncCallMutex;
     pthread_cond_t mainThreadSyncCallReadyCondition;
+    
+    float* obtainedReal;
+    float* originalReal;
+    int fftStride;
+    FFTSetup setupReal;
+    DSPSplitComplex fftInput;
     
     volatile BOOL waiting;
     volatile double requestedSeekTime;
@@ -470,6 +478,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		
 		self->volume = 1.0;
         self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
+        self->spectrumAnalyzerEnabled = NO;
 
         PopulateOptionsWithDefault(&options);
         
@@ -578,6 +587,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     pthread_cond_destroy(&mainThreadSyncCallReadyCondition);
     
     free(readBuffer);
+    free(originalReal);
+    free(obtainedReal);
 }
 
 -(void) startSystemBackgroundTask
@@ -2912,6 +2923,50 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	return averagePowerDb[channelNumber];
 }
 
+-(BOOL) spectrumAnalyzerEnabled
+{
+	return self->spectrumAnalyzerEnabled;
+}
+
+-(void) setSpectrumAnalyzerEnabled:(BOOL)value
+{
+    if (self->spectrumAnalyzerEnabled == value)
+	{
+		return;
+	}
+    
+    self->spectrumAnalyzerEnabled = value;
+    
+    if (!value)
+    {
+        [self removeFrameFilterWithName:@"STKSpectrumAnalyzerFilter"];
+    }
+    else
+    {
+        if (!obtainedReal)
+        {
+            int maxSamples = 4096;
+            int log2n = log2f(maxSamples);
+            int n = 1 << log2n;
+            
+            fftStride = 1;
+            int nOver2 = maxSamples / 2;
+            
+            fftInput.realp = (float*)calloc(nOver2, sizeof(float));
+            fftInput.imagp =(float*)calloc(nOver2, sizeof(float));
+
+            obtainedReal = (float*)calloc(n, sizeof(float));
+            originalReal = (float*)calloc(n, sizeof(float));
+            
+            setupReal = vDSP_create_fftsetup(log2n, FFT_RADIX2);
+        }
+        
+        [self appendFrameFilterWithName:@"STKSpectrumAnalyzerFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
+        {
+        }];
+    }
+}
+
 -(BOOL) meteringEnabled
 {
 	return self->meteringEnabled;
@@ -2941,11 +2996,12 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	{
 		return;
 	}
+    
+    self->meteringEnabled = value;
 	
 	if (!value)
 	{
 		[self removeFrameFilterWithName:@"STKMeteringFilter"];
-		self->meteringEnabled = NO;
 	}
 	else
 	{

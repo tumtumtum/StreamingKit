@@ -27,6 +27,7 @@
 		A17FFB6318A0028300BAA7FF /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */; };
 		A17FFB6918A002E400BAA7FF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F5E491189EB3F20070B03F /* AVFoundation.framework */; };
 		A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */; };
+		A1F3410A1908185900CA7755 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F341091908185900CA7755 /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +66,7 @@
 		A142571C18907861005F0129 /* airplane.aac */ = {isa = PBXFileReference; lastKnownFileType = file; path = airplane.aac; sourceTree = "<group>"; };
 		A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		A1F341091908185900CA7755 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1F5E491189EB3F20070B03F /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -74,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F3410A1908185900CA7755 /* Accelerate.framework in Frameworks */,
 				A17FFB6918A002E400BAA7FF /* AVFoundation.framework in Frameworks */,
 				A17FFB6318A0028300BAA7FF /* AudioToolbox.framework in Frameworks */,
 				A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */,
@@ -119,6 +122,7 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A1F341091908185900CA7755 /* Accelerate.framework */,
 				A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */,
 				A1F5E491189EB3F20070B03F /* AVFoundation.framework */,
 				A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */,
