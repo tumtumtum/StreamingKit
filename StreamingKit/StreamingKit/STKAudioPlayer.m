@@ -255,9 +255,11 @@ static AudioStreamBasicDescription canonicalAudioStreamBasicDescription;
     pthread_mutex_t mainThreadSyncCallMutex;
     pthread_cond_t mainThreadSyncCallReadyCondition;
     
+    float* window;
     float* obtainedReal;
     float* originalReal;
     int fftStride;
+
     FFTSetup setupReal;
     DSPSplitComplex fftInput;
     
@@ -589,6 +591,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     free(readBuffer);
     free(originalReal);
     free(obtainedReal);
+    free(window);
 }
 
 -(void) startSystemBackgroundTask
@@ -2957,14 +2960,79 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 
             obtainedReal = (float*)calloc(n, sizeof(float));
             originalReal = (float*)calloc(n, sizeof(float));
+            window = (float*)calloc(maxSamples, sizeof(float));
+            
+            vDSP_blkman_window(window, maxSamples, 0);
             
             setupReal = vDSP_create_fftsetup(log2n, FFT_RADIX2);
         }
         
         [self appendFrameFilterWithName:@"STKSpectrumAnalyzerFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
         {
+            int log2n = log2f(frameCount);
+            int n = 1 << log2n;
+            int nOver2 = frameCount / 2;
+            SInt16* samples16 = (SInt16*)frames;
+			SInt32* samples32 = (SInt32*)frames;
+            
+            if (bytesPerFrame / channelsPerFrame == 2)
+            {
+                for (int i = 0, j = 0; i < frameCount * channelsPerFrame; i+= channelsPerFrame, j += 2)
+                {
+                    originalReal[j] = samples16[i] / 32768.0;
+                }
+            }
+            else if (bytesPerFrame / channelsPerFrame == 4)
+            {
+                for (int i = 0, j = 0; i < frameCount * channelsPerFrame; i+= channelsPerFrame, j+= 2)
+                {
+                    originalReal[j] = samples32[i] / 32768.0;
+                }
+            }
+            
+            vDSP_hann_window(window, n, 0);
+            vDSP_vmul(originalReal, 2, window, 1, originalReal, 2, n);
+            
+            vDSP_ctoz((COMPLEX*)originalReal, 2, &fftInput, 1, nOver2);
+            vDSP_fft_zrip(setupReal, &fftInput, fftStride, log2n, FFT_FORWARD);
+            
+            float one = 1;
+
+            float scale = (float)1.0 / (2 * n);
+            vDSP_vsmul(fftInput.realp, 1, &scale, fftInput.realp, 1, nOver2);
+            vDSP_vsmul(fftInput.imagp, 1, &scale, fftInput.imagp, 1, nOver2);
+
+            pthread_mutex_lock(&self->playerMutex);
+            
+            vDSP_zvmags(&fftInput, 1, obtainedReal, 1, nOver2);
+            vDSP_vdbcon(obtainedReal, 1, &one, obtainedReal, 1, nOver2, 0);
+
+            float vmin = -96;
+            float vmax = 0;
+            
+            vDSP_vclip(obtainedReal, 1, &vmin, &vmax, obtainedReal, 1, nOver2);
+            
+            pthread_mutex_unlock(&self->playerMutex);
         }];
     }
+}
+
+-(float) testPowerWithIndex:(int)index
+{
+    pthread_mutex_lock(&self->playerMutex);
+    
+    if (!obtainedReal)
+    {
+        pthread_mutex_unlock(&self->playerMutex);
+        
+        return 0;
+    }
+    
+    float retval = obtainedReal[index];
+    
+    pthread_mutex_unlock(&self->playerMutex);
+    
+    return retval;
 }
 
 -(BOOL) meteringEnabled

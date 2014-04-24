@@ -40,6 +40,9 @@
 ///
 
 @interface AudioPlayerView()
+{
+    NSMutableArray* meters;
+}
 -(void) setupTimer;
 -(void) updateControls;
 @end
@@ -54,6 +57,8 @@
     if (self)
 	{
         self.audioPlayer = audioPlayerIn;
+        
+        self.audioPlayer.spectrumAnalyzerEnabled = YES;
         
 		CGSize size = CGSizeMake(220, 50);
 		
@@ -114,9 +119,23 @@
 		
         statusLabel.textAlignment = NSTextAlignmentCenter;
 		
+        meters = [[NSMutableArray alloc] init];
+        
 		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 450, 0, 20)];
 		
 		meter.backgroundColor = [UIColor greenColor];
+        
+        for (int i = 0; i < 256; i++)
+        {
+            UIView* freqMeter = [[UIView alloc] initWithFrame:CGRectMake(i, self.bounds.size.height, 1, 0)];
+            
+            freqMeter.backgroundColor = [UIColor blueColor];
+            
+            [self addSubview:freqMeter];
+            [meters addObject:freqMeter];
+            
+            [self sendSubviewToBack:freqMeter];
+        }
 		
 		[self addSubview:slider];
 		[self addSubview:playButton];
@@ -193,9 +212,18 @@
     
     statusLabel.text = audioPlayer.state == STKAudioPlayerStateBuffering ? @"buffering" : @"";
 	
-	CGFloat newWidth = 320 * (([audioPlayer averagePowerInDecibelsForChannel:1] + 60) / 60);
+	CGFloat newWidth = 320 * (([audioPlayer testPowerWithIndex:100] + 96) / 96);
 	
 	meter.frame = CGRectMake(0, 460, newWidth, 20);
+    
+    for (int i = 0; i < 256; i++)
+    {
+        UIView* freqMeter = [meters objectAtIndex:i];
+        
+        CGFloat height = 200 * (([audioPlayer testPowerWithIndex:i] + 96) / 96);
+        
+        freqMeter.frame = CGRectMake(freqMeter.frame.origin.x, self.bounds.size.height - height, 1, height);
+    }
 }
 
 -(void) playFromHTTPButtonTouched
