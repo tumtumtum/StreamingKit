@@ -283,6 +283,17 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 @implementation STKAudioPlayer
 
++(instancetype) sharedManager {
+    
+    static STKAudioPlayer *audioPlayer = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        audioPlayer = [[self alloc]init];
+    });
+    
+    return audioPlayer;
+}
+
 +(void) initialize
 {
     convertUnitDescription = (AudioComponentDescription)
