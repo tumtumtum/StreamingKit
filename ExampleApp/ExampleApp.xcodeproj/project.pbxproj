@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		77DFD7FA1940171300B661F1 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DFD7F91940171300B661F1 /* MediaPlayer.framework */; };
 		A1115935188D686000641365 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115934188D686000641365 /* Foundation.framework */; };
 		A1115937188D686000641365 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115936188D686000641365 /* CoreGraphics.framework */; };
 		A1115939188D686000641365 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115938188D686000641365 /* UIKit.framework */; };
@@ -40,6 +41,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = StreamingKit.xcodeproj; path = ../StreamingKit/StreamingKit.xcodeproj; sourceTree = "<group>"; };
+		77DFD7F91940171300B661F1 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		A1115931188D686000641365 /* ExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1115934188D686000641365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		A1115936188D686000641365 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -74,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77DFD7FA1940171300B661F1 /* MediaPlayer.framework in Frameworks */,
 				A17FFB6918A002E400BAA7FF /* AVFoundation.framework in Frameworks */,
 				A17FFB6318A0028300BAA7FF /* AudioToolbox.framework in Frameworks */,
 				A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */,
@@ -100,6 +104,7 @@
 		A1115928188D686000641365 = {
 			isa = PBXGroup;
 			children = (
+				77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */,
 				A111593A188D686000641365 /* ExampleApp */,
 				A1115953188D686000641365 /* ExampleAppTests */,
 				A1115933188D686000641365 /* Frameworks */,
@@ -119,6 +124,7 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				77DFD7F91940171300B661F1 /* MediaPlayer.framework */,
 				A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */,
 				A1F5E491189EB3F20070B03F /* AVFoundation.framework */,
 				A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */,
