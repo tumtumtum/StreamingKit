@@ -37,7 +37,7 @@
 #import "STKHTTPDataSource.h"
 #import "STKAutoRecoveringHTTPDataSource.h"
 #import "STKLocalFileDataSource.h"
-#import "STKMediaLibraryFileLoader.h"
+#import "STKMediaLibraryFileDataSource.h"
 #import "STKQueueEntry.h"
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
@@ -627,7 +627,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         retval = [[STKAutoRecoveringHTTPDataSource alloc] initWithHTTPDataSource:[[STKHTTPDataSource alloc] initWithURL:url]];
     }
     else if ([url.scheme caseInsensitiveCompare:@"ipod-library"] == NSOrderedSame) {
-        retval = [STKMediaLibraryFileLoader localFileDataSourceWithMediaLibraryURL:url];
+        retval = [[STKMediaLibraryFileDataSource alloc] initWithMediaURL:url];
     }
     
     return retval;

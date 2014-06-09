@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		43CC19061945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 43CC19051945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.m */; };
 		77DFD7FD1940200300B661F1 /* STKMediaLibraryFileLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 77DFD7FC1940200300B661F1 /* STKMediaLibraryFileLoader.m */; };
 		A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
 		A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49974189E744500E2A2E2 /* StreamingKitMac.m */; };
@@ -84,6 +85,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		43CC19041945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKMediaLibraryFileDataSource.h; sourceTree = "<group>"; };
+		43CC19051945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKMediaLibraryFileDataSource.m; sourceTree = "<group>"; };
 		77DFD7FB1940200300B661F1 /* STKMediaLibraryFileLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKMediaLibraryFileLoader.h; sourceTree = "<group>"; };
 		77DFD7FC1940200300B661F1 /* STKMediaLibraryFileLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKMediaLibraryFileLoader.m; sourceTree = "<group>"; };
 		A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKitMac.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -281,6 +284,8 @@
 				A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */,
 				77DFD7FB1940200300B661F1 /* STKMediaLibraryFileLoader.h */,
 				77DFD7FC1940200300B661F1 /* STKMediaLibraryFileLoader.m */,
+				43CC19041945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.h */,
+				43CC19051945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.m */,
 				A1BF65D0189A6582004DD08C /* STKQueueEntry.h */,
 				A1BF65D1189A6582004DD08C /* STKQueueEntry.m */,
 				A1BF65D3189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.h */,
@@ -510,6 +515,7 @@
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,
 				A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */,
+				43CC19061945FBF4007F8ED3 /* STKMediaLibraryFileDataSource.m in Sources */,
 				A1E7C500188D5E550010896F /* STKAutoRecoveringHTTPDataSource.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
