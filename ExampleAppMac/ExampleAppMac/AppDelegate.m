@@ -58,7 +58,7 @@
 
 -(void) playFromHTTP
 {
-	[audioPlayer play:@"http://fs.bloom.fm/oss/audiosamples/sample.mp3"];
+	[audioPlayer play:@"http://www.abstractpath.com/files/audiosamples/sample.mp3"];
 }
 
 -(void) tick:(NSTimer*)timer
