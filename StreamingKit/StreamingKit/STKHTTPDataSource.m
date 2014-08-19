@@ -49,6 +49,7 @@
     STKAsyncURLProvider asyncUrlProvider;
     NSDictionary* httpHeaders;
     AudioFileTypeID audioFileTypeHint;
+    NSDictionary* requestHeaders;
 }
 -(void) open;
 
@@ -59,6 +60,13 @@
 -(id) initWithURL:(NSURL*)urlIn
 {
     return [self initWithURLProvider:^NSURL* { return urlIn; }];
+}
+
+-(id) initWithURL:(NSURL *)urlIn httpRequestHeaders:(NSDictionary *)httpRequestHeaders
+{
+    self = [self initWithURLProvider:^NSURL* { return urlIn; }];
+    self->requestHeaders = httpRequestHeaders;
+    return self;
 }
 
 -(id) initWithURLProvider:(STKURLProvider)urlProviderIn
@@ -297,6 +305,12 @@
             CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Range"), (__bridge CFStringRef)[NSString stringWithFormat:@"bytes=%lld-", seekStart]);
 
             discontinuous = YES;
+        }
+
+        for (NSString* key in self->requestHeaders)
+        {
+            NSString* value = [self->requestHeaders objectForKey:key];
+            CFHTTPMessageSetHeaderFieldValue(message, (__bridge CFStringRef)key, (__bridge CFStringRef)value);
         }
 
         stream = CFReadStreamCreateForHTTPRequest(NULL, message);
