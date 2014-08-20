@@ -805,7 +805,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
                 pthread_mutex_lock(&playerMutex);
                 
-                entryToUpdate->audioStreamBasicDescription = newBasicDescription;
+                if (entryToUpdate->audioStreamBasicDescription.mFormatID == 0)
+                {
+                    entryToUpdate->audioStreamBasicDescription = newBasicDescription;
+                }
+                
                 entryToUpdate->sampleRate = entryToUpdate->audioStreamBasicDescription.mSampleRate;
                 entryToUpdate->packetDuration = entryToUpdate->audioStreamBasicDescription.mFramesPerPacket / entryToUpdate->sampleRate;
 
@@ -886,13 +890,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                 
                 if (pasbd.mFormatID == kAudioFormatMPEG4AAC_HE || pasbd.mFormatID == kAudioFormatMPEG4AAC_HE_V2)
                 {
-                    //
-                    // We've found HE-AAC, remember this to tell the audio queue
-                    // when we construct it.
-                    //
-#if !TARGET_IPHONE_SIMULATOR
                     currentlyReadingEntry->audioStreamBasicDescription = pasbd;
-#endif
+
                     break;
                 }
             }

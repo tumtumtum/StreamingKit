@@ -38,6 +38,7 @@
 	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .flushQueueOnSeek = YES, .enableVolumeMixer = NO, .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000} }];
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 1;
+    
 	
 	AudioPlayerView* audioPlayerView = [[AudioPlayerView alloc] initWithFrame:self.window.bounds andAudioPlayer:audioPlayer];
     
@@ -60,7 +61,7 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {
-	NSURL* url = [NSURL URLWithString:@"http://www.abstractpath.com/files/audiosamples/sample.mp3"];
+    NSURL* url = [NSURL URLWithString:@"file:///Users/tum/Temp/airplane-cut.aac"];
     
     STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
     
