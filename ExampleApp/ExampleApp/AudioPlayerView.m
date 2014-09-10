@@ -111,9 +111,18 @@
         label.textAlignment = NSTextAlignmentCenter;
         
         statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 8, frame.size.width, 50)];
-		
         statusLabel.textAlignment = NSTextAlignmentCenter;
-		
+        
+        metaDataLabel = [[UILabel alloc] initWithFrame:
+                         CGRectMake(
+                                    0,
+                                    statusLabel.frame.origin.y - 20,
+                                    frame.size.width,
+                                    15
+                                    )];
+        metaDataLabel.font = [UIFont systemFontOfSize:12];
+        metaDataLabel.textAlignment = NSTextAlignmentCenter;
+        
 		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 450, 0, 20)];
 		
 		meter.backgroundColor = [UIColor greenColor];
@@ -127,6 +136,7 @@
         [self addSubview:repeatSwitch];
         [self addSubview:label];
         [self addSubview:statusLabel];
+        [self addSubview:metaDataLabel];
         [self addSubview:stopButton];
 		[self addSubview:meter];
 		[self addSubview:muteButton];
@@ -351,6 +361,11 @@
 -(void) audioPlayer:(STKAudioPlayer *)audioPlayer logInfo:(NSString *)line
 {
     NSLog(@"%@", line);
+}
+
+-(void) audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetaData:(NSDictionary *)metaData
+{
+    metaDataLabel.text = metaData[@"StreamTitle"];
 }
 
 @end

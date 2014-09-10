@@ -61,7 +61,7 @@
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView
 {
-    NSURL* url = [NSURL URLWithString:@"file:///Users/tum/Temp/airplane-cut.aac"];
+    NSURL* url = [NSURL URLWithString:@"http://streaming.swisstxt.ch/m/rsj/mp3_128"];
     
     STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
     
