@@ -117,4 +117,9 @@
     [self.delegate dataSourceEof:self];
 }
 
+-(void) dataSource:(STKDataSource *)dataSource didUpdateMetaData:(NSDictionary *)metaDataDictionary
+{
+    [self.delegate dataSource:self didUpdateMetaData:metaDataDictionary];
+}
+
 @end

@@ -13,6 +13,7 @@
 {
 	NSView* meter;
 	NSSlider* slider;
+    NSTextField* metaDataTextField;
 	STKAudioPlayer* audioPlayer;
 }
 @end
@@ -36,9 +37,14 @@
 	[meter setWantsLayer:YES];
 	meter.layer.backgroundColor = [NSColor greenColor].CGColor;
 	
+	metaDataTextField = [[NSTextField alloc] initWithFrame:CGRectMake(10, 270, frame.size.width - 20, 80)];
+	metaDataTextField.alignment = NSCenterTextAlignment;
+	metaDataTextField.stringValue = @"no meta data";
+	
 	[[self.window contentView] addSubview:slider];
 	[[self.window contentView] addSubview:playFromHTTPButton];
 	[[self.window contentView] addSubview:meter];
+	[[self.window contentView] addSubview:metaDataTextField];
 	
 	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .enableVolumeMixer = NO, .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000} } ];
 	audioPlayer.delegate = self;
@@ -58,7 +64,8 @@
 
 -(void) playFromHTTP
 {
-	[audioPlayer play:@"http://www.abstractpath.com/files/audiosamples/sample.mp3"];
+    // Swiss Jazz stream
+	[audioPlayer play:@"http://streaming.swisstxt.ch/m/rsj/mp3_128"];
 }
 
 -(void) tick:(NSTimer*)timer
@@ -124,6 +131,11 @@
 
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer unexpectedError:(STKAudioPlayerErrorCode)errorCode
 {
+}
+
+-(void) audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetaData:(NSDictionary *)metaData
+{
+	metaDataTextField.stringValue = [metaData description];
 }
 
 @end

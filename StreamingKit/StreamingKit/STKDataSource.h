@@ -41,6 +41,9 @@
 -(void) dataSourceDataAvailable:(STKDataSource*)dataSource;
 -(void) dataSourceErrorOccured:(STKDataSource*)dataSource;
 -(void) dataSourceEof:(STKDataSource*)dataSource;
+
+-(void) dataSource:(STKDataSource*)dataSource didUpdateMetaData:(NSDictionary *)metaDataDictionary;
+
 @end
 
 @interface STKDataSource : NSObject
