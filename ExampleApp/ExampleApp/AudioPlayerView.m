@@ -63,9 +63,14 @@
 		[playFromHTTPButton setTitle:@"Play from HTTP" forState:UIControlStateNormal];
 
 		playFromLocalFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playFromLocalFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 50, size.width, size.height);
+		playFromLocalFileButton.frame = CGRectMake((320 - size.width * 1.4) / 2, frame.size.height * 0.10 + 50, size.width * 0.7, size.height);
 		[playFromLocalFileButton addTarget:self action:@selector(playFromLocalFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[playFromLocalFileButton setTitle:@"Play from Local File" forState:UIControlStateNormal];
+        
+        playFromiTunesLibrary = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playFromiTunesLibrary.frame = CGRectMake(playFromLocalFileButton.frame.origin.x + playFromLocalFileButton.frame.size.width, playFromLocalFileButton.frame.origin.y, size.width * 0.7f, size.height);
+        [playFromiTunesLibrary addTarget:self action:@selector(playFromiTunesLibraryTouched) forControlEvents:UIControlEventTouchUpInside];
+        [playFromiTunesLibrary setTitle:@"from iTunes Lib" forState:UIControlStateNormal];
         
         queueShortFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 		queueShortFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 100, size.width, size.height);
@@ -122,6 +127,7 @@
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];
 		[self addSubview:playFromLocalFileButton];
+        [self addSubview:playFromiTunesLibrary];
         [self addSubview:queueShortFileButton];
 		[self addSubview:queuePcmWaveFileFromHTTPButton];
         [self addSubview:repeatSwitch];
@@ -208,6 +214,10 @@
 	[self.delegate audioPlayerViewPlayFromLocalFileSelected:self];
 }
 
+-(void) playFromiTunesLibraryTouched
+{
+    [self.delegate audioPlayerViewPlayFromiTunesLibrarySelected:self];
+}
 -(void) queueShortFileButtonTouched
 {
 	[self.delegate audioPlayerViewQueueShortFileSelected:self];

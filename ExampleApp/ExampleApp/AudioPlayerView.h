@@ -42,6 +42,7 @@
 -(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewPlayFromLocalFileSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewQueuePcmWaveFileSelected:(AudioPlayerView*)audioPlayerView;
+-(void) audioPlayerViewPlayFromiTunesLibrarySelected:(AudioPlayerView*)audioPlayerView;
 @end
 
 @interface AudioPlayerView : UIView<STKAudioPlayerDelegate>
@@ -55,6 +56,7 @@
     UISwitch* repeatSwitch;
 	UIButton* muteButton;
 	UIButton* playButton;
+    UIButton* playFromiTunesLibrary;
     UIButton* stopButton;
 	UIButton* playFromHTTPButton;
     UIButton* queueShortFileButton;

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		77DFD7FA1940171300B661F1 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DFD7F91940171300B661F1 /* MediaPlayer.framework */; };
 		A1115935188D686000641365 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115934188D686000641365 /* Foundation.framework */; };
 		A1115937188D686000641365 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115936188D686000641365 /* CoreGraphics.framework */; };
 		A1115939188D686000641365 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1115938188D686000641365 /* UIKit.framework */; };
@@ -30,6 +31,34 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		43CC18FC1945FBB3007F8ED3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1E7C4C8188D57F50010896F;
+			remoteInfo = StreamingKit;
+		};
+		43CC18FE1945FBB3007F8ED3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1E7C4D8188D57F60010896F;
+			remoteInfo = StreamingKitTests;
+		};
+		43CC19001945FBB3007F8ED3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A49969189E744400E2A2E2;
+			remoteInfo = StreamingKitMac;
+		};
+		43CC19021945FBB3007F8ED3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A4997A189E744500E2A2E2;
+			remoteInfo = StreamingKitMacTests;
+		};
 		A1115951188D686000641365 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A1115929188D686000641365 /* Project object */;
@@ -40,6 +69,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = StreamingKit.xcodeproj; path = ../StreamingKit/StreamingKit.xcodeproj; sourceTree = "<group>"; };
+		77DFD7F91940171300B661F1 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		A1115931188D686000641365 /* ExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1115934188D686000641365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		A1115936188D686000641365 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -74,6 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77DFD7FA1940171300B661F1 /* MediaPlayer.framework in Frameworks */,
 				A17FFB6918A002E400BAA7FF /* AVFoundation.framework in Frameworks */,
 				A17FFB6318A0028300BAA7FF /* AudioToolbox.framework in Frameworks */,
 				A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */,
@@ -97,9 +129,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		43CC18F61945FBB3007F8ED3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				43CC18FD1945FBB3007F8ED3 /* libStreamingKit.a */,
+				43CC18FF1945FBB3007F8ED3 /* StreamingKitTests.xctest */,
+				43CC19011945FBB3007F8ED3 /* libStreamingKitMac.a */,
+				43CC19031945FBB3007F8ED3 /* StreamingKitMacTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A1115928188D686000641365 = {
 			isa = PBXGroup;
 			children = (
+				77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */,
 				A111593A188D686000641365 /* ExampleApp */,
 				A1115953188D686000641365 /* ExampleAppTests */,
 				A1115933188D686000641365 /* Frameworks */,
@@ -119,6 +163,7 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				77DFD7F91940171300B661F1 /* MediaPlayer.framework */,
 				A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */,
 				A1F5E491189EB3F20070B03F /* AVFoundation.framework */,
 				A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */,
@@ -248,6 +293,12 @@
 			mainGroup = A1115928188D686000641365;
 			productRefGroup = A1115932188D686000641365 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 43CC18F61945FBB3007F8ED3 /* Products */;
+					ProjectRef = 77DFD7E919400FF600B661F1 /* StreamingKit.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A1115930188D686000641365 /* ExampleApp */,
@@ -255,6 +306,37 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		43CC18FD1945FBB3007F8ED3 /* libStreamingKit.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libStreamingKit.a;
+			remoteRef = 43CC18FC1945FBB3007F8ED3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		43CC18FF1945FBB3007F8ED3 /* StreamingKitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = StreamingKitTests.xctest;
+			remoteRef = 43CC18FE1945FBB3007F8ED3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		43CC19011945FBB3007F8ED3 /* libStreamingKitMac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libStreamingKitMac.a;
+			remoteRef = 43CC19001945FBB3007F8ED3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		43CC19031945FBB3007F8ED3 /* StreamingKitMacTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = StreamingKitMacTests.xctest;
+			remoteRef = 43CC19021945FBB3007F8ED3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A111592F188D686000641365 /* Resources */ = {

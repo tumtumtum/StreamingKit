@@ -12,6 +12,7 @@
 #import "STKAutoRecoveringHTTPDataSource.h"
 #import "SampleQueueId.h"
 #import <AVFoundation/AVFoundation.h>
+#import <MediaPlayer/MediaPlayer.h>
 
 @interface AppDelegate()
 {
@@ -96,5 +97,28 @@
     
 	[audioPlayer queueDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }
+
+-(void) audioPlayerViewPlayFromiTunesLibrarySelected:(AudioPlayerView*)audioPlayerView
+{
+    NSArray *alliTunesTracks = [[MPMediaQuery songsQuery] items];
+    if (alliTunesTracks.count < 1) {
+        UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"iTunes library empty" message:@"load track and try again" delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+        [av show];
+        return;
+    }
+    MPMediaItem *randomItem = nil;
+    while (!randomItem) {
+        NSUInteger randomIndex = arc4random_uniform(alliTunesTracks.count-1);
+        randomItem = [alliTunesTracks objectAtIndex:randomIndex];
+        if ([[randomItem valueForProperty:MPMediaItemPropertyIsCloudItem] boolValue]) {
+            randomItem = nil;
+            continue;
+        }
+    }
+    NSURL *url = [randomItem valueForProperty:MPMediaItemPropertyAssetURL];
+    STKDataSource *dataSource = [STKAudioPlayer dataSourceFromURL:url];
+    [audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
+}
+
 
 @end
