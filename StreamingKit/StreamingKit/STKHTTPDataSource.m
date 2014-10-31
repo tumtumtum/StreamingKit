@@ -118,6 +118,8 @@
             @"audio/mpg": @(kAudioFileMP3Type),
             @"audio/mpeg": @(kAudioFileMP3Type),
             @"audio/wav": @(kAudioFileWAVEType),
+            @"audio/x-wav": @(kAudioFileWAVEType),
+            @"audio/vnd.wav": @(kAudioFileWAVEType),
             @"audio/aifc": @(kAudioFileAIFCType),
             @"audio/aiff": @(kAudioFileAIFFType),
             @"audio/x-m4a": @(kAudioFileM4AType),
@@ -125,10 +127,18 @@
             @"audio/aacp": @(kAudioFileAAC_ADTSType),
             @"audio/m4a": @(kAudioFileM4AType),
             @"audio/mp4": @(kAudioFileMPEG4Type),
+            @"video/mp4": @(kAudioFileMPEG4Type),
             @"audio/caf": @(kAudioFileCAFType),
+            @"audio/x-caf": @(kAudioFileCAFType),
             @"audio/aac": @(kAudioFileAAC_ADTSType),
+            @"audio/aacp": @(kAudioFileAAC_ADTSType),
             @"audio/ac3": @(kAudioFileAC3Type),
-            @"audio/3gp": @(kAudioFile3GPType)
+            @"audio/3gp": @(kAudioFile3GPType),
+            @"video/3gp": @(kAudioFile3GPType),
+            @"audio/3gpp": @(kAudioFile3GPType),
+            @"video/3gpp": @(kAudioFile3GPType),
+            @"audio/3gp2": @(kAudioFile3GP2Type),
+            @"video/3gp2": @(kAudioFile3GP2Type)
         };
     });
     
