@@ -164,6 +164,50 @@
     return audioFileTypeHint;
 }
 
+-(NSDictionary*) parseIceHeader:(NSData*)headerData
+{
+    NSMutableDictionary* retval = [[NSMutableDictionary alloc] init];
+    NSCharacterSet* characterSet = [NSCharacterSet characterSetWithCharactersInString:@"\r\n"];
+    NSString* fullString = [[NSString alloc] initWithData:headerData encoding:NSUTF8StringEncoding];
+    NSArray* strings = [fullString componentsSeparatedByCharactersInSet:characterSet];
+    
+    httpHeaders = [NSMutableDictionary dictionary];
+    
+    for (NSString* s in strings)
+    {
+        if (s.length == 0)
+        {
+            continue;
+        }
+        
+        if ([s hasPrefix:@"ICY "])
+        {
+            NSArray* parts = [s componentsSeparatedByString:@" "];
+            
+            if (parts.count >= 2)
+            {
+                self->httpStatusCode = [parts[1] intValue];
+            }
+            
+            continue;
+        }
+        
+        NSRange range = [s rangeOfString:@":"];
+        
+        if (range.location == NSNotFound)
+        {
+            continue;
+        }
+        
+        NSString* key = [s substringWithRange: (NSRange){.location = 0, .length = range.location}];
+        NSString* value = [s substringFromIndex:range.location + 1];
+        
+        [retval setValue:value forKey:key];
+    }
+    
+    return retval;
+}
+
 -(BOOL) parseHttpHeader
 {
     if (!httpHeaderNotAvailable)
@@ -197,7 +241,6 @@
         if (!self->iceHeaderSearchComplete)
         {
             UInt8 byte;
-            UInt8 bytes[4];
             UInt8 terminal1[] = { '\n', '\n' };
             UInt8 terminal2[] = { '\r', '\n', '\r', '\n' };
 
@@ -224,9 +267,7 @@
                 
                 if (iceHeaderData.length >= sizeof(terminal1))
                 {
-                    [iceHeaderData getBytes:&bytes[0] range:(NSRange){.location = iceHeaderData.length - sizeof(terminal1), .length = sizeof(terminal1)}];
-                    
-                    if (memcmp(&terminal1[0], &bytes[0], sizeof(terminal1)) == 0)
+                    if (memcmp(&terminal1[0], [self->iceHeaderData bytes] + iceHeaderData.length - sizeof(terminal1), sizeof(terminal1)) == 0)
                     {
                         self->iceHeaderAvailable = YES;
                         self->iceHeaderSearchComplete = YES;
@@ -237,9 +278,7 @@
                 
                 if (iceHeaderData.length >= sizeof(terminal2))
                 {
-                    [iceHeaderData getBytes:&bytes[0] range:(NSRange){.location = iceHeaderData.length - sizeof(terminal2), .length = sizeof(terminal2)}];
-                    
-                    if (memcmp(&terminal2[0], &bytes[0], sizeof(terminal2)) == 0)
+                    if (memcmp(&terminal2[0], [self->iceHeaderData bytes] + iceHeaderData.length - sizeof(terminal2), sizeof(terminal2)) == 0)
                     {
                         self->iceHeaderAvailable = YES;
                         self->iceHeaderSearchComplete = YES;
@@ -248,11 +287,9 @@
                     }
                 }
                 
-                if (iceHeaderData.length >=4)
+                if (iceHeaderData.length >= 4)
                 {
-                    [iceHeaderData getBytes:&bytes[0] length:4];
-                    
-                    if (memcmp(bytes, "ICY", 3) != 0 && memcmp(bytes, "HTTP", 4) != 0)
+                    if (memcmp([self->iceHeaderData bytes], "ICY ", 4) != 0 && memcmp([self->iceHeaderData bytes], "HTTP", 4) != 0)
                     {
                         self->iceHeaderAvailable = NO;
                         self->iceHeaderSearchComplete = YES;
@@ -269,42 +306,9 @@
             }
         }
 
-        NSCharacterSet* characterSet = [NSCharacterSet characterSetWithCharactersInString:@"\r\n"];
-        NSString* fullString = [[NSString alloc] initWithData:self->iceHeaderData encoding:NSUTF8StringEncoding];
+        httpHeaders = [self parseIceHeader:self->iceHeaderData];
         
-        NSArray* strings = [fullString componentsSeparatedByCharactersInSet:characterSet];
-        
-        httpHeaders = [NSMutableDictionary dictionary];
-        
-        for (NSString* s in strings)
-        {
-            if (s.length == 0)
-            {
-                continue;
-            }
-            
-            if ([s hasPrefix:@"ICY"])
-            {
-                NSArray* ss = [s componentsSeparatedByString:@" "];
-                
-                if (ss.count >= 2)
-                {
-                    self->httpStatusCode = [ss[1] intValue];
-                }
-            }
-            
-            NSRange range = [s rangeOfString:@":"];
-            
-            if (range.location == NSNotFound)
-            {
-                continue;
-            }
-            
-            NSString* key = [s substringWithRange: (NSRange){.location = 0, .length = range.location}];
-            NSString* value = [s substringFromIndex:range.location + 1];
-            
-            [httpHeaders setValue:value forKey:key];
-        }
+        self->iceHeaderData = nil;
     }
     
     if (([httpHeaders objectForKey:@"Accepts-Ranges"] ?: [httpHeaders objectForKey:@"accepts-ranges"]) != nil)
@@ -322,7 +326,6 @@
         }
         
         NSString* contentType = [httpHeaders objectForKey:@"Content-Type"] ?: [httpHeaders objectForKey:@"content-type"] ;
-        
         AudioFileTypeID typeIdFromMimeType = [STKHTTPDataSource audioFileTypeHintFromMimeType:contentType];
         
         if (typeIdFromMimeType != 0)
@@ -437,6 +440,11 @@
 
 -(int) readIntoBuffer:(UInt8*)buffer withSize:(int)size
 {
+    return [self privateReadIntoBuffer:buffer withSize:size];
+}
+
+-(int) privateReadIntoBuffer:(UInt8*)buffer withSize:(int)size
+{
     if (size == 0)
     {
         return 0;
@@ -458,8 +466,7 @@
         return count;
     }
     
-    
-    int read = (int)CFReadStreamRead(stream, buffer, size);
+    int read = [super readIntoBuffer:buffer withSize:size];
     
     if (read < 0)
     {
@@ -511,11 +518,12 @@
         for (NSString* key in self->requestHeaders)
         {
             NSString* value = [self->requestHeaders objectForKey:key];
+            
             CFHTTPMessageSetHeaderFieldValue(message, (__bridge CFStringRef)key, (__bridge CFStringRef)value);
         }
         
-        CFHTTPMessageSetHeaderFieldValue(message, (__bridge CFStringRef)@"Accept", (__bridge CFStringRef)@"*/*");
-        CFHTTPMessageSetHeaderFieldValue(message, (__bridge CFStringRef)@"Ice-MetaData", (__bridge CFStringRef)@"0");
+        CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Accept"), CFSTR("*/*"));
+        CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Ice-MetaData"), CFSTR("0"));
 
         stream = CFReadStreamCreateForHTTPRequest(NULL, message);
 
@@ -540,13 +548,11 @@
         }
 
         // Proxy support
-
         CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
         CFReadStreamSetProperty(stream, kCFStreamPropertyHTTPProxy, proxySettings);
         CFRelease(proxySettings);
 
         // SSL support
-
         if ([self->currentUrl.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
         {
             NSDictionary* sslSettings = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -563,7 +569,6 @@
 		self->httpStatusCode = 0;
 		
         // Open
-
         if (!CFReadStreamOpen(stream))
         {
             CFRelease(stream);
