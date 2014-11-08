@@ -41,8 +41,10 @@ static void ReadStreamCallbackProc(CFReadStreamRef stream, CFStreamEventType eve
     switch (eventType)
     {
         case kCFStreamEventErrorOccurred:
+        {
             [datasource errorOccured];
             break;
+        }
         case kCFStreamEventEndEncountered:
             [datasource eof];
             break;

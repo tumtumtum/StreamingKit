@@ -79,4 +79,9 @@
     return 0;
 }
 
+-(BOOL) supportsSeek
+{
+    return YES;
+}
+
 @end

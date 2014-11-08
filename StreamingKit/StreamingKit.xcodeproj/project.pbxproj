@@ -401,7 +401,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = STK;
-				LastUpgradeCheck = 0510;
+				LastUpgradeCheck = 0610;
 				ORGANIZATIONNAME = "Thong Nguyen";
 			};
 			buildConfigurationList = A1E7C4C3188D57F50010896F /* Build configuration list for PBXProject "StreamingKit" */;
@@ -554,6 +554,7 @@
 		A1A49988189E744500E2A2E2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -574,6 +575,7 @@
 		A1A49989189E744500E2A2E2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

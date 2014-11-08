@@ -45,6 +45,7 @@
 
 @interface STKDataSource : NSObject
 
+@property (readonly) BOOL supportsSeek;
 @property (readonly) SInt64 position;
 @property (readonly) SInt64 length;
 @property (readonly) BOOL hasBytesAvailable;

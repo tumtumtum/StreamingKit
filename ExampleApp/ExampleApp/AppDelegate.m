@@ -68,6 +68,15 @@
 	[audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
 }
 
+-(void) audioPlayerViewPlayFromIcecastSelected:(AudioPlayerView *)audioPlayerView
+{
+    NSURL* url = [NSURL URLWithString:@"http://shoutmedia.abc.net.au:10326"];
+    
+    STKDataSource* dataSource = [STKAudioPlayer dataSourceFromURL:url];
+    
+    [audioPlayer setDataSource:dataSource withQueueItemId:[[SampleQueueId alloc] initWithUrl:url andCount:0]];
+}
+
 -(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView
 {
     NSString* path = [[NSBundle mainBundle] pathForResource:@"airplane" ofType:@"aac"];
