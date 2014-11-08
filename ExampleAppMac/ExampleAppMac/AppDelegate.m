@@ -72,7 +72,7 @@
 	
 	CGFloat meterWidth = 0;
 	
-    if (audioPlayer.duration != 0)
+    if (audioPlayer.currentlyPlayingQueueItemId != nil)
     {
         slider.minValue = 0;
         slider.maxValue = audioPlayer.duration;
