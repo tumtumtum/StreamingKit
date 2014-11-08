@@ -194,7 +194,7 @@
         slider.minimumValue = 0;
         slider.maximumValue = 0;
         
-        label.text =  @"";
+        label.text =  [NSString stringWithFormat:@"Live stream %@", [self formatTimeFromSeconds:audioPlayer.progress]];
     }
     
     statusLabel.text = audioPlayer.state == STKAudioPlayerStateBuffering ? @"buffering" : @"";
