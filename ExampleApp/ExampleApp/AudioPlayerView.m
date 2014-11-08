@@ -94,7 +94,7 @@
         [stopButton setTitle:@"Stop" forState:UIControlStateNormal];
 		
 		muteButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		muteButton.frame = CGRectMake((320 - size.width) - 30, 420, size.width, size.height);
+		muteButton.frame = CGRectMake((320 - size.width) - 30, 430, size.width, size.height);
 		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
 		
@@ -180,6 +180,17 @@
 		return;
 	}
 	
+    if (audioPlayer.currentlyPlayingQueueItemId == nil)
+    {
+        slider.value = 0;
+        slider.minimumValue = 0;
+        slider.maximumValue = 0;
+        
+        label.text = @"";
+        
+        return;
+    }
+    
     if (audioPlayer.duration != 0)
     {
         slider.minimumValue = 0;
