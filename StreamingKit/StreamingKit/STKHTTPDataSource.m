@@ -311,7 +311,7 @@
         self->iceHeaderData = nil;
     }
     
-    if (([httpHeaders objectForKey:@"Accepts-Ranges"] ?: [httpHeaders objectForKey:@"accepts-ranges"]) != nil)
+    if (([httpHeaders objectForKey:@"Accept-Ranges"] ?: [httpHeaders objectForKey:@"accept-ranges"]) != nil)
     {
         self->supportsSeek = YES;
     }
@@ -497,8 +497,6 @@
 			return;
 		}
 	
-        self->supportsSeek = NO;
-        
         self->currentUrl = url;
 
         if (url == nil)
