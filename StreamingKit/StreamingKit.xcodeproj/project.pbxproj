@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5B949CD21A1140E4005675A0 /* STKAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F1188D5E550010896F /* STKAudioPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD31A1140E4005675A0 /* STKAutoRecoveringHTTPDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F5188D5E550010896F /* STKCoreFoundationDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD51A1140E4005675A0 /* STKDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F7188D5E550010896F /* STKDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD61A1140E4005675A0 /* STKDataSourceWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F9188D5E550010896F /* STKDataSourceWrapper.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD71A1140E4005675A0 /* STKHTTPDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4FB188D5E550010896F /* STKHTTPDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD81A1140E4005675A0 /* STKLocalFileDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5B949CD91A1140E4005675A0 /* STKQueueEntry.h in Headers */ = {isa = PBXBuildFile; fileRef = A1BF65D0189A6582004DD08C /* STKQueueEntry.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
 		A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49974189E744500E2A2E2 /* StreamingKitMac.m */; };
 		A1A4997B189E744500E2A2E2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
@@ -314,6 +322,21 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		5B949CD11A1140CF005675A0 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B949CD21A1140E4005675A0 /* STKAudioPlayer.h in Headers */,
+				5B949CD31A1140E4005675A0 /* STKAutoRecoveringHTTPDataSource.h in Headers */,
+				5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */,
+				5B949CD51A1140E4005675A0 /* STKDataSource.h in Headers */,
+				5B949CD61A1140E4005675A0 /* STKDataSourceWrapper.h in Headers */,
+				5B949CD71A1140E4005675A0 /* STKHTTPDataSource.h in Headers */,
+				5B949CD81A1140E4005675A0 /* STKLocalFileDataSource.h in Headers */,
+				5B949CD91A1140E4005675A0 /* STKQueueEntry.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1A49967189E744400E2A2E2 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -366,6 +389,7 @@
 				A1E7C4C4188D57F50010896F /* Sources */,
 				A1E7C4C5188D57F50010896F /* Frameworks */,
 				A1E7C4C6188D57F50010896F /* CopyFiles */,
+				5B949CD11A1140CF005675A0 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -568,6 +592,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = include/StreamingKit;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -586,6 +611,7 @@
 				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
 				MACOSX_DEPLOYMENT_TARGET = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = include/StreamingKit;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -713,6 +739,7 @@
 				GCC_PREFIX_HEADER = "StreamingKit/StreamingKit-Prefix.pch";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = include/StreamingKit;
 				SKIP_INSTALL = YES;
 			};
 			name = Debug;
@@ -729,6 +756,7 @@
 				GCC_PREFIX_HEADER = "StreamingKit/StreamingKit-Prefix.pch";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = include/StreamingKit;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
