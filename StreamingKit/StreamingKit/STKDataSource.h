@@ -48,6 +48,7 @@
 @property (readonly) SInt64 position;
 @property (readonly) SInt64 length;
 @property (readonly) BOOL hasBytesAvailable;
+@property (nonatomic, readwrite, assign) double durationHint;
 @property (readwrite, unsafe_unretained) id<STKDataSourceDelegate> delegate;
 
 -(BOOL) registerForEvents:(NSRunLoop*)runLoop;
