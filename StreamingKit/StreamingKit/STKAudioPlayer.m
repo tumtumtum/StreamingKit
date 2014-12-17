@@ -1879,6 +1879,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 
     [self destroyAudioConverter];
     
+    canonicalAudioStreamBasicDescription.mChannelsPerFrame = asbd->mChannelsPerFrame;
+    
     AudioClassDescription classDesc;
     
     if (GetHardwareCodecClassDesc(asbd->mFormatID, &classDesc))
