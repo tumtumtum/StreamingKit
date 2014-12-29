@@ -292,9 +292,13 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         .componentSubType = kAudioUnitSubType_AUConverter,
         .componentFlags = 0,
         .componentFlagsMask = 0
-	};
+    };
     
-    const int bytesPerSample = 2;
+#if CA_PREFER_FIXED_POINT || __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+    const int bytesPerSample = sizeof(SInt16);
+#else
+    const int bytesPerSample = sizeof(AudioSampleType);
+#endif
     
     canonicalAudioStreamBasicDescription = (AudioStreamBasicDescription)
     {
