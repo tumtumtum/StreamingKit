@@ -23,6 +23,7 @@
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
         self->lastFrameQueued = -1;
+        self->durationHint = dataSourceIn.durationHint;
     }
     
     return self;
@@ -60,6 +61,8 @@
 
 -(double) duration
 {
+    if (durationHint > 0.0) return durationHint;
+    
     if (self->sampleRate <= 0)
     {
         return 0;

@@ -28,6 +28,7 @@
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
+    double durationHint;
 }
 
 @property (readonly) UInt64 audioDataLengthInBytes;
