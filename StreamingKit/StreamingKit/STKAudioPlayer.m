@@ -307,7 +307,9 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         .componentFlagsMask = 0
     };
     
-#if CA_PREFER_FIXED_POINT || __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+#ifdef CA_CANONICAL_DEPRECATED
+    const int bytesPerSample = sizeof(SInt16);
+#elif __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
     const int bytesPerSample = sizeof(SInt16);
 #else
     const int bytesPerSample = sizeof(AudioSampleType);
