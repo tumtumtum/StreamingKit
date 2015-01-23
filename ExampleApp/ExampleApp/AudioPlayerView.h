@@ -50,6 +50,7 @@
 @private
 	NSTimer* timer;
     UILabel* label;
+    UILabel* metadataLabel;
     UILabel* statusLabel;
 	UISlider* slider;
     UISwitch* enableEqSwitch;

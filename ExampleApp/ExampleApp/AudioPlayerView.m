@@ -111,6 +111,11 @@
         
         [enableEqSwitch addTarget:self action:@selector(onEnableEqSwitch) forControlEvents:UIControlEventAllTouchEvents];
 
+        metadataLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 10, frame.size.width, 25)];
+        
+        metadataLabel.textAlignment = NSTextAlignmentCenter;
+        metadataLabel.font = [UIFont boldSystemFontOfSize:17.0f];
+        
         label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 40, frame.size.width, 25)];
 		
         label.textAlignment = NSTextAlignmentCenter;
@@ -131,6 +136,7 @@
         [self addSubview:queueShortFileButton];
 		[self addSubview:queuePcmWaveFileFromHTTPButton];
         [self addSubview:repeatSwitch];
+        [self addSubview:metadataLabel];
         [self addSubview:label];
         [self addSubview:statusLabel];
         [self addSubview:stopButton];
@@ -218,26 +224,31 @@
 -(void) playFromHTTPButtonTouched
 {
 	[self.delegate audioPlayerViewPlayFromHTTPSelected:self];
+    metadataLabel.text = nil;
 }
 
 -(void) playFromIcecasButtonTouched
 {
     [self.delegate audioPlayerViewPlayFromIcecastSelected:self];
+    metadataLabel.text = nil;
 }
 
 -(void) playFromLocalFileButtonTouched
 {
 	[self.delegate audioPlayerViewPlayFromLocalFileSelected:self];
+    metadataLabel.text = nil;
 }
 
 -(void) queueShortFileButtonTouched
 {
 	[self.delegate audioPlayerViewQueueShortFileSelected:self];
+    metadataLabel.text = nil;
 }
 
 -(void) queuePcmWaveFileButtonTouched
 {
 	[self.delegate audioPlayerViewQueuePcmWaveFileSelected:self];
+    metadataLabel.text = nil;
 }
 
 -(void) muteButtonPressed
@@ -373,6 +384,11 @@
 -(void) audioPlayer:(STKAudioPlayer *)audioPlayer logInfo:(NSString *)line
 {
     NSLog(@"%@", line);
+}
+
+- (void)audioPlayer:(STKAudioPlayer *)audioPlayer didReadStreamMetadata:(NSDictionary *)dictionary
+{
+    metadataLabel.text = dictionary[@"StreamTitle"];
 }
 
 @end

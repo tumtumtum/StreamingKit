@@ -30,6 +30,41 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1D5086651A711D060030B19C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1E7C4C8188D57F50010896F;
+			remoteInfo = StreamingKit;
+		};
+		1D5086671A711D060030B19C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1E7C4D8188D57F60010896F;
+			remoteInfo = StreamingKitTests;
+		};
+		1D5086691A711D060030B19C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A49969189E744400E2A2E2;
+			remoteInfo = StreamingKitMac;
+		};
+		1D50866B1A711D060030B19C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A1A4997A189E744500E2A2E2;
+			remoteInfo = StreamingKitMacTests;
+		};
+		1D50866D1A711D160030B19C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = A1E7C4C7188D57F50010896F;
+			remoteInfo = StreamingKit;
+		};
 		A1115951188D686000641365 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A1115929188D686000641365 /* Project object */;
@@ -40,6 +75,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = StreamingKit.xcodeproj; path = ../StreamingKit/StreamingKit.xcodeproj; sourceTree = "<group>"; };
 		A1115931188D686000641365 /* ExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1115934188D686000641365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		A1115936188D686000641365 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -97,6 +133,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D50865E1A711D050030B19C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1D5086661A711D060030B19C /* libStreamingKit.a */,
+				1D5086681A711D060030B19C /* StreamingKitTests.xctest */,
+				1D50866A1A711D060030B19C /* libStreamingKitMac.a */,
+				1D50866C1A711D060030B19C /* StreamingKitMacTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A1115928188D686000641365 = {
 			isa = PBXGroup;
 			children = (
@@ -119,6 +166,7 @@
 		A1115933188D686000641365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */,
 				A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */,
 				A1F5E491189EB3F20070B03F /* AVFoundation.framework */,
 				A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */,
@@ -200,6 +248,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1D50866E1A711D160030B19C /* PBXTargetDependency */,
 			);
 			name = ExampleApp;
 			productName = ExampleApp;
@@ -248,6 +297,12 @@
 			mainGroup = A1115928188D686000641365;
 			productRefGroup = A1115932188D686000641365 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 1D50865E1A711D050030B19C /* Products */;
+					ProjectRef = 1D50865D1A711D050030B19C /* StreamingKit.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A1115930188D686000641365 /* ExampleApp */,
@@ -255,6 +310,37 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		1D5086661A711D060030B19C /* libStreamingKit.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libStreamingKit.a;
+			remoteRef = 1D5086651A711D060030B19C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		1D5086681A711D060030B19C /* StreamingKitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = StreamingKitTests.xctest;
+			remoteRef = 1D5086671A711D060030B19C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		1D50866A1A711D060030B19C /* libStreamingKitMac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libStreamingKitMac.a;
+			remoteRef = 1D5086691A711D060030B19C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		1D50866C1A711D060030B19C /* StreamingKitMacTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = StreamingKitMacTests.xctest;
+			remoteRef = 1D50866B1A711D060030B19C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A111592F188D686000641365 /* Resources */ = {
@@ -301,6 +387,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		1D50866E1A711D160030B19C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = StreamingKit;
+			targetProxy = 1D50866D1A711D160030B19C /* PBXContainerItemProxy */;
+		};
 		A1115952188D686000641365 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A1115930188D686000641365 /* ExampleApp */;

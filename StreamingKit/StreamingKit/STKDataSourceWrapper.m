@@ -117,4 +117,9 @@
     [self.delegate dataSourceEof:self];
 }
 
+- (void)dataSource:(STKDataSource *)dataSource didReadStreamMetadata:(NSDictionary *)metadata
+{
+    [self.delegate dataSource:self didReadStreamMetadata:metadata];
+}
+
 @end
