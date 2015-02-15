@@ -52,7 +52,7 @@ STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 ```objective-c
 STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 
-[[STKAudioPlayer Player] playLocation:m3uOrM3u8URL];
+[audioPlayer playLocation:@"http://ice9.securenetsystems.net/DASH37.m3u"];
 ```
 
 

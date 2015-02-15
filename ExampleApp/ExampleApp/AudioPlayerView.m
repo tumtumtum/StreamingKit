@@ -214,7 +214,7 @@
 }
 
 - (void)playFromM3u8ButtonTouched {
-	[[STKAudioPlayer Player] playLocation:m3uOrM3u8URL];
+	[self.delegate audioPlayerViewPlayFromM3uM3u8];
 }
 
 - (void)playFromHTTPButtonTouched {

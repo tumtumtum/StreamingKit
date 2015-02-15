@@ -38,6 +38,7 @@
 @class AudioPlayerView;
 
 @protocol AudioPlayerViewDelegate <NSObject>
+- (void)audioPlayerViewPlayFromM3uM3u8;
 - (void)audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView *)audioPlayerView;
 - (void)audioPlayerViewPlayFromIcecastSelected:(AudioPlayerView *)audioPlayerView;
 - (void)audioPlayerViewQueueShortFileSelected:(AudioPlayerView *)audioPlayerView;
