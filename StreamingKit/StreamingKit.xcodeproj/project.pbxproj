@@ -45,6 +45,8 @@
 		A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FA188D5E550010896F /* STKDataSourceWrapper.m */; };
 		A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */; };
 		A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */; };
+		D3744D451A907722000903A4 /* AudioDownloader.h in Headers */ = {isa = PBXBuildFile; fileRef = D3744D431A907722000903A4 /* AudioDownloader.h */; };
+		D3744D461A907722000903A4 /* AudioDownloader.m in Sources */ = {isa = PBXBuildFile; fileRef = D3744D441A907722000903A4 /* AudioDownloader.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +135,8 @@
 		A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STKLocalFileDataSource.h; sourceTree = "<group>"; };
 		A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STKLocalFileDataSource.m; sourceTree = "<group>"; };
 		A1E7C507188D62D20010896F /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		D3744D431A907722000903A4 /* AudioDownloader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDownloader.h; sourceTree = "<group>"; };
+		D3744D441A907722000903A4 /* AudioDownloader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AudioDownloader.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +274,8 @@
 		A1E7C4CD188D57F50010896F /* StreamingKit */ = {
 			isa = PBXGroup;
 			children = (
+				D3744D431A907722000903A4 /* AudioDownloader.h */,
+				D3744D441A907722000903A4 /* AudioDownloader.m */,
 				A1E7C4F1188D5E550010896F /* STKAudioPlayer.h */,
 				A1E7C4F2188D5E550010896F /* STKAudioPlayer.m */,
 				A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */,
@@ -327,6 +333,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B949CD21A1140E4005675A0 /* STKAudioPlayer.h in Headers */,
+				D3744D451A907722000903A4 /* AudioDownloader.h in Headers */,
 				5B949CD31A1140E4005675A0 /* STKAutoRecoveringHTTPDataSource.h in Headers */,
 				5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */,
 				5B949CD51A1140E4005675A0 /* STKDataSource.h in Headers */,
@@ -525,6 +532,7 @@
 				A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */,
 				A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */,
 				A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */,
+				D3744D461A907722000903A4 /* AudioDownloader.m in Sources */,
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,
 				A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */,

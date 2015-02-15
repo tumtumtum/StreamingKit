@@ -47,6 +47,14 @@ STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 
 ```
 
+### m3u or m3u8 playback
+
+```objective-c
+STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
+
+[audioPlayer playLocation:@"http://ice9.securenetsystems.net/DASH37.m3u"];
+```
+
 
 ### Intercept PCM data just before its played
 
