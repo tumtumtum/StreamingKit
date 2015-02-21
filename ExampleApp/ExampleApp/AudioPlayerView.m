@@ -50,98 +50,109 @@
 - (id)initWithFrame:(CGRect)frame andAudioPlayer:(STKAudioPlayer*)audioPlayerIn
 {
     self = [super initWithFrame:frame];
-	
-    if (self)
-	{
+    
+    if (self) {
         self.audioPlayer = audioPlayerIn;
         
-		CGSize size = CGSizeMake(220, 50);
-		
-		playFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10, size.width, size.height);
-		[playFromHTTPButton addTarget:self action:@selector(playFromHTTPButtonTouched) forControlEvents:UIControlEventTouchUpInside];
-		[playFromHTTPButton setTitle:@"Play from HTTP" forState:UIControlStateNormal];
+        CGSize size = CGSizeMake(220, 50);
+        
+        playFromM3u8Button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playFromM3u8Button.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10, size.width, size.height);
+        [playFromM3u8Button addTarget:self action:@selector(playFromM3u8ButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [playFromM3u8Button setTitle:@"Play from m3u8" forState:UIControlStateNormal];
+        
+        playFromM3uButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playFromM3uButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 35, size.width, size.height);
+        [playFromM3uButton addTarget:self action:@selector(playFromM3uButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [playFromM3uButton setTitle:@"Play from m3u" forState:UIControlStateNormal];
+        
+        playFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 70, size.width, size.height);
+        [playFromHTTPButton addTarget:self action:@selector(playFromHTTPButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [playFromHTTPButton setTitle:@"Play from HTTP" forState:UIControlStateNormal];
         
         playFromIcecastButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        playFromIcecastButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 35, size.width, size.height);
+        playFromIcecastButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 105, size.width, size.height);
         [playFromIcecastButton addTarget:self action:@selector(playFromIcecasButtonTouched) forControlEvents:UIControlEventTouchUpInside];
         [playFromIcecastButton setTitle:@"Play from Icecast" forState:UIControlStateNormal];
-
-		playFromLocalFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playFromLocalFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 70, size.width, size.height);
-		[playFromLocalFileButton addTarget:self action:@selector(playFromLocalFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
-		[playFromLocalFileButton setTitle:@"Play from Local File" forState:UIControlStateNormal];
+        
+        playFromLocalFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playFromLocalFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 149, size.width, size.height);
+        [playFromLocalFileButton addTarget:self action:@selector(playFromLocalFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [playFromLocalFileButton setTitle:@"Play from Local File" forState:UIControlStateNormal];
         
         queueShortFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		queueShortFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 105, size.width, size.height);
-		[queueShortFileButton addTarget:self action:@selector(queueShortFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
-		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
-		
-		queuePcmWaveFileFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		queuePcmWaveFileFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 140, size.width, size.height);
-		[queuePcmWaveFileFromHTTPButton addTarget:self action:@selector(queuePcmWaveFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
-		[queuePcmWaveFileFromHTTPButton setTitle:@"Queue PCM/WAVE from HTTP" forState:UIControlStateNormal];
+        queueShortFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 175, size.width, size.height);
+        [queueShortFileButton addTarget:self action:@selector(queueShortFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
+        
+        queuePcmWaveFileFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        queuePcmWaveFileFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 210, size.width, size.height);
+        [queuePcmWaveFileFromHTTPButton addTarget:self action:@selector(queuePcmWaveFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
+        [queuePcmWaveFileFromHTTPButton setTitle:@"Queue PCM/WAVE from HTTP" forState:UIControlStateNormal];
         
         size = CGSizeMake(90, 40);
         
-		playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playButton.frame = CGRectMake(30, 400, size.width, size.height);
-		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+        playButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        playButton.frame = CGRectMake(30, 400, size.width, size.height);
+        [playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
         
         stopButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		stopButton.frame = CGRectMake((320 - size.width) - 30, 400, size.width, size.height);
-		[stopButton addTarget:self action:@selector(stopButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+        stopButton.frame = CGRectMake((320 - size.width) - 30, 400, size.width, size.height);
+        [stopButton addTarget:self action:@selector(stopButtonPressed) forControlEvents:UIControlEventTouchUpInside];
         [stopButton setTitle:@"Stop" forState:UIControlStateNormal];
-		
-		muteButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		muteButton.frame = CGRectMake((320 - size.width) - 30, 430, size.width, size.height);
-		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
-		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
-		
-		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 20)];
-		slider.continuous = YES;
-		[slider addTarget:self action:@selector(sliderChanged) forControlEvents:UIControlEventValueChanged];
+        
+        muteButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        muteButton.frame = CGRectMake((320 - size.width) - 30, 430, size.width, size.height);
+        [muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
+        [muteButton setTitle:@"Mute" forState:UIControlStateNormal];
+        
+        slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 90)];
+        slider.continuous = YES;
+        [slider addTarget:self action:@selector(sliderChanged) forControlEvents:UIControlEventValueChanged];
         
         size = CGSizeMake(80, 50);
         
-        repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(30, frame.size.height * 0.15 + 180, size.width, size.height)];
+        repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(30, frame.size.height * 0.15 + 225, size.width, size.height)];
         
-        enableEqSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(320 - size.width - 30, frame.size.height * 0.15 + 180, size.width, size.height)];
+        enableEqSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(320 - size.width - 30, frame.size.height * 0.15 + 225, size.width, size.height)];
         enableEqSwitch.on = audioPlayer.equalizerEnabled;
         
         [enableEqSwitch addTarget:self action:@selector(onEnableEqSwitch) forControlEvents:UIControlEventAllTouchEvents];
-
-        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 40, frame.size.width, 25)];
-		
+        
+        label = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + 70, frame.size.width, 25)];
+        
         label.textAlignment = NSTextAlignmentCenter;
         
-        statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 50, frame.size.width, 50)];
-		
+        statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 60, frame.size.width, 50)];
+        
         statusLabel.textAlignment = NSTextAlignmentCenter;
-		
-		meter = [[UIView alloc] initWithFrame:CGRectMake(0, 450, 0, 20)];
-		
-		meter.backgroundColor = [UIColor greenColor];
-		
-		[self addSubview:slider];
-		[self addSubview:playButton];
-		[self addSubview:playFromHTTPButton];
+        
+        meter = [[UIView alloc] initWithFrame:CGRectMake(0, 460, 0, 20)];
+        
+        meter.backgroundColor = [UIColor greenColor];
+        
+        [self addSubview:slider];
+        [self addSubview:playButton];
+        [self addSubview:playFromM3u8Button];
+        [self addSubview:playFromM3uButton];
+        [self addSubview:playFromHTTPButton];
         [self addSubview:playFromIcecastButton];
-		[self addSubview:playFromLocalFileButton];
+        [self addSubview:playFromLocalFileButton];
         [self addSubview:queueShortFileButton];
-		[self addSubview:queuePcmWaveFileFromHTTPButton];
+        [self addSubview:queuePcmWaveFileFromHTTPButton];
         [self addSubview:repeatSwitch];
         [self addSubview:label];
         [self addSubview:statusLabel];
         [self addSubview:stopButton];
-		[self addSubview:meter];
-		[self addSubview:muteButton];
+        [self addSubview:meter];
+        [self addSubview:muteButton];
         [self addSubview:enableEqSwitch];
         
-		[self setupTimer];
-		[self updateControls];
+        [self setupTimer];
+        [self updateControls];
     }
-	
+
     return self;
 }
 
@@ -214,6 +225,17 @@
 	
 	meter.frame = CGRectMake(0, 460, newWidth, 20);
 }
+
+- (void)playFromM3u8ButtonTouched
+{
+    [self.delegate audioPlayerViewPlayFromM3u8];
+}
+
+- (void)playFromM3uButtonTouched
+{
+    [self.delegate audioPlayerViewPlayFromM3u];
+}
+
 
 -(void) playFromHTTPButtonTouched
 {

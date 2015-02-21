@@ -27,6 +27,7 @@
 		A17FFB6318A0028300BAA7FF /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A17FFB6218A0028300BAA7FF /* AudioToolbox.framework */; };
 		A17FFB6918A002E400BAA7FF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1F5E491189EB3F20070B03F /* AVFoundation.framework */; };
 		A1EBEE64188DE34500681B04 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */; };
+		D384A2561A991B320077EC0C /* AudioDownloader.m in Sources */ = {isa = PBXBuildFile; fileRef = D384A2551A991B320077EC0C /* AudioDownloader.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,8 @@
 		A1EBEE63188DE34500681B04 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		A1F5E48F189EB3CB0070B03F /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A1F5E491189EB3F20070B03F /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		D384A2541A991B320077EC0C /* AudioDownloader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDownloader.h; sourceTree = "<group>"; };
+		D384A2551A991B320077EC0C /* AudioDownloader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AudioDownloader.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +139,8 @@
 			isa = PBXGroup;
 			children = (
 				A111596A188D6C4B00641365 /* Resources */,
+				D384A2541A991B320077EC0C /* AudioDownloader.h */,
+				D384A2551A991B320077EC0C /* AudioDownloader.m */,
 				A1115943188D686000641365 /* AppDelegate.h */,
 				A1115944188D686000641365 /* AppDelegate.m */,
 				A1115965188D6AEE00641365 /* AudioPlayerView.h */,
@@ -283,6 +288,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D384A2561A991B320077EC0C /* AudioDownloader.m in Sources */,
 				A1115945188D686000641365 /* AppDelegate.m in Sources */,
 				A1115941188D686000641365 /* main.m in Sources */,
 				A111596F188D6DB100641365 /* SampleQueueId.m in Sources */,

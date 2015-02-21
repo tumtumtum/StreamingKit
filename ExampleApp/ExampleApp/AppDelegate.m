@@ -12,10 +12,12 @@
 #import "STKAutoRecoveringHTTPDataSource.h"
 #import "SampleQueueId.h"
 #import <AVFoundation/AVFoundation.h>
+#import "AudioDownloader.h"
 
 @interface AppDelegate()
 {
     STKAudioPlayer* audioPlayer;
+    AudioDownloader *audioDownloader;
 }
 @end
 
@@ -57,6 +59,26 @@
 -(BOOL) canBecomeFirstResponder
 {
     return YES;
+}
+
+- (void)audioPlayerViewPlayFromM3u8
+{
+    if(!audioDownloader)
+        audioDownloader = [[AudioDownloader alloc] init];
+    [audioDownloader setCurrentStreamLocation:@""];
+    
+    [audioDownloader setAudioPlayer:audioPlayer];
+    [audioDownloader playLocation:@"http://playlists.ihrhls.com/c1/2257/playlist.m3u8"];
+}
+
+- (void)audioPlayerViewPlayFromM3u
+{
+    if(!audioDownloader)
+        audioDownloader = [[AudioDownloader alloc] init];
+    [audioDownloader setCurrentStreamLocation:@""];
+    
+    [audioDownloader setAudioPlayer:audioPlayer];
+    [audioDownloader playLocation:@"http://ice9.securenetsystems.net/DASH37.m3u"];
 }
 
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView

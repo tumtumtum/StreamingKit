@@ -38,6 +38,8 @@
 @class AudioPlayerView;
 
 @protocol AudioPlayerViewDelegate<NSObject>
+- (void)audioPlayerViewPlayFromM3u;
+- (void)audioPlayerViewPlayFromM3u8;
 -(void) audioPlayerViewPlayFromHTTPSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewPlayFromIcecastSelected:(AudioPlayerView*)audioPlayerView;
 -(void) audioPlayerViewQueueShortFileSelected:(AudioPlayerView*)audioPlayerView;
@@ -58,6 +60,8 @@
 	UIButton* playButton;
     UIButton* stopButton;
 	UIButton* playFromHTTPButton;
+    UIButton* playFromM3uButton;
+    UIButton* playFromM3u8Button;
     UIButton* playFromIcecastButton;
     UIButton* queueShortFileButton;
 	UIButton* queuePcmWaveFileFromHTTPButton;
