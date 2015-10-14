@@ -96,7 +96,7 @@
         
         self->asyncUrlProvider = [asyncUrlProviderIn copy];
         
-        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:self->currentUrl.pathExtension];
+        audioFileTypeHint = [[self class] audioFileTypeHintFromFileExtension:self->currentUrl.pathExtension];
     }
     
     return self;

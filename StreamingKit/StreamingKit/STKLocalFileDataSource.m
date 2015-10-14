@@ -53,7 +53,7 @@
     {
         self.filePath = filePathIn;
         
-        audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:filePathIn.pathExtension];
+        audioFileTypeHint = [[self class] audioFileTypeHintFromFileExtension:filePathIn.pathExtension];
     }
     
     return self;
