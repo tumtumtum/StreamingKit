@@ -411,7 +411,7 @@
     
     eventsRunLoop = savedEventsRunLoop;
 	
-    [self seekToOffset:self.position];
+    [self seekToOffset:self->supportsSeek ? self.position : 0];
 }
 
 -(void) seekToOffset:(SInt64)offset
