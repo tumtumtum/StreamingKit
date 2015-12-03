@@ -58,27 +58,27 @@
 		CGSize size = CGSizeMake(220, 50);
 		
 		playFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10, size.width, size.height);
+		playFromHTTPButton.frame = CGRectMake((frame.size.width - size.width) / 2, frame.size.height * 0.10, size.width, size.height);
 		[playFromHTTPButton addTarget:self action:@selector(playFromHTTPButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[playFromHTTPButton setTitle:@"Play from HTTP" forState:UIControlStateNormal];
         
         playFromIcecastButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        playFromIcecastButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 35, size.width, size.height);
+        playFromIcecastButton.frame = CGRectMake((frame.size.width - size.width) / 2, frame.size.height * 0.10 + 35, size.width, size.height);
         [playFromIcecastButton addTarget:self action:@selector(playFromIcecasButtonTouched) forControlEvents:UIControlEventTouchUpInside];
         [playFromIcecastButton setTitle:@"Play from Icecast" forState:UIControlStateNormal];
 
 		playFromLocalFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		playFromLocalFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 70, size.width, size.height);
+		playFromLocalFileButton.frame = CGRectMake((frame.size.width - size.width) / 2, frame.size.height * 0.10 + 70, size.width, size.height);
 		[playFromLocalFileButton addTarget:self action:@selector(playFromLocalFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[playFromLocalFileButton setTitle:@"Play from Local File" forState:UIControlStateNormal];
         
         queueShortFileButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		queueShortFileButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 105, size.width, size.height);
+		queueShortFileButton.frame = CGRectMake((frame.size.width - size.width) / 2, frame.size.height * 0.10 + 105, size.width, size.height);
 		[queueShortFileButton addTarget:self action:@selector(queueShortFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[queueShortFileButton setTitle:@"Queue short file" forState:UIControlStateNormal];
 		
 		queuePcmWaveFileFromHTTPButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		queuePcmWaveFileFromHTTPButton.frame = CGRectMake((320 - size.width) / 2, frame.size.height * 0.10 + 140, size.width, size.height);
+		queuePcmWaveFileFromHTTPButton.frame = CGRectMake((frame.size.width - size.width) / 2, frame.size.height * 0.10 + 140, size.width, size.height);
 		[queuePcmWaveFileFromHTTPButton addTarget:self action:@selector(queuePcmWaveFileButtonTouched) forControlEvents:UIControlEventTouchUpInside];
 		[queuePcmWaveFileFromHTTPButton setTitle:@"Queue PCM/WAVE from HTTP" forState:UIControlStateNormal];
         
@@ -89,12 +89,12 @@
 		[playButton addTarget:self action:@selector(playButtonPressed) forControlEvents:UIControlEventTouchUpInside];
         
         stopButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		stopButton.frame = CGRectMake((320 - size.width) - 30, 400, size.width, size.height);
+		stopButton.frame = CGRectMake((frame.size.width - size.width) - 30, 400, size.width, size.height);
 		[stopButton addTarget:self action:@selector(stopButtonPressed) forControlEvents:UIControlEventTouchUpInside];
         [stopButton setTitle:@"Stop" forState:UIControlStateNormal];
 		
 		muteButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-		muteButton.frame = CGRectMake((320 - size.width) - 30, 430, size.width, size.height);
+		muteButton.frame = CGRectMake((frame.size.width - size.width) - 30, 430, size.width, size.height);
 		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
 		
@@ -106,7 +106,7 @@
         
         repeatSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(30, frame.size.height * 0.15 + 180, size.width, size.height)];
         
-        enableEqSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(320 - size.width - 30, frame.size.height * 0.15 + 180, size.width, size.height)];
+        enableEqSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(frame.size.width - size.width - 30, frame.size.height * 0.15 + 180, size.width, size.height)];
         enableEqSwitch.on = audioPlayer.equalizerEnabled;
         
         [enableEqSwitch addTarget:self action:@selector(onEnableEqSwitch) forControlEvents:UIControlEventAllTouchEvents];

@@ -32,6 +32,7 @@
     AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(bufferLength), &bufferLength);
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    self.window.rootViewController = [[UIViewController alloc] init];
     
 	self.window.backgroundColor = [UIColor whiteColor];
     
@@ -39,7 +40,6 @@
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 1;
     
-	
 	AudioPlayerView* audioPlayerView = [[AudioPlayerView alloc] initWithFrame:self.window.bounds andAudioPlayer:audioPlayer];
     
 	audioPlayerView.delegate = self;
@@ -47,9 +47,9 @@
     [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
     [self becomeFirstResponder];
 	
-	[self.window addSubview:audioPlayerView];
-	
     [self.window makeKeyAndVisible];
+    
+    [self.window.rootViewController.view addSubview:audioPlayerView];
 	
     return YES;
 }

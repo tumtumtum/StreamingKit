@@ -101,6 +101,8 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
 
 @implementation STKAutoRecoveringHTTPDataSource
 
+@dynamic innerDataSource;
+
 -(STKHTTPDataSource*) innerHTTPDataSource
 {
     return (STKHTTPDataSource*)self.innerDataSource;

@@ -425,7 +425,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = STK;
-				LastUpgradeCheck = 0610;
+				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Thong Nguyen";
 			};
 			buildConfigurationList = A1E7C4C3188D57F50010896F /* Build configuration list for PBXProject "StreamingKit" */;
@@ -633,6 +633,7 @@
 				);
 				INFOPLIST_FILE = "StreamingKitMacTests/StreamingKitMacTests-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.abstractpath.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = xctest;
@@ -653,6 +654,7 @@
 				GCC_PREFIX_HEADER = "StreamingKitMac/StreamingKitMac-Prefix.pch";
 				INFOPLIST_FILE = "StreamingKitMacTests/StreamingKitMacTests-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.abstractpath.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = xctest;
@@ -676,6 +678,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -776,6 +779,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "StreamingKitTests/StreamingKitTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "abstractpath.com.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = xctest;
 			};
@@ -792,6 +796,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "StreamingKit/StreamingKit-Prefix.pch";
 				INFOPLIST_FILE = "StreamingKitTests/StreamingKitTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "abstractpath.com.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = xctest;
 			};

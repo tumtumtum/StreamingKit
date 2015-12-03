@@ -96,6 +96,34 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
     }
 }
 
+static void NormalizeDisabledBuffers(STKAudioPlayerOptions* options)
+{
+    if (options->bufferSizeInSeconds == STK_DISABLE_BUFFER)
+    {
+        options->bufferSizeInSeconds = 0;
+    }
+    
+    if (options->readBufferSize == STK_DISABLE_BUFFER)
+    {
+        options->readBufferSize = 0;
+    }
+    
+    if (options->secondsRequiredToStartPlaying == STK_DISABLE_BUFFER)
+    {
+        options->secondsRequiredToStartPlaying = 0;
+    }
+    
+    if (options->secondsRequiredToStartPlayingAfterBufferUnderun == STK_DISABLE_BUFFER)
+    {
+        options->secondsRequiredToStartPlayingAfterBufferUnderun = 0;
+    }
+    
+    if (options->gracePeriodAfterSeekInSeconds == STK_DISABLE_BUFFER)
+    {
+        options->gracePeriodAfterSeekInSeconds = 0;
+    }
+}
+
 #define CHECK_STATUS_AND_REPORT(call) \
 	if ((status = (call))) \
 	{ \
@@ -491,6 +519,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
 
         PopulateOptionsWithDefault(&options);
+        NormalizeDisabledBuffers(&options);
         
         framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlaying;
         framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlayingAfterBufferUnderun;
@@ -877,7 +906,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
-			if (!audioConverterAudioStreamBasicDescription.mFormatID == kAudioFormatLinearPCM)
+			if (audioConverterAudioStreamBasicDescription.mFormatID != kAudioFormatLinearPCM)
 			{
 				discontinuous = YES;
 			}
