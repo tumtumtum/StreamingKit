@@ -64,7 +64,7 @@
 #define STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS (0.5)
 
 #define OSSTATUS_PRINTF_PLACEHOLDER @"%c%c%c%c"
-#define OSSTATUS_PRINTF_VALUE(status) ((status) >> 24) & 0xFF, ((status) >> 16) & 0xFF, ((status) >> 8) & 0xFF, (status) & 0xFF
+#define OSSTATUS_PRINTF_VALUE(status) (char)(((status) >> 24) & 0xFF), (char)(((status) >> 16) & 0xFF), (char)(((status) >> 8) & 0xFF), (char)((status) & 0xFF)
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
