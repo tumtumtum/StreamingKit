@@ -44,7 +44,7 @@
 #include "UIKit/UIApplication.h"
 #endif
 
-typedef enum
+typedef NS_OPTIONS(NSInteger, STKAudioPlayerState)
 {
     STKAudioPlayerStateReady,
     STKAudioPlayerStateRunning = 1,
@@ -54,10 +54,9 @@ typedef enum
     STKAudioPlayerStateStopped = (1 << 4),
     STKAudioPlayerStateError = (1 << 5),
     STKAudioPlayerStateDisposed = (1 << 6)
-}
-STKAudioPlayerState;
+};
 
-typedef enum
+typedef NS_ENUM(NSInteger, STKAudioPlayerStopReason)
 {
 	STKAudioPlayerStopReasonNone = 0,
 	STKAudioPlayerStopReasonEof,
@@ -65,10 +64,9 @@ typedef enum
 	STKAudioPlayerStopReasonPendingNext,
 	STKAudioPlayerStopReasonDisposed,
 	STKAudioPlayerStopReasonError = 0xffff
-}
-STKAudioPlayerStopReason;
+};
 
-typedef enum
+typedef NS_ENUM(NSInteger, STKAudioPlayerErrorCode)
 {
 	STKAudioPlayerErrorNone = 0,
 	STKAudioPlayerErrorDataSource,
@@ -77,8 +75,7 @@ typedef enum
     STKAudioPlayerErrorCodecError,
     STKAudioPlayerErrorDataNotFound,
     STKAudioPlayerErrorOther = 0xffff
-}
-STKAudioPlayerErrorCode;
+};
 
 ///
 /// Options to initiailise the Audioplayer with.
