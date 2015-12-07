@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "StreamingKit"
-  s.version      = "0.1.26"
+  s.version      = "0.1.27"
   s.summary      = "A fast and extensible audio streamer for iOS and OSX with support for gapless playback and custom (non-HTTP) sources."
   s.homepage     = "https://github.com/tumtumtum/StreamingKit/"
   s.license      = 'MIT'
