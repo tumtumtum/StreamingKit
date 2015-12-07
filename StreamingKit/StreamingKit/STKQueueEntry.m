@@ -46,7 +46,7 @@
 	{
 		if (processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_PREFERRED || (audioStreamBasicDescription.mBytesPerFrame == 0 && processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MIN))
 		{
-			double averagePacketByteSize = processedPacketsSizeTotal / processedPacketsCount;
+			double averagePacketByteSize = (double)processedPacketsSizeTotal / (double)processedPacketsCount;
 			
 			retval = averagePacketByteSize / packetDuration * 8;
 			
