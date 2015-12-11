@@ -2442,6 +2442,9 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
     else if (!isRunning)
     {
+        stopReason = stopReasonIn;
+        self.internalState = STKAudioPlayerInternalStateStopped;
+
         return;
     }
     
