@@ -35,7 +35,7 @@
 @property (readwrite, retain) NSObject* queueItemId;
 @property (readwrite, retain) STKDataSource* dataSource;
 
--(id) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
+-(instancetype) initWithDataSource:(STKDataSource*)dataSource andQueueItemId:(NSObject*)queueItemId;
 
 -(void) reset;
 -(double) duration;

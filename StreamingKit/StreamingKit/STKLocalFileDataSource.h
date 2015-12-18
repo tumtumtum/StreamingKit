@@ -38,6 +38,6 @@
 
 +(AudioFileTypeID) audioFileTypeHintFromFileExtension:(NSString*)fileExtension;
 @property (readonly, copy) NSString* filePath;
--(id) initWithFilePath:(NSString*)filePath;
+-(instancetype) initWithFilePath:(NSString*)filePath;
 
 @end

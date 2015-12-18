@@ -174,10 +174,10 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 
 /// Initializes a new STKAudioPlayer with the default options
--(id) init;
+-(instancetype) init;
 
 /// Initializes a new STKAudioPlayer with the given options
--(id) initWithOptions:(STKAudioPlayerOptions)optionsIn;
+-(instancetype) initWithOptions:(STKAudioPlayerOptions)optionsIn;
 
 /// Plays an item from the given URL string (all pending queued items are removed).
 /// The NSString is used as the queue item ID

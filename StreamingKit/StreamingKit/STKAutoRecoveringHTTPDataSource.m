@@ -108,17 +108,17 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
     return (STKHTTPDataSource*)self.innerDataSource;
 }
 
--(id) initWithDataSource:(STKDataSource *)innerDataSource
+-(instancetype) initWithDataSource:(STKDataSource *)innerDataSource
 {
     return [self initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource];
 }
 
--(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn
+-(instancetype) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn
 {
     return [self initWithHTTPDataSource:innerDataSourceIn andOptions:(STKAutoRecoveringHTTPDataSourceOptions){}];
 }
 
--(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn andOptions:(STKAutoRecoveringHTTPDataSourceOptions)optionsIn
+-(instancetype) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSourceIn andOptions:(STKAutoRecoveringHTTPDataSourceOptions)optionsIn
 {
     if (self = [super initWithDataSource:innerDataSourceIn])
     {

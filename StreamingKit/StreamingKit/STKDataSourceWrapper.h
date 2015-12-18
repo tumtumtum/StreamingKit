@@ -36,7 +36,7 @@
 
 @interface STKDataSourceWrapper : STKDataSource<STKDataSourceDelegate>
 
--(id) initWithDataSource:(STKDataSource*)innerDataSource;
+-(instancetype) initWithDataSource:(STKDataSource*)innerDataSource;
 
 @property (readonly) STKDataSource* innerDataSource;
 

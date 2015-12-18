@@ -45,7 +45,7 @@ STKAutoRecoveringHTTPDataSourceOptions;
 
 @interface STKAutoRecoveringHTTPDataSource : STKDataSourceWrapper
 
--(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;
+-(instancetype) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;
 
 @property (readonly) STKHTTPDataSource* innerDataSource;
 

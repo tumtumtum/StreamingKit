@@ -64,19 +64,19 @@
 
 @implementation STKHTTPDataSource
 
--(id) initWithURL:(NSURL*)urlIn
+-(instancetype) initWithURL:(NSURL*)urlIn
 {
     return [self initWithURLProvider:^NSURL* { return urlIn; }];
 }
 
--(id) initWithURL:(NSURL *)urlIn httpRequestHeaders:(NSDictionary *)httpRequestHeaders
+-(instancetype) initWithURL:(NSURL *)urlIn httpRequestHeaders:(NSDictionary *)httpRequestHeaders
 {
     self = [self initWithURLProvider:^NSURL* { return urlIn; }];
     self->requestHeaders = httpRequestHeaders;
     return self;
 }
 
--(id) initWithURLProvider:(STKURLProvider)urlProviderIn
+-(instancetype) initWithURLProvider:(STKURLProvider)urlProviderIn
 {
 	urlProviderIn = [urlProviderIn copy];
     
@@ -86,7 +86,7 @@
     }];
 }
 
--(id) initWithAsyncURLProvider:(STKAsyncURLProvider)asyncUrlProviderIn
+-(instancetype) initWithAsyncURLProvider:(STKAsyncURLProvider)asyncUrlProviderIn
 {
     if (self = [super init])
     {
