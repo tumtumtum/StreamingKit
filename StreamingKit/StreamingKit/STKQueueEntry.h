@@ -10,6 +10,8 @@
 #import "libkern/OSAtomic.h"
 #import "AudioToolbox/AudioToolbox.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface STKQueueEntry : NSObject
 {
 @public
@@ -44,3 +46,5 @@
 -(BOOL) isDefinitelyCompatible:(AudioStreamBasicDescription*)basicDescription;
 
 @end
+
+NS_ASSUME_NONNULL_END

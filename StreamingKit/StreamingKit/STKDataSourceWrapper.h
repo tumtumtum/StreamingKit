@@ -34,6 +34,8 @@
 
 #import "STKDataSource.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface STKDataSourceWrapper : STKDataSource<STKDataSourceDelegate>
 
 -(instancetype) initWithDataSource:(STKDataSource*)innerDataSource;
@@ -41,3 +43,5 @@
 @property (readonly) STKDataSource* innerDataSource;
 
 @end
+
+NS_ASSUME_NONNULL_END

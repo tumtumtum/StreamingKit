@@ -34,10 +34,12 @@
 
 #import "STKCoreFoundationDataSource.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class STKHTTPDataSource;
 
 typedef void(^STKURLBlock)(NSURL* url);
-typedef NSURL*(^STKURLProvider)();
+typedef NSURL* _Nonnull (^STKURLProvider)();
 typedef void(^STKAsyncURLProvider)(STKHTTPDataSource* dataSource, BOOL forSeek, STKURLBlock callback);
 
 @interface STKHTTPDataSource : STKCoreFoundationDataSource
@@ -54,3 +56,5 @@ typedef void(^STKAsyncURLProvider)(STKHTTPDataSource* dataSource, BOOL forSeek, 
 -(void) reconnect;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -34,6 +34,8 @@
 
 #import "STKDataSource.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class STKCoreFoundationDataSource;
 
 @interface CoreFoundationDataSourceClientInfo : NSObject
@@ -62,3 +64,5 @@
 -(CFStreamStatus) status;
 
 @end
+
+NS_ASSUME_NONNULL_END

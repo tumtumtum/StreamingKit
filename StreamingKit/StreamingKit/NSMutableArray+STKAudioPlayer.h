@@ -8,10 +8,14 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface NSMutableArray (STKAudioPlayer)
 -(void) enqueue:(id)obj;
 -(void) skipQueue:(id)obj;
 -(void) skipQueueWithQueue:(NSMutableArray*)queue;
--(id) dequeue;
--(id) peek;
+-(nullable id) dequeue;
+-(nullable id) peek;
 @end
+
+NS_ASSUME_NONNULL_END
