@@ -40,7 +40,7 @@
 
 @implementation STKDataSourceWrapper
 
--(id) initWithDataSource:(STKDataSource*)innerDataSourceIn
+-(instancetype) initWithDataSource:(STKDataSource*)innerDataSourceIn
 {
     if (self = [super init])
     {

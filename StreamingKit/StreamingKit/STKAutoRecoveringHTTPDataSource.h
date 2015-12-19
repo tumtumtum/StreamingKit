@@ -36,6 +36,8 @@
 #import "STKHTTPDataSource.h"
 #import "STKDataSourceWrapper.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef struct
 {
     int watchdogPeriodSeconds;
@@ -45,8 +47,10 @@ STKAutoRecoveringHTTPDataSourceOptions;
 
 @interface STKAutoRecoveringHTTPDataSource : STKDataSourceWrapper
 
--(id) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;
+-(instancetype) initWithHTTPDataSource:(STKHTTPDataSource*)innerDataSource;
 
 @property (readonly) STKHTTPDataSource* innerDataSource;
 
 @end
+
+NS_ASSUME_NONNULL_END

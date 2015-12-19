@@ -34,10 +34,14 @@
 
 #import "STKCoreFoundationDataSource.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface STKLocalFileDataSource : STKCoreFoundationDataSource
 
 +(AudioFileTypeID) audioFileTypeHintFromFileExtension:(NSString*)fileExtension;
 @property (readonly, copy) NSString* filePath;
--(id) initWithFilePath:(NSString*)filePath;
+-(instancetype) initWithFilePath:(NSString*)filePath;
 
 @end
+
+NS_ASSUME_NONNULL_END

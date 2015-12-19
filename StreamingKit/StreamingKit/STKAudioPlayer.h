@@ -44,6 +44,8 @@
 #include "UIKit/UIApplication.h"
 #endif
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef NS_OPTIONS(NSInteger, STKAudioPlayerState)
 {
     STKAudioPlayerStateReady,
@@ -151,13 +153,13 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Enables or disables the EQ
 @property (readwrite) BOOL equalizerEnabled;
 /// Returns an array of STKFrameFilterEntry objects representing the filters currently in use
-@property (readonly) NSArray* frameFilters;
+@property (readonly, nullable) NSArray* frameFilters;
 /// Returns the items pending to be played (includes buffering and upcoming items but does not include the current item)
 @property (readonly) NSArray* pendingQueue;
 /// The number of items pending to be played (includes buffering and upcoming items but does not include the current item)
 @property (readonly) NSUInteger pendingQueueCount;
 /// Gets the most recently queued item that is still pending to play
-@property (readonly) NSObject* mostRecentlyQueuedStillPendingItem;
+@property (readonly, nullable) NSObject* mostRecentlyQueuedStillPendingItem;
 /// Gets the current state of the player
 @property (readwrite) STKAudioPlayerState state;
 /// Gets the options provided to the player on startup
@@ -174,10 +176,10 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 
 /// Initializes a new STKAudioPlayer with the default options
--(id) init;
+-(instancetype) init;
 
 /// Initializes a new STKAudioPlayer with the given options
--(id) initWithOptions:(STKAudioPlayerOptions)optionsIn;
+-(instancetype) initWithOptions:(STKAudioPlayerOptions)optionsIn;
 
 /// Plays an item from the given URL string (all pending queued items are removed).
 /// The NSString is used as the queue item ID
@@ -254,7 +256,7 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 
 /// Appends a frame filter with the given name and filter block just after the filter with the given name.
 /// If the given name is nil, the filter will be inserted at the beginning of the filter change
--(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(NSString*)afterFilterWithName block:(STKFrameFilter)block;
+-(void) addFrameFilterWithName:(NSString*)name afterFilterWithName:(nullable NSString*)afterFilterWithName block:(STKFrameFilter)block;
 
 /// Reads the peak power in decibals for the given channel (0 or 1).
 /// Return values are between -60 (low) and 0 (high).
@@ -268,3 +270,5 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;
 
 @end
+
+NS_ASSUME_NONNULL_END

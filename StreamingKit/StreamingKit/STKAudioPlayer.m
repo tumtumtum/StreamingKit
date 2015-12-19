@@ -173,7 +173,7 @@ STKAudioPlayerInternalState;
 @end
 
 @implementation STKFrameFilterEntry
--(id) initWithFilter:(STKFrameFilter)filterIn andName:(NSString*)nameIn
+-(instancetype) initWithFilter:(STKFrameFilter)filterIn andName:(NSString*)nameIn
 {
 	if (self = [super init])
 	{
@@ -504,12 +504,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     }
 }
 
--(id) init
+-(instancetype) init
 {
     return [self initWithOptions:(STKAudioPlayerOptions){}];
 }
 
--(id) initWithOptions:(STKAudioPlayerOptions)optionsIn
+-(instancetype) initWithOptions:(STKAudioPlayerOptions)optionsIn
 {
     if (self = [super init])
     {
