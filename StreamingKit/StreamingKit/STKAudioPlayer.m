@@ -907,7 +907,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
-			if (audioConverterAudioStreamBasicDescription.mFormatID != kAudioFormatLinearPCM)
+			if (!(audioConverterAudioStreamBasicDescription.mFormatID == kAudioFormatLinearPCM))
 			{
 				discontinuous = YES;
 			}
@@ -1977,7 +1977,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 
     [self destroyAudioConverter];
     
-    canonicalAudioStreamBasicDescription.mChannelsPerFrame = asbd->mChannelsPerFrame;
+    //canonicalAudioStreamBasicDescription.mChannelsPerFrame = asbd->mChannelsPerFrame;
     
     BOOL isRecording = currentlyReadingEntry.dataSource.recordToFileUrl != nil;
     if (isRecording)
