@@ -907,7 +907,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
-			if (!(audioConverterAudioStreamBasicDescription.mFormatID == kAudioFormatLinearPCM))
+			if (audioConverterAudioStreamBasicDescription.mFormatID != kAudioFormatLinearPCM)
 			{
 				discontinuous = YES;
 			}
