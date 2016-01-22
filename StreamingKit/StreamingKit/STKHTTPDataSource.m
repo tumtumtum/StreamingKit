@@ -310,11 +310,7 @@
         
         self->iceHeaderData = nil;
     }
-    
-    if (([httpHeaders objectForKey:@"Accept-Ranges"] ?: [httpHeaders objectForKey:@"accept-ranges"]) != nil)
-    {
-        self->supportsSeek = YES;
-    }
+    self->supportsSeek = YES;
     
     if (self.httpStatusCode == 200)
     {
