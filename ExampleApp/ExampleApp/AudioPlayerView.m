@@ -98,9 +98,22 @@
 		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
 		
-		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 20)];
+		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 300, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 20)];
 		slider.continuous = YES;
 		[slider addTarget:self action:@selector(sliderChanged) forControlEvents:UIControlEventValueChanged];
+        
+        //playbackspeed Slider
+        playbackspeedslider = [[UISlider alloc] initWithFrame:CGRectMake(20, 330, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 20)];
+        
+        playbackspeedslider.continuous = YES;
+        [playbackspeedslider addTarget:self action:@selector(playbackspeed) forControlEvents:UIControlEventValueChanged];
+        
+        //Set PlaybackSpeed range and initial value
+        playbackspeedslider.minimumValue=0.5;
+        playbackspeedslider.maximumValue=2;
+        playbackspeedslider.value=1;
+        
+        
         
         size = CGSizeMake(80, 50);
         
@@ -115,6 +128,12 @@
 		
         label.textAlignment = NSTextAlignmentCenter;
         
+        //playbackspeedlabel
+        playbackspeedlabel = [[UILabel alloc] initWithFrame:CGRectMake(0, playbackspeedslider.frame.origin.y + playbackspeedslider.frame.size.height + 40, frame.size.width, 25)];
+        
+        playbackspeedlabel.textAlignment = NSTextAlignmentCenter;
+        
+        
         statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, slider.frame.origin.y + slider.frame.size.height + label.frame.size.height + 50, frame.size.width, 50)];
 		
         statusLabel.textAlignment = NSTextAlignmentCenter;
@@ -124,6 +143,8 @@
 		meter.backgroundColor = [UIColor greenColor];
 		
 		[self addSubview:slider];
+        //playbackspeedslider
+        [self addSubview:playbackspeedslider];
 		[self addSubview:playButton];
 		[self addSubview:playFromHTTPButton];
         [self addSubview:playFromIcecastButton];
@@ -132,6 +153,8 @@
 		[self addSubview:queuePcmWaveFileFromHTTPButton];
         [self addSubview:repeatSwitch];
         [self addSubview:label];
+        //playbackspeedlabel
+        [self addSubview:playbackspeedlabel];
         [self addSubview:statusLabel];
         [self addSubview:stopButton];
 		[self addSubview:meter];
@@ -162,6 +185,14 @@
 	[audioPlayer seekToTime:slider.value];
 }
 
+-(void) playbackspeed{
+
+    // Set PlaybackSpeedValue; Allows continuous float values from 0.5x to 2x
+    [audioPlayer setplaybackbackspeed:(AudioUnitParameterValue) playbackspeedslider.value];
+
+}
+
+
 -(void) setupTimer
 {
 	timer = [NSTimer timerWithTimeInterval:0.001 target:self selector:@selector(tick) userInfo:nil repeats:YES];
@@ -171,12 +202,15 @@
 
 -(void) tick
 {
+    
+    
 	if (!audioPlayer)
 	{
 		slider.value = 0;
         label.text = @"";
         statusLabel.text = @"";
-		
+        //playbackspeedlabel
+		playbackspeedlabel.text=@"";
 		return;
 	}
 	
@@ -187,7 +221,8 @@
         slider.maximumValue = 0;
         
         label.text = @"";
-        
+        //playbackspeedlabel
+        playbackspeedlabel.text=@"";
         return;
     }
     
@@ -198,6 +233,9 @@
         slider.value = audioPlayer.progress;
         
         label.text = [NSString stringWithFormat:@"%@ - %@", [self formatTimeFromSeconds:audioPlayer.progress], [self formatTimeFromSeconds:audioPlayer.duration]];
+        
+        //playbackspeedlabel
+        playbackspeedlabel.text=[[NSString alloc] initWithFormat:@"%0.3fx", playbackspeedslider.value];
     }
     else
     {

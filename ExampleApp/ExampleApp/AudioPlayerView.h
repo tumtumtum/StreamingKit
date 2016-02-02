@@ -50,8 +50,12 @@
 @private
 	NSTimer* timer;
     UILabel* label;
+    //playbackspeedlabel
+    UILabel* playbackspeedlabel;
     UILabel* statusLabel;
 	UISlider* slider;
+    //playbackspeedslider
+    UISlider* playbackspeedslider;
     UISwitch* enableEqSwitch;
     UISwitch* repeatSwitch;
 	UIButton* muteButton;

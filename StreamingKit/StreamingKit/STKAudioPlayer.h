@@ -269,6 +269,9 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Sets the gain value (from -96 low to +24 high) for an equalizer band (0 based index)
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;
 
+//SetPlaybackSpeed
+-(void) setplaybackbackspeed:(float)value;
+
 @end
 
 NS_ASSUME_NONNULL_END
