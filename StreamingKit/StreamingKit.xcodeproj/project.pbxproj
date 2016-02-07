@@ -15,6 +15,8 @@
 		5B949CD71A1140E4005675A0 /* STKHTTPDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4FB188D5E550010896F /* STKHTTPDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5B949CD81A1140E4005675A0 /* STKLocalFileDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5B949CD91A1140E4005675A0 /* STKQueueEntry.h in Headers */ = {isa = PBXBuildFile; fileRef = A1BF65D0189A6582004DD08C /* STKQueueEntry.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		958A8E291C67E9B700AA861D /* AEFloatConverter.h in Headers */ = {isa = PBXBuildFile; fileRef = 958A8E271C67E9B700AA861D /* AEFloatConverter.h */; };
+		958A8E2A1C67E9B700AA861D /* AEFloatConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 958A8E281C67E9B700AA861D /* AEFloatConverter.m */; };
 		A1A4996B189E744400E2A2E2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A4996A189E744400E2A2E2 /* Cocoa.framework */; };
 		A1A49975189E744500E2A2E2 /* StreamingKitMac.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A49974189E744500E2A2E2 /* StreamingKitMac.m */; };
 		A1A4997B189E744500E2A2E2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1E7C4D9188D57F60010896F /* XCTest.framework */; };
@@ -91,6 +93,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		958A8E271C67E9B700AA861D /* AEFloatConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEFloatConverter.h; sourceTree = "<group>"; };
+		958A8E281C67E9B700AA861D /* AEFloatConverter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AEFloatConverter.m; sourceTree = "<group>"; };
 		A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKitMac.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A4996A189E744400E2A2E2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		A1A4996D189E744500E2A2E2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -270,6 +274,8 @@
 		A1E7C4CD188D57F50010896F /* StreamingKit */ = {
 			isa = PBXGroup;
 			children = (
+				958A8E271C67E9B700AA861D /* AEFloatConverter.h */,
+				958A8E281C67E9B700AA861D /* AEFloatConverter.m */,
 				A1E7C4F1188D5E550010896F /* STKAudioPlayer.h */,
 				A1E7C4F2188D5E550010896F /* STKAudioPlayer.m */,
 				A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */,
@@ -331,6 +337,7 @@
 				5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */,
 				5B949CD51A1140E4005675A0 /* STKDataSource.h in Headers */,
 				5B949CD61A1140E4005675A0 /* STKDataSourceWrapper.h in Headers */,
+				958A8E291C67E9B700AA861D /* AEFloatConverter.h in Headers */,
 				5B949CD71A1140E4005675A0 /* STKHTTPDataSource.h in Headers */,
 				5B949CD81A1140E4005675A0 /* STKLocalFileDataSource.h in Headers */,
 				5B949CD91A1140E4005675A0 /* STKQueueEntry.h in Headers */,
@@ -525,6 +532,7 @@
 				A1E7C505188D5E550010896F /* STKLocalFileDataSource.m in Sources */,
 				A1BF65D2189A6582004DD08C /* STKQueueEntry.m in Sources */,
 				A1E7C504188D5E550010896F /* STKHTTPDataSource.m in Sources */,
+				958A8E2A1C67E9B700AA861D /* AEFloatConverter.m in Sources */,
 				A1E7C503188D5E550010896F /* STKDataSourceWrapper.m in Sources */,
 				A1E7C502188D5E550010896F /* STKDataSource.m in Sources */,
 				A1BF65D5189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m in Sources */,

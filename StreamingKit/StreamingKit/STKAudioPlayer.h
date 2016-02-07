@@ -129,6 +129,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Raised when items queued items are cleared (usually because of a call to play, setDataSource or stop)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 
+-(void) plotGraphWithBuffer:(float*)buffer andLength:(UInt32)count;
+
 @end
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>

@@ -41,6 +41,7 @@
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
 #import <float.h>
+#import "AEFloatConverter.h"
 
 #ifndef DBL_MAX
 #define DBL_MAX 1.7976931348623157e+308
@@ -271,6 +272,9 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     volatile BOOL disposeWasRequested;
     volatile BOOL seekToTimeWasRequested;
     volatile STKAudioPlayerStopReason stopReason;
+    
+    float **_floatBuffers;
+    AEFloatConverter *_floatConverter;
 }
 
 @property (readwrite) STKAudioPlayerInternalState internalState;
@@ -526,7 +530,21 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         upcomingQueue = [[NSMutableArray alloc] init];
         bufferingQueue = [[NSMutableArray alloc] init];
+        
+        
+        //initialie the float converter
+        // Allocate the float buffers
+        _floatConverter = [[AEFloatConverter alloc] initWithSourceFormat:canonicalAudioStreamBasicDescription];
+        size_t sizeToAllocate = sizeof(float*) * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
+        sizeToAllocate = MAX(8, sizeToAllocate);
+        _floatBuffers   = (float**)malloc( sizeToAllocate );
+        UInt32 outputBufferSize = 32 * 1024; // 32 KB
+        for ( int i=0; i< canonicalAudioStreamBasicDescription.mChannelsPerFrame; i++ ) {
+            _floatBuffers[i] = (float*)malloc(outputBufferSize);
+        }
 
+
+        
 		[self resetPcmBuffers];
         [self createAudioGraph];
         [self createPlaybackThread];
@@ -3209,6 +3227,12 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	{
 		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
 		{
+            AEFloatConverterToFloat(_floatConverter,&(pcmAudioBufferList),_floatBuffers,frameCount);
+            
+            if ([self.delegate respondsToSelector:@selector(plotGraphWithBuffer:andLength:)]) {
+                [self.delegate plotGraphWithBuffer:*(_floatBuffers) andLength:frameCount];
+            }
+            
 			SInt16* samples16 = (SInt16*)frames;
 			SInt32* samples32 = (SInt32*)frames;
 			UInt32 countLeft = 0;
