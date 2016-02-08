@@ -93,7 +93,7 @@ static OSStatus complexInputDataProc(AudioConverterRef             inAudioConver
 }
 
 
-BOOL AEFloatConverterToFloat(STKFloatConverter* THIS, AudioBufferList *sourceBuffer, float * const * targetBuffers, UInt32 frames) {
+BOOL STKFloatConverterToFloat(STKFloatConverter* THIS, AudioBufferList *sourceBuffer, float * const * targetBuffers, UInt32 frames) {
     if ( frames == 0 ) return YES;
     
     if ( THIS->_toFloatConverter ) {
@@ -131,17 +131,17 @@ BOOL AEFloatConverterToFloat(STKFloatConverter* THIS, AudioBufferList *sourceBuf
     return YES;
 }
 
-BOOL AEFloatConverterToFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer,  AudioBufferList *targetBuffer, UInt32 frames) {
+BOOL STKFloatConverterToFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer,  AudioBufferList *targetBuffer, UInt32 frames) {
     assert(targetBuffer->mNumberBuffers == converter->_floatAudioDescription.mChannelsPerFrame);
     
     float *targetBuffers[targetBuffer->mNumberBuffers];
     for ( int i=0; i<targetBuffer->mNumberBuffers; i++ ) {
         targetBuffers[i] = (float*)targetBuffer->mBuffers[i].mData;
     }
-    return AEFloatConverterToFloat(converter, sourceBuffer, targetBuffers, frames);
+    return STKFloatConverterToFloat(converter, sourceBuffer, targetBuffers, frames);
 }
 
-BOOL AEFloatConverterFromFloat(STKFloatConverter* THIS, float * const * sourceBuffers, AudioBufferList *targetBuffer, UInt32 frames) {
+BOOL STKFloatConverterFromFloat(STKFloatConverter* THIS, float * const * sourceBuffers, AudioBufferList *targetBuffer, UInt32 frames) {
     if ( frames == 0 ) return YES;
     
     if ( THIS->_fromFloatConverter ) {
@@ -178,14 +178,14 @@ BOOL AEFloatConverterFromFloat(STKFloatConverter* THIS, float * const * sourceBu
     return YES;
 }
 
-BOOL AEFloatConverterFromFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer, AudioBufferList *targetBuffer, UInt32 frames) {
+BOOL STKFloatConverterFromFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer, AudioBufferList *targetBuffer, UInt32 frames) {
     assert(sourceBuffer->mNumberBuffers == converter->_floatAudioDescription.mChannelsPerFrame);
     
     float *sourceBuffers[sourceBuffer->mNumberBuffers];
     for ( int i=0; i<sourceBuffer->mNumberBuffers; i++ ) {
         sourceBuffers[i] = (float*)sourceBuffer->mBuffers[i].mData;
     }
-    return AEFloatConverterFromFloat(converter, sourceBuffers, targetBuffer, frames);
+    return STKFloatConverterFromFloat(converter, sourceBuffers, targetBuffer, frames);
 }
 
 static OSStatus complexInputDataProc(AudioConverterRef             inAudioConverter,
