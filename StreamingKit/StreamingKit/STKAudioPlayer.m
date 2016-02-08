@@ -41,7 +41,7 @@
 #import "NSMutableArray+STKAudioPlayer.h"
 #import "libkern/OSAtomic.h"
 #import <float.h>
-#import "AEFloatConverter.h"
+#import "STKFloatConverter.h"
 
 #ifndef DBL_MAX
 #define DBL_MAX 1.7976931348623157e+308
@@ -274,7 +274,7 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     volatile STKAudioPlayerStopReason stopReason;
     
     float **_floatBuffers;
-    AEFloatConverter *_floatConverter;
+    STKFloatConverter *_floatConverter;
 }
 
 @property (readwrite) STKAudioPlayerInternalState internalState;
@@ -534,7 +534,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         //initialie the float converter
         // Allocate the float buffers
-        _floatConverter = [[AEFloatConverter alloc] initWithSourceFormat:canonicalAudioStreamBasicDescription];
+        _floatConverter = [[STKFloatConverter alloc] initWithSourceFormat:canonicalAudioStreamBasicDescription];
         size_t sizeToAllocate = sizeof(float*) * canonicalAudioStreamBasicDescription.mChannelsPerFrame;
         sizeToAllocate = MAX(8, sizeToAllocate);
         _floatBuffers   = (float**)malloc( sizeToAllocate );
@@ -3225,9 +3225,9 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	}
 	else
 	{
-		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
+		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, float* frames)
 		{
-            AEFloatConverterToFloat(_floatConverter,&(pcmAudioBufferList),_floatBuffers,frameCount);
+            STKFloatConverterToFloat(_floatConverter,&(pcmAudioBufferList),_floatBuffers,frameCount);
             
             if ([self.delegate respondsToSelector:@selector(plotGraphWithBuffer:andLength:)]) {
                 [self.delegate plotGraphWithBuffer:*(_floatBuffers) andLength:frameCount];

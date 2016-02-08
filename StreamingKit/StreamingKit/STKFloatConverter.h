@@ -26,17 +26,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
-    
-    /*!
-     * Universal converter to float format
-     *
-     *  Use this class to easily convert arbitrary audio formats to floating point
-     *  for use with utilities like the Accelerate framework.
-     */
-    @interface AEFloatConverter : NSObject
+
+/*!
+ * Universal converter to float format
+ *
+ *  Use this class to easily convert arbitrary audio formats to floating point
+ *  for use with utilities like the Accelerate framework.
+ */
+@interface STKFloatConverter : NSObject
 
 /*!
  * Initialize
@@ -54,12 +54,12 @@ extern "C" {
  *
  * @param converter         Pointer to the converter object.
  * @param sourceBuffer      An audio buffer list containing the source audio.
- * @param targetBuffers     An array of floating-point arrays to store the converted float audio into.
+ * @param targetBuffers     An array of floating-point arrays to store the converted float audio into. 
  *                          Note that you must provide the correct number of arrays, to match the number of channels.
  * @param frames            The number of frames to convert.
  * @return YES on success; NO on failure
  */
-BOOL AEFloatConverterToFloat(AEFloatConverter* converter, AudioBufferList *sourceBuffer, float * const * targetBuffers, UInt32 frames);
+BOOL STKFloatConverterToFloat(STKFloatConverter* converter, AudioBufferList *sourceBuffer, float * const * targetBuffers, UInt32 frames);
 
 /*!
  * Convert audio to floating-point, in a buffer list
@@ -74,7 +74,7 @@ BOOL AEFloatConverterToFloat(AEFloatConverter* converter, AudioBufferList *sourc
  * @param frames            The number of frames to convert.
  * @return YES on success; NO on failure
  */
-BOOL AEFloatConverterToFloatBufferList(AEFloatConverter* converter, AudioBufferList *sourceBuffer,  AudioBufferList *targetBuffer, UInt32 frames);
+BOOL STKFloatConverterToFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer,  AudioBufferList *targetBuffer, UInt32 frames);
 
 /*!
  * Convert audio from floating-point
@@ -90,7 +90,7 @@ BOOL AEFloatConverterToFloatBufferList(AEFloatConverter* converter, AudioBufferL
  * @param frames            The number of frames to convert.
  * @return YES on success; NO on failure
  */
-BOOL AEFloatConverterFromFloat(AEFloatConverter* converter, float * const * sourceBuffers, AudioBufferList *targetBuffer, UInt32 frames);
+BOOL STKFloatConverterFromFloat(STKFloatConverter* converter, float * const * sourceBuffers, AudioBufferList *targetBuffer, UInt32 frames);
 
 /*!
  * Convert audio from floating-point, in a buffer list
@@ -105,7 +105,7 @@ BOOL AEFloatConverterFromFloat(AEFloatConverter* converter, float * const * sour
  * @param frames            The number of frames to convert.
  * @return YES on success; NO on failure
  */
-BOOL AEFloatConverterFromFloatBufferList(AEFloatConverter* converter, AudioBufferList *sourceBuffer, AudioBufferList *targetBuffer, UInt32 frames);
+BOOL STKFloatConverterFromFloatBufferList(STKFloatConverter* converter, AudioBufferList *sourceBuffer, AudioBufferList *targetBuffer, UInt32 frames);
 
 /*!
  * The AudioStreamBasicDescription representing the converted floating-point format
@@ -118,7 +118,7 @@ BOOL AEFloatConverterFromFloatBufferList(AEFloatConverter* converter, AudioBuffe
 @property (nonatomic, readonly) AudioStreamBasicDescription sourceFormat;
 
 @end
-    
+
 #ifdef __cplusplus
 }
 #endif

@@ -101,7 +101,7 @@ typedef struct
 }
 STKAudioPlayerOptions;
 
-typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, float* frames);
 
 @interface STKFrameFilterEntry : NSObject
 @property (readonly) NSString* name;
