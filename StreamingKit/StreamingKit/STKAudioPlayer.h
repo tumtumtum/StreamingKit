@@ -91,7 +91,7 @@ typedef struct
 	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
     UInt32 readBufferSize;
     /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)
-    UInt32 bufferSizeInSeconds;
+    float bufferSizeInSeconds;
     /// Number of seconds of decompressed audio is required before playback first starts for each item (Default is 0.5 seconds. Must be larger than bufferSizeInSeconds)
     Float32 secondsRequiredToStartPlaying;
 	/// Seconds after a seek is performed before data needs to come in (after which the state will change to playing/buffering)
@@ -256,11 +256,11 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 
 /// Reads the peak power in decibals for the given channel (0 or 1).
 /// Return values are between -60 (low) and 0 (high).
--(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
+//-(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 /// Reads the average power in decibals for the given channel (0 or 1)
 /// Return values are between -60 (low) and 0 (high).
--(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
+//-(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 /// Sets the gain value (from -96 low to +24 high) for an equalizer band (0 based index)
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;

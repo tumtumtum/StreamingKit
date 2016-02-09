@@ -52,15 +52,15 @@
 #define kOutputBus 0
 #define kInputBus 1
 
-#define STK_DBMIN (-60)
-#define STK_DBOFFSET (-74.0)
+//#define STK_DBMIN (-60)
+//#define STK_DBOFFSET (-74.0)
 #define STK_LOWPASSFILTERTIMESLICE (0.0005)
 
-#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (2 * 60)
+#define STK_DEFAULT_PCM_BUFFER_SIZE_IN_SECONDS (0.1)
 #define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING (1)
 #define STK_DEFAULT_SECONDS_REQUIRED_TO_START_PLAYING_AFTER_BUFFER_UNDERRUN (7.5)
 #define STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION (4096)
-#define STK_DEFAULT_READ_BUFFER_SIZE (64 * 1024)
+#define STK_DEFAULT_READ_BUFFER_SIZE (128 * 1024)
 #define STK_DEFAULT_PACKET_BUFFER_SIZE (2048)
 #define STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS (0.5)
 
@@ -1734,10 +1734,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     self->pcmBufferFrameStartIndex = 0;
     self->pcmBufferUsedFrameCount = 0;
-	self->peakPowerDb[0] = STK_DBMIN;
-	self->peakPowerDb[1] = STK_DBMIN;
-	self->averagePowerDb[0] = STK_DBMIN;
-	self->averagePowerDb[1] = STK_DBMIN;
+//	self->peakPowerDb[0] = STK_DBMIN;
+//	self->peakPowerDb[1] = STK_DBMIN;
+//	self->averagePowerDb[0] = STK_DBMIN;
+//	self->averagePowerDb[1] = STK_DBMIN;
     
     OSSpinLockUnlock(&pcmBufferSpinLock);
 }
@@ -3233,58 +3233,58 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
                 [self.delegate plotGraphWithBuffer:*(_floatBuffers) andLength:frameCount];
             }
             
-			SInt16* samples16 = (SInt16*)frames;
-			SInt32* samples32 = (SInt32*)frames;
-			UInt32 countLeft = 0;
-			UInt32 countRight = 0;
-			Float32 decibelsLeft = STK_DBMIN;
-			Float32 peakValueLeft = STK_DBMIN;
-			Float64 totalValueLeft = 0;
-			Float32 previousFilteredValueOfSampleAmplitudeLeft = 0;
-			Float32 decibelsRight = STK_DBMIN;
-			Float32 peakValueRight = STK_DBMIN;
-			Float64 totalValueRight = 0;
-			Float32 previousFilteredValueOfSampleAmplitudeRight = 0;
-			
-			if (bytesPerFrame / channelsPerFrame == 2)
-			{
-				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
-				{
-					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples16[i]);
-					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples16[i + 1]);
-					
-					CALCULATE_METER(Left);
-					CALCULATE_METER(Right);
-				}
-			}
-			else if (bytesPerFrame / channelsPerFrame == 4)
-			{
-				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
-				{
-					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples32[i]) / 32768.0;
-					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples32[i + 1]) / 32768.0;
-					
-					CALCULATE_METER(Left);
-					CALCULATE_METER(Right);
-				}
-			}
-			else
-			{
-				return;
-			}
-			
-			peakPowerDb[0] = MIN(MAX(decibelsLeft, -60), 0);
-			peakPowerDb[1] = MIN(MAX(decibelsRight, -60), 0);
-			
-			if (countLeft > 0)
-			{
-				averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
-			}
-			
-			if (countRight != 0)
-			{
-				averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
-			}
+//			SInt16* samples16 = (SInt16*)frames;
+//			SInt32* samples32 = (SInt32*)frames;
+//			UInt32 countLeft = 0;
+//			UInt32 countRight = 0;
+//			Float32 decibelsLeft = STK_DBMIN;
+//			Float32 peakValueLeft = STK_DBMIN;
+//			Float64 totalValueLeft = 0;
+//			Float32 previousFilteredValueOfSampleAmplitudeLeft = 0;
+//			Float32 decibelsRight = STK_DBMIN;
+//			Float32 peakValueRight = STK_DBMIN;
+//			Float64 totalValueRight = 0;
+//			Float32 previousFilteredValueOfSampleAmplitudeRight = 0;
+//			
+//			if (bytesPerFrame / channelsPerFrame == 2)
+//			{
+//				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
+//				{
+//					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples16[i]);
+//					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples16[i + 1]);
+//					
+//					CALCULATE_METER(Left);
+//					CALCULATE_METER(Right);
+//				}
+//			}
+//			else if (bytesPerFrame / channelsPerFrame == 4)
+//			{
+//				for (int i = 0; i < frameCount * channelsPerFrame; i += channelsPerFrame)
+//				{
+//					Float32 absoluteValueOfSampleAmplitudeLeft = abs(samples32[i]) / 32768.0;
+//					Float32 absoluteValueOfSampleAmplitudeRight = abs(samples32[i + 1]) / 32768.0;
+//					
+//					CALCULATE_METER(Left);
+//					CALCULATE_METER(Right);
+//				}
+//			}
+//			else
+//			{
+//				return;
+//			}
+//			
+//			peakPowerDb[0] = MIN(MAX(decibelsLeft, -60), 0);
+//			peakPowerDb[1] = MIN(MAX(decibelsRight, -60), 0);
+//			
+//			if (countLeft > 0)
+//			{
+//				averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
+//			}
+//			
+//			if (countRight != 0)
+//			{
+//				averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
+//			}
 		}];
 	}
 }
