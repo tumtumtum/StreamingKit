@@ -1042,6 +1042,30 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return retval;
 }
 
+-(float) rate
+{
+	AudioUnitParameterValue rateValue;
+	AudioUnitGetParameter(playbackRateUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, &rateValue);
+	return rateValue;
+}
+
+-(void) setRate:(float)rate
+{
+	AudioUnitSetParameter(playbackRateUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, rate, 0);
+}
+
+-(float) overlap
+{
+	AudioUnitParameterValue overlapValue;
+	AudioUnitGetParameter(playbackRateUnit, kNewTimePitchParam_Overlap, kAudioUnitScope_Global, 0, &overlapValue);
+	return overlapValue;
+}
+
+-(void) setOverlap:(float)overlap
+{
+	AudioUnitSetParameter(playbackRateUnit, kNewTimePitchParam_Overlap, kAudioUnitScope_Global, 0, overlap, 0);
+}
+
 -(BOOL) invokeOnPlaybackThread:(void(^)())block
 {
 	NSRunLoop* runLoop = playbackThreadRunLoop;
@@ -2249,11 +2273,6 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     OSStatus status;
 	
 	CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(eqUnit, kAUNBandEQParam_Gain + bandIndex, kAudioUnitScope_Global, 0, gain, 0));
-}
-
--(void) setRate:(float)rate
-{
-	AudioUnitSetParameter(playbackRateUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, rate, 0);
 }
 
 -(AUNode) createConverterNode:(AudioStreamBasicDescription)srcFormat desFormat:(AudioStreamBasicDescription)desFormat
