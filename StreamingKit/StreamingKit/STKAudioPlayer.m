@@ -680,6 +680,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return retval;
 }
 
++ (AudioStreamBasicDescription)canonicalAudioStreamBasicDescription
+{
+  return canonicalAudioStreamBasicDescription;
+}
+
 -(void) clearQueue
 {
     pthread_mutex_lock(&playerMutex);

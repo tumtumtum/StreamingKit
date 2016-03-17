@@ -175,6 +175,9 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// URLs with unrecognised schemes will return nil.
 +(STKDataSource*) dataSourceFromURL:(NSURL*)url;
 
+/// Returns canonical audio format used by STKFrameFilter blocks.
++(AudioStreamBasicDescription)canonicalAudioStreamBasicDescription;
+
 /// Initializes a new STKAudioPlayer with the default options
 -(instancetype) init;
 
