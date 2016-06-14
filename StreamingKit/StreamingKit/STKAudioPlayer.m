@@ -65,7 +65,7 @@
 #define STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS (0.5)
 
 #define OSSTATUS_PRINTF_PLACEHOLDER @"%c%c%c%c"
-#define OSSTATUS_PRINTF_VALUE(status) ((status) >> 24) & 0xFF, ((status) >> 16) & 0xFF, ((status) >> 8) & 0xFF, (status) & 0xFF
+#define OSSTATUS_PRINTF_VALUE(status) (char)(((status) >> 24) & 0xFF), (char)(((status) >> 16) & 0xFF), (char)(((status) >> 8) & 0xFF), (char)((status) & 0xFF)
 
 #define LOGINFO(x) [self logInfo:[NSString stringWithFormat:@"%s %@", sel_getName(_cmd), x]];
 
@@ -94,6 +94,34 @@ static void PopulateOptionsWithDefault(STKAudioPlayerOptions* options)
 	if (options->gracePeriodAfterSeekInSeconds == 0)
     {
         options->gracePeriodAfterSeekInSeconds = MIN(STK_DEFAULT_GRACE_PERIOD_AFTER_SEEK_SECONDS, options->bufferSizeInSeconds);
+    }
+}
+
+static void NormalizeDisabledBuffers(STKAudioPlayerOptions* options)
+{
+    if (options->bufferSizeInSeconds == STK_DISABLE_BUFFER)
+    {
+        options->bufferSizeInSeconds = 0;
+    }
+    
+    if (options->readBufferSize == STK_DISABLE_BUFFER)
+    {
+        options->readBufferSize = 0;
+    }
+    
+    if (options->secondsRequiredToStartPlaying == STK_DISABLE_BUFFER)
+    {
+        options->secondsRequiredToStartPlaying = 0;
+    }
+    
+    if (options->secondsRequiredToStartPlayingAfterBufferUnderun == STK_DISABLE_BUFFER)
+    {
+        options->secondsRequiredToStartPlayingAfterBufferUnderun = 0;
+    }
+    
+    if (options->gracePeriodAfterSeekInSeconds == STK_DISABLE_BUFFER)
+    {
+        options->gracePeriodAfterSeekInSeconds = 0;
     }
 }
 
@@ -146,7 +174,7 @@ STKAudioPlayerInternalState;
 @end
 
 @implementation STKFrameFilterEntry
--(id) initWithFilter:(STKFrameFilter)filterIn andName:(NSString*)nameIn
+-(instancetype) initWithFilter:(STKFrameFilter)filterIn andName:(NSString*)nameIn
 {
 	if (self = [super init])
 	{
@@ -480,12 +508,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     }
 }
 
--(id) init
+-(instancetype) init
 {
     return [self initWithOptions:(STKAudioPlayerOptions){}];
 }
 
--(id) initWithOptions:(STKAudioPlayerOptions)optionsIn
+-(instancetype) initWithOptions:(STKAudioPlayerOptions)optionsIn
 {
     if (self = [super init])
     {
@@ -495,6 +523,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
 
         PopulateOptionsWithDefault(&options);
+        NormalizeDisabledBuffers(&options);
         
         framesRequiredToStartPlaying = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlaying;
         framesRequiredToPlayAfterRebuffering = canonicalAudioStreamBasicDescription.mSampleRate * options.secondsRequiredToStartPlayingAfterBufferUnderun;
@@ -896,7 +925,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         }
 		case kAudioFileStreamProperty_ReadyToProducePackets:
         {
-			if (!audioConverterAudioStreamBasicDescription.mFormatID == kAudioFormatLinearPCM)
+			if (audioConverterAudioStreamBasicDescription.mFormatID != kAudioFormatLinearPCM)
 			{
 				discontinuous = YES;
 			}
@@ -1966,10 +1995,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 
     [self destroyAudioConverter];
     
-    //This breaks mono files
-    //canonicalAudioStreamBasicDescription.mChannelsPerFrame = asbd->mChannelsPerFrame;
-    
     BOOL isRecording = currentlyReadingEntry.dataSource.recordToFileUrl != nil;
+    
     if (isRecording)
     {
         recordAudioStreamBasicDescription = (AudioStreamBasicDescription)
@@ -2432,6 +2459,9 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
     else if (!isRunning)
     {
+        stopReason = stopReasonIn;
+        self.internalState = STKAudioPlayerInternalStateStopped;
+
         return;
     }
     

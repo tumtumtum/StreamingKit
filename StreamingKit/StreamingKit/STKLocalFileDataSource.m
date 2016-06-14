@@ -47,7 +47,7 @@
 @implementation STKLocalFileDataSource
 @synthesize filePath;
 
--(id) initWithFilePath:(NSString*)filePathIn
+-(instancetype) initWithFilePath:(NSString*)filePathIn
 {
     if (self = [super init])
     {

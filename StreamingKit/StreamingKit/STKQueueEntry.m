@@ -14,7 +14,7 @@
 
 @implementation STKQueueEntry
 
--(id) initWithDataSource:(STKDataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn
+-(instancetype) initWithDataSource:(STKDataSource*)dataSourceIn andQueueItemId:(NSObject*)queueItemIdIn
 {
     if (self = [super init])
     {
