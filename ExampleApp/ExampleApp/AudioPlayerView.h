@@ -51,6 +51,7 @@
 	NSTimer* timer;
     UILabel* label;
     UILabel* statusLabel;
+    UILabel* metaDataLabel;
 	UISlider* slider;
     UISwitch* enableEqSwitch;
     UISwitch* repeatSwitch;
