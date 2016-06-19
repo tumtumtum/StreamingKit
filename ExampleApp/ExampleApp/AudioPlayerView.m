@@ -97,6 +97,11 @@
 		muteButton.frame = CGRectMake((frame.size.width - size.width) - 30, 430, size.width, size.height);
 		[muteButton addTarget:self action:@selector(muteButtonPressed) forControlEvents:UIControlEventTouchUpInside];
 		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
+        
+        rateControl = [[UISegmentedControl alloc] initWithItems:@[ @"0.5x", @"1.0x", @"1.25x", @"1.5x"]];
+        rateControl.selectedSegmentIndex = 1;
+		rateControl.frame = CGRectMake((frame.size.width - size.width) - 200, 490, 200, size.height);
+		[rateControl addTarget:self action:@selector(rateControlChanged) forControlEvents:UIControlEventValueChanged];
 		
 		slider = [[UISlider alloc] initWithFrame:CGRectMake(20, 320, queuePcmWaveFileFromHTTPButton.frame.origin.y + queuePcmWaveFileFromHTTPButton.frame.size.height + 20, 20)];
 		slider.continuous = YES;
@@ -147,6 +152,7 @@
         [self addSubview:stopButton];
 		[self addSubview:meter];
 		[self addSubview:muteButton];
+        [self addSubview:rateControl];
         [self addSubview:enableEqSwitch];
         
 		[self setupTimer];
@@ -263,6 +269,27 @@
 	{
 		[muteButton setTitle:@"Mute" forState:UIControlStateNormal];
 	}
+}
+
+-(void) rateControlChanged
+{
+    switch (rateControl.selectedSegmentIndex) {
+        case 0:
+            audioPlayer.playbackRate = 0.5;
+            break;
+            
+        case 1:
+            audioPlayer.playbackRate = 1.0;
+            break;
+            
+        case 2:
+            audioPlayer.playbackRate = 1.25;
+            break;
+            
+        case 3:
+            audioPlayer.playbackRate = 1.5;
+            break;
+    }
 }
 
 -(void) stopButtonPressed

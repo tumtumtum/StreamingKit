@@ -199,6 +199,7 @@ STKAudioPlayerInternalState;
 
 static UInt32 maxFramesPerSlice = 4096;
 
+static AudioComponentDescription shifterDescription;
 static AudioComponentDescription mixerDescription;
 static AudioComponentDescription nbandUnitDescription;
 static AudioComponentDescription outputUnitDescription;
@@ -213,7 +214,9 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     UInt8* readBuffer;
     int readBufferSize;
     STKAudioPlayerInternalState internalState;
-	
+    
+	Float32 playbackRate;
+    
 	Float32 volume;
 	Float32 peakPowerDb[2];
 	Float32 averagePowerDb[2];
@@ -226,15 +229,19 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     NSMutableArray* converterNodes;
 
 	AUGraph audioGraph;
+    AUNode shifterNode;
     AUNode eqNode;
 	AUNode mixerNode;
     AUNode outputNode;
-	
+
+    AUNode shifterInputNode;
+    AUNode shifterOutputNode;
 	AUNode eqInputNode;
 	AUNode eqOutputNode;
 	AUNode mixerInputNode;
 	AUNode mixerOutputNode;
 	
+    AudioComponentInstance shifterUnit;
     AudioComponentInstance eqUnit;
 	AudioComponentInstance mixerUnit;
 	AudioComponentInstance outputUnit;
@@ -367,6 +374,15 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		.componentFlagsMask = 0,
 		.componentManufacturer = kAudioUnitManufacturer_Apple
 	};
+    
+    shifterDescription = (AudioComponentDescription)
+    {
+        .componentType = kAudioUnitType_FormatConverter,
+        .componentSubType = kAudioUnitSubType_NewTimePitch,
+        .componentFlags = 0,
+        .componentFlagsMask = 0,
+        .componentManufacturer = kAudioUnitManufacturer_Apple
+    };
 	
 	mixerDescription = (AudioComponentDescription)
 	{
@@ -516,6 +532,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         options = optionsIn;
 		
 		self->volume = 1.0;
+        self->playbackRate = 1.0;
         self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
 
         PopulateOptionsWithDefault(&options);
@@ -2160,6 +2177,16 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
 }
 
+-(void) createShifterUnit
+{
+    OSStatus status;
+    
+    CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &shifterDescription, &shifterNode));
+    CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, shifterNode, &shifterDescription, &shifterUnit));
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(shifterUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)));
+    CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(shifterUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, 1.0, 0));
+}
+
 -(void) createMixerUnit
 {
 	OSStatus status;
@@ -2317,6 +2344,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
 	
 	[self createEqUnit];
+    [self createShifterUnit];
 	[self createMixerUnit];
 	[self createOutputUnit];
     
@@ -2359,6 +2387,12 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     else
     {
         self->equalizerOn = NO;
+    }
+    
+    if (shifterUnit)
+    {
+        [nodes addObject:@(shifterNode)];
+        [units addObject:[NSValue valueWithPointer:shifterUnit]];
     }
     
     if (mixerNode)
@@ -3448,5 +3482,21 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     self->equalizerEnabled = value;
 }
 
+#pragma mark Playback rate
+
+-(void) setPlaybackRate:(Float32)value
+{
+    self->playbackRate = value;
+    
+    if (self->shifterUnit)
+    {
+        AudioUnitSetParameter(self->shifterUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, self->playbackRate, 0);
+    }
+}
+
+-(Float32) playbackRate
+{
+    return self->playbackRate;
+}
 
 @end

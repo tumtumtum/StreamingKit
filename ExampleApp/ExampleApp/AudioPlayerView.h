@@ -56,6 +56,7 @@
     UISwitch* enableEqSwitch;
     UISwitch* repeatSwitch;
 	UIButton* muteButton;
+    UISegmentedControl *rateControl;
 	UIButton* playButton;
     UIButton* stopButton;
 	UIButton* playFromHTTPButton;
