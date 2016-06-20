@@ -153,6 +153,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 @property (readonly) double duration;
 /// Gets the current item progress in seconds
 @property (readonly) double progress;
+/// Gets the current item progress in seconds
+@property (readonly) double bufferedProgress;
 /// Enables or disables peak and average decibel meteting
 @property (readwrite) BOOL meteringEnabled;
 /// Enables or disables the EQ

@@ -1047,6 +1047,29 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return retval;
 }
 
+-(double) bufferedProgress
+{
+    if (self.internalState == STKAudioPlayerInternalStatePendingNext)
+    {
+        return 0;
+    }
+    
+    OSSpinLockLock(&currentEntryReferencesLock);
+    STKQueueEntry* entry = currentlyPlayingEntry;
+    OSSpinLockUnlock(&currentEntryReferencesLock);
+    
+    if (entry == nil)
+    {
+        return 0;
+    }
+    
+    OSSpinLockLock(&entry->spinLock);
+    double retval = (pcmBufferUsedFrameCount / canonicalAudioStreamBasicDescription.mSampleRate);
+    OSSpinLockUnlock(&entry->spinLock);
+    
+    return retval;
+}
+
 -(BOOL) invokeOnPlaybackThread:(void(^)())block
 {
 	NSRunLoop* runLoop = playbackThreadRunLoop;
