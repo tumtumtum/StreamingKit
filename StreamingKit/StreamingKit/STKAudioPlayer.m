@@ -1715,9 +1715,12 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 
 -(void) dataSource:(STKDataSource *)dataSource didUpdateMetaData:(NSDictionary *)metaDataDictionary
 {
-    if ([self.delegate respondsToSelector:@selector(audioPlayer:didUpdateMetaData:)]) {
-        [self.delegate audioPlayer:self didUpdateMetaData:metaDataDictionary];
-    }
+    dispatch_async(dispatch_get_main_queue(), ^
+    {
+        if ([self.delegate respondsToSelector:@selector(audioPlayer:didUpdateMetaData:)]) {
+            [self.delegate audioPlayer:self didUpdateMetaData:metaDataDictionary];
+        }
+    });
 }
 
 -(void) pause
