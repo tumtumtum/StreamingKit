@@ -28,6 +28,9 @@
 
 @property (readwrite, assign) OSSpinLock metadataSpinLock;
 @property (readwrite, strong) NSMutableArray *sortedMetadataItems;
+// Working data structures to avoid allocations during -removeMetadataDictionariesStartingAtFrame:length:
+@property (readwrite, strong) NSMutableArray *workingMetadataBuffer;
+@property (readwrite, strong) NSMutableIndexSet *workingMetadataIndexes;
 
 @end
 
@@ -45,6 +48,8 @@
         self->lastFrameQueued = -1;
         self->durationHint = dataSourceIn.durationHint;
         self.sortedMetadataItems = [[NSMutableArray alloc] init];
+        self.workingMetadataBuffer = [[NSMutableArray alloc] init];
+        self.workingMetadataIndexes = [[NSMutableIndexSet alloc] init];
     }
     
     return self;
@@ -59,7 +64,11 @@
     OSSpinLockUnlock(&self->spinLock);
     
     OSSpinLockLock(&self->_metadataSpinLock);
+    
     [self.sortedMetadataItems removeAllObjects];
+    [self.workingMetadataBuffer removeAllObjects];
+    [self.workingMetadataIndexes removeAllIndexes];
+    
     OSSpinLockUnlock(&self->_metadataSpinLock);
 }
 
@@ -173,10 +182,9 @@
 
 -(NSArray *) removeMetadataDictionariesStartingAtFrame:(SInt64)frame length:(SInt64)length
 {
-    NSMutableArray *removedMetadata = [[NSMutableArray alloc] init];
+    NSArray *result = nil;
     OSSpinLockLock(&self->_metadataSpinLock);
     
-    NSMutableIndexSet *indexesToRemove = [[NSMutableIndexSet alloc] init];
     NSInteger count = self.sortedMetadataItems.count;
     for (int i = 0; i < count; ++i)
     {
@@ -192,13 +200,20 @@
             break;
         }
         
-        [indexesToRemove addIndex:i];
-        [removedMetadata addObject:metadataItem.metadata];
+        [self.workingMetadataIndexes addIndex:i];
+        [self.workingMetadataBuffer addObject:metadataItem.metadata];
     }
-    [self.sortedMetadataItems removeObjectsAtIndexes:indexesToRemove];
+    
+    if (self.workingMetadataIndexes.count > 0) {
+        [self.sortedMetadataItems removeObjectsAtIndexes:self.workingMetadataIndexes];
+        result = [self.workingMetadataBuffer copy];
+        [self.workingMetadataBuffer removeAllObjects];
+        [self.workingMetadataIndexes removeAllIndexes];
+    }
     
     OSSpinLockUnlock(&self->_metadataSpinLock);
-    return removedMetadata;
+    
+    return result;
 }
 
 -(NSString*) description
