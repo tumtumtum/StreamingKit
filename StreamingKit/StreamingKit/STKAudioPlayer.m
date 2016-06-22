@@ -893,15 +893,18 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                     if (error || packetBufferSize == 0)
                     {
                         entryToUpdate->packetBufferSize = STK_DEFAULT_PACKET_BUFFER_SIZE;
+                        entryToUpdate->averageBytesPerPacket = STK_DEFAULT_PACKET_BUFFER_SIZE;
                     }
                     else
                     {
                         entryToUpdate->packetBufferSize = packetBufferSize;
+                        entryToUpdate->averageBytesPerPacket = packetBufferSize;
                     }
                 }
                 else
                 {
                     entryToUpdate->packetBufferSize = packetBufferSize;
+                    entryToUpdate->averageBytesPerPacket = packetBufferSize;
                 }
                 
                 [self createAudioConverter:&currentlyReadingEntry->audioStreamBasicDescription];
@@ -1713,14 +1716,39 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     [self processRunloop];
 }
 
--(void) dataSource:(STKDataSource *)dataSource didUpdateMetaData:(NSDictionary *)metaDataDictionary
+- (void)dataSource:(STKDataSource *)dataSource didReadMetadata:(NSDictionary *)metadata whileReadingAtOffset:(int)offset
 {
-    dispatch_async(dispatch_get_main_queue(), ^
-    {
-        if ([self.delegate respondsToSelector:@selector(audioPlayer:didUpdateMetaData:)]) {
-            [self.delegate audioPlayer:self didUpdateMetaData:metaDataDictionary];
-        }
-    });
+    OSSpinLockLock(&currentlyReadingEntry->spinLock);
+    const SInt64 framesPlayed = currentlyReadingEntry->framesPlayed;
+    const SInt64 framesQueued = currentlyReadingEntry->framesQueued;
+    const Float64 sampleRate = currentlyReadingEntry->sampleRate;
+    const Float64 seekTime = currentlyReadingEntry->seekTime;
+    const double packetDuration = currentlyReadingEntry->packetDuration;
+    const Float64 averageBytesPerPacket = currentlyReadingEntry->averageBytesPerPacket;
+    OSSpinLockUnlock(&currentlyReadingEntry->spinLock);
+    
+    // Determine the frame number of the frame currently at the end of the queue.
+    const SInt64 unplayedFrames = framesQueued - framesPlayed;
+    const SInt64 frameAtEndOfQueue = seekTime * sampleRate + framesQueued;
+    // Estimate the number of frames occurring before the metadata.
+    const Float64 unprocessedPackets = (Float64)offset / averageBytesPerPacket;
+    const Float64 unprocessedPacketsDuration = unprocessedPackets * packetDuration;
+    const SInt64 unprocessedFrames = (SInt64)(unprocessedPacketsDuration * sampleRate);
+    // This is the estimate for the audio frame that the metadata is associated with.
+    const SInt64 metadataFrame = frameAtEndOfQueue + unprocessedFrames;
+    
+    /*
+    NSLog(@"metadata received for frame %d (bytespp: %d, bitrate: %f, unplayedFramesDuration: %f, unprocessedPacketsDuration: %f, metadataDelay: %f\n%@)",
+          metadataFrame,
+          (int)averageBytesPerPacket,
+          (averageBytesPerPacket * 8.0) / packetDuration,
+          unplayedFrames / sampleRate,
+          unprocessedFrames / sampleRate,
+          (unplayedFrames / sampleRate + unprocessedFrames / sampleRate),
+          metadata);
+     */
+    
+    [currentlyReadingEntry addMetadataDictionaryFor:metadata forFrame:metadataFrame];
 }
 
 -(void) pause
@@ -2618,6 +2646,18 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
         }
     }
     
+    // Update data about average bytes per packet every time packets are processed
+    Float64 averageBytesPerPacket = 0;
+    UInt32 bytesPerPacketSize = sizeof(averageBytesPerPacket);
+    OSStatus error = AudioFileStreamGetProperty(audioFileStream, kAudioFileStreamProperty_AverageBytesPerPacket, &bytesPerPacketSize, &averageBytesPerPacket);
+    
+    if (!error)
+    {
+        OSSpinLockLock(&currentlyReadingEntry->spinLock);
+        currentlyReadingEntry->averageBytesPerPacket = averageBytesPerPacket;
+        OSSpinLockUnlock(&currentlyReadingEntry->spinLock);
+    }
+    
     while (true)
     {
         OSSpinLockLock(&pcmBufferSpinLock);
@@ -3120,8 +3160,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         framesPlayedForCurrent = MIN(entry->lastFrameQueued - entry->framesPlayed, framesPlayedForCurrent);
     }
     
+    const SInt64 previousFramesProgress = (entry->seekTime * entry->audioStreamBasicDescription.mSampleRate) + entry->framesPlayed;
     entry->framesPlayed += framesPlayedForCurrent;
     extraFramesPlayedNotAssigned = totalFramesCopied - framesPlayedForCurrent;
+    NSArray *metadataDictionaries = [entry removeMetadataDictionariesStartingAtFrame:previousFramesProgress length:framesPlayedForCurrent];
     
     BOOL lastFramePlayed = entry->framesPlayed == entry->lastFrameQueued;
 
@@ -3180,6 +3222,14 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 
         pthread_cond_signal(&audioPlayer->playerThreadReadyCondition);
         pthread_mutex_unlock(&audioPlayer->playerMutex);
+    }
+    
+    // Report any metadata that was rendered during the callback
+    if (metadataDictionaries.count > 0) {
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [audioPlayer.delegate audioPlayer:audioPlayer didUpdateMetadata:metadataDictionaries];
+        });
     }
     
     return 0;

@@ -697,8 +697,8 @@
                 if (--metaDataBytesRemaining == 0) {
                     dataBytesRead = 0;
                     
-                    NSDictionary *metaDataDictionary = [self dictionaryFromMetaData:metaDataString];
-                    [self.delegate dataSource:self didUpdateMetaData:metaDataDictionary];
+                    NSDictionary *metadata = [self dictionaryFromMetadata:metaDataString];
+                    [self.delegate dataSource:self didReadMetadata:metadata whileReadingAtOffset:audioDataByteCount];
                 }
                 
                 continue;
@@ -706,7 +706,6 @@
             
             // is this the interval byte?
             if (metaDataInterval > 0 && dataBytesRead == metaDataInterval) {
-                
                 metaDataBytesRemaining = buffer[i] * 16;
                 
                 metaDataString.string = @"";
@@ -739,7 +738,7 @@
     }
 }
 
--(NSDictionary *) dictionaryFromMetaData:(NSString *)metaData
+-(NSDictionary *) dictionaryFromMetadata:(NSString *)metaData
 {
     NSArray *components = [metaData componentsSeparatedByString:@";"];
     
