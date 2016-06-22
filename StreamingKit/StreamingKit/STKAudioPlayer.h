@@ -136,7 +136,7 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
 
 // Raised when new meta data arrives
--(void)audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetaData:(NSDictionary *)metaData;
+-(void)audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetadata:(NSArray *)metadataDictionaries;
 
 @end
 

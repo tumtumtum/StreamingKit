@@ -413,9 +413,9 @@
     NSLog(@"%@", line);
 }
 
--(void) audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetaData:(NSDictionary *)metaData
+- (void)audioPlayer:(STKAudioPlayer *)audioPlayer didUpdateMetadata:(NSArray *)metadataDictionaries
 {
-    metaDataLabel.text = metaData[@"StreamTitle"];
+    metaDataLabel.text = [[metadataDictionaries lastObject] objectForKey:@"StreamTitle"];
 }
 
 @end
