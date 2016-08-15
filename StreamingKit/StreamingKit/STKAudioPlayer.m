@@ -2028,7 +2028,11 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 
     audioConverterAudioStreamBasicDescription = *asbd;
     
-    if (self->currentlyReadingEntry.dataSource.audioFileTypeHint != kAudioFileAAC_ADTSType)
+    // Should probably be (self->currentlyReadingEntry.dataSource.audioFileTypeHint == kAudioFileAAC_ADTSType).
+    // Related issue https://github.com/tumtumtum/StreamingKit/issues/298
+    // MP3 files do not have magic cookies https://www.google.ch/patents/US20090019087
+    
+    if (self->currentlyReadingEntry.dataSource.audioFileTypeHint != kAudioFileAC3Type)
     {
         status = AudioFileStreamGetPropertyInfo(audioFileStream, kAudioFileStreamProperty_MagicCookieData, &cookieSize, &writable);
     
