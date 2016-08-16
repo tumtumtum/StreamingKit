@@ -2805,6 +2805,21 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                     if (writeError)
                     {
                         NSLog(@"STKAudioPlayer:handleRecordingOfAudioPackets failed on AudioFileWritePackets with error \"" OSSTATUS_PRINTF_PLACEHOLDER "\"", OSSTATUS_PRINTF_VALUE(writeError));
+                        
+                        /**
+                         * kAudioFileInvalidPacketOffsetError
+                         *
+                         * @description
+                         *
+                         * A packet offset was past the end of the file, or not at the end of the file when a VBR format was written,
+                         * or a corrupt packet size was read when the packet table was built.
+                         */
+                        
+                        if (writeError == 1885563711) { //kAudioFileInvalidPacketOffsetError (happens sometimes, probably on VBR)
+                            
+                            [self closeRecordAudioFile];
+                            break;
+                        }
                     }
                     else
                     {
