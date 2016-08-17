@@ -43,6 +43,7 @@
     SInt64 seekStart;
     SInt64 relativePosition;
     SInt64 fileLength;
+    SInt64 bytesRead;
     int discontinuous;
 	int requestSerialNumber;
     int prefixBytesRead;
@@ -474,8 +475,14 @@
     }
     
     relativePosition += read;
+    bytesRead += read;
     
     return read;
+}
+
+-(SInt64) bytesRead
+{
+    return bytesRead;
 }
 
 -(void) open
