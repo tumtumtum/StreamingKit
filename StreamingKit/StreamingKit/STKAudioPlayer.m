@@ -1642,7 +1642,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     
     [self dispatchSyncOnMainThread:^
     {
-        [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId];
+        BOOL fullyProcessed = currentlyReadingEntry->audioDataByteCount == currentlyReadingEntry->processedBytesSizeTotal;
+        [self.delegate audioPlayer:self didFinishBufferingSourceWithQueueItemId:queueItemId fullyProcessed:fullyProcessed];
     }];
 
     pthread_mutex_lock(&playerMutex);
@@ -2539,6 +2540,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     convertInfo.audioBuffer.mData = (void *)inputData;
     convertInfo.audioBuffer.mDataByteSize = numberBytes;
     convertInfo.audioBuffer.mNumberChannels = audioConverterAudioStreamBasicDescription.mChannelsPerFrame;
+    
+    OSAtomicAdd32((int32_t)numberBytes, &currentlyReadingEntry->processedBytesSizeTotal);
 
     if (packetDescriptionsIn && currentlyReadingEntry->processedPacketsCount < STK_MAX_COMPRESSED_PACKETS_FOR_BITRATE_CALCULATION)
     {

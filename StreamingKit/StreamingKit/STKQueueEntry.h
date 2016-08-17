@@ -29,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
     volatile SInt64 lastFrameQueued;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
+    volatile int processedBytesSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
     double durationHint;
 }
