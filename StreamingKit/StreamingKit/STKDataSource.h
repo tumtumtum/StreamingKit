@@ -50,6 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) BOOL supportsSeek;
 @property (readonly) SInt64 position;
 @property (readonly) SInt64 length;
+@property (readonly) SInt64 bytesRead;
 @property (readonly) BOOL hasBytesAvailable;
 @property (nonatomic, readwrite, assign) double durationHint;
 @property (readwrite, unsafe_unretained, nullable) id<STKDataSourceDelegate> delegate;
@@ -62,7 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
 -(void) seekToOffset:(SInt64)offset;
 -(int) readIntoBuffer:(UInt8*)buffer withSize:(int)size;
 -(AudioFileTypeID) audioFileTypeHint;
--(SInt64) bytesRead;
 
 @end
 
