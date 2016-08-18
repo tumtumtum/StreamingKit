@@ -2024,6 +2024,9 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         if (status)
         {
             NSLog(@"STKAudioPlayer failed to create a recording audio converter");
+            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
+                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
+            }
         }
     }
 
@@ -2134,6 +2137,9 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
             NSLog(@"STKAudioPlayer failed to create a recording audio file at %@", currentlyReadingEntry.dataSource.recordToFileUrl);
             
             [self closeRecordAudioFile];
+            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
+                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:error];
+            }
         }
     }
 }
@@ -2816,8 +2822,11 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                          * or a corrupt packet size was read when the packet table was built.
                          */
                         
-                        if (writeError == 1885563711) { //kAudioFileInvalidPacketOffsetError (happens sometimes, probably on VBR)
+                        if (writeError == 1885563711) { //kAudioFileInvalidPacketOffsetError
                             
+                            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
+                                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
+                            }
                             [self closeRecordAudioFile];
                             break;
                         }

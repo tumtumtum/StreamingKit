@@ -135,7 +135,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer logInfo:(NSString*)line;
 /// Raised when items queued items are cleared (usually because of a call to play, setDataSource or stop)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
-
+/// Raised when stream recording fails
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFailToRecordQueueItemId:(NSObject*)queueItemId withStatus:(OSStatus)status;
 @end
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
