@@ -2822,14 +2822,9 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                          * or a corrupt packet size was read when the packet table was built.
                          */
                         
-                        if (writeError == 1885563711) { //kAudioFileInvalidPacketOffsetError
-                            
-                            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
-                                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
-                            }
-                            [self closeRecordAudioFile];
-                            break;
-                        }
+                        NSLog(@"STKAudioPlayer: Unexpected error during recording audio file conversion");
+                        [self fireRecordingErrorWithStatus:status];
+                        break;
                     }
                     else
                     {
@@ -2840,6 +2835,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             else
             {
                 NSLog(@"STKAudioPlayer: Unexpected error during recording audio file conversion");
+                [self fireRecordingErrorWithStatus:status];
+                break;
             }
             
             if (status == 100)
@@ -2848,6 +2845,14 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             }
         }
     }
+}
+
+- (void)fireRecordingErrorWithStatus:(OSStatus)status
+{
+    if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
+        [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
+    }
+    [self closeRecordAudioFile];
 }
 
 static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
