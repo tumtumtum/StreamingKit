@@ -1865,14 +1865,22 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 {
     if (recordAudioFileId)
     {
-        AudioFileClose(recordAudioFileId);
-        recordAudioFileId = NULL;
+        OSStatus status = AudioFileClose(recordAudioFileId);
+        if (status) {
+            NSLog(@"STKAudioPlayer ERROR on AudioFileClose(). OSStatus %lu", status);
+        } else {
+            recordAudioFileId = NULL;
+        }
     }
     
     if (recordAudioConverterRef)
     {
-        AudioConverterDispose(recordAudioConverterRef);
-        recordAudioConverterRef = nil;
+        OSStatus status = AudioConverterDispose(recordAudioConverterRef);
+        if (status) {
+            NSLog(@"STKAudioPlayer ERROR on AudioConverterDispose(). OSStatus %lu", status);
+        } else {
+            recordAudioConverterRef = NULL;
+        }
     }
     
     if (recordOutputBuffer)
