@@ -1987,6 +1987,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     [self destroyAudioConverter];
     
     BOOL isRecording = currentlyReadingEntry.dataSource.recordToFileUrl != nil;
+    OSStatus didFailToRecordStatus = 0;
     
     if (isRecording)
     {
@@ -2027,14 +2028,11 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     
     if (isRecording && !recordAudioConverterRef)
     {
-        status = AudioConverterNew(&canonicalAudioStreamBasicDescription, &recordAudioStreamBasicDescription, &recordAudioConverterRef);
+        didFailToRecordStatus = AudioConverterNew(&canonicalAudioStreamBasicDescription, &recordAudioStreamBasicDescription, &recordAudioConverterRef);
         
-        if (status)
+        if (didFailToRecordStatus)
         {
             NSLog(@"STKAudioPlayer failed to create a recording audio converter");
-            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
-                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
-            }
         }
     }
 
@@ -2131,7 +2129,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         recordOutputBuffer = (UInt8 *)malloc(sizeof(UInt8) * recordOutputBufferSize);
             
-        error = AudioFileCreateWithURL(
+        didFailToRecordStatus = AudioFileCreateWithURL(
                                                 (__bridge CFURLRef)(currentlyReadingEntry.dataSource.recordToFileUrl),
                                                 kAudioFileCAFType,
                                                 &recordAudioStreamBasicDescription,
@@ -2140,15 +2138,14 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
         
         recordFilePacketPosition = 0;
         
-        if (error)
+        if (didFailToRecordStatus)
         {
             NSLog(@"STKAudioPlayer failed to create a recording audio file at %@", currentlyReadingEntry.dataSource.recordToFileUrl);
-            
-            [self closeRecordAudioFile];
-            if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
-                [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:error];
-            }
         }
+    }
+    
+    if (didFailToRecordStatus) {
+        [self fireRecordingErrorWithStatus:didFailToRecordStatus];
     }
 }
 
@@ -2857,10 +2854,10 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
 
 - (void)fireRecordingErrorWithStatus:(OSStatus)status
 {
+    [self closeRecordAudioFile];
     if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
         [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
     }
-    [self closeRecordAudioFile];
 }
 
 static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
