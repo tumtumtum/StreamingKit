@@ -2145,7 +2145,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     }
     
     if (didFailToRecordStatus) {
-        [self fireRecordingErrorWithStatus:didFailToRecordStatus];
+        [self fireRecordingErrorWithStatus:didFailToRecordStatus isInLock:YES];
     }
 }
 
@@ -2828,7 +2828,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
                          */
                         
                         NSLog(@"STKAudioPlayer: Unexpected error during recording audio file conversion");
-                        [self fireRecordingErrorWithStatus:status];
+                        [self fireRecordingErrorWithStatus:status isInLock:NO];
                         break;
                     }
                     else
@@ -2840,7 +2840,7 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             else
             {
                 NSLog(@"STKAudioPlayer: Unexpected error during recording audio file conversion");
-                [self fireRecordingErrorWithStatus:status];
+                [self fireRecordingErrorWithStatus:status isInLock:NO];
                 break;
             }
             
@@ -2852,9 +2852,18 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     }
 }
 
-- (void)fireRecordingErrorWithStatus:(OSStatus)status
+- (void)fireRecordingErrorWithStatus:(OSStatus)status isInLock:(BOOL)locked
 {
+    if (!locked) {
+        pthread_mutex_lock(&playerMutex);
+    }
+    
     [self closeRecordAudioFile];
+    
+    if (!locked) {
+        pthread_mutex_unlock(&playerMutex);
+    }
+    
     if ([_delegate respondsToSelector:@selector(audioPlayer:didFailToRecordQueueItemId:withStatus:)]) {
         [_delegate audioPlayer:self didFailToRecordQueueItemId:currentlyPlayingEntry.queueItemId withStatus:status];
     }
