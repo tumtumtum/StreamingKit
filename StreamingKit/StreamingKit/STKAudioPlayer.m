@@ -685,7 +685,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     [self clearQueueWithCompletion:NULL];
 }
 
--(void) clearQueueWithCompletion:(void (^)())completionBlock
+-(void) clearQueueWithCompletion:( void (^ _Nullable )())completionBlock
 {
     pthread_mutex_lock(&playerMutex);
     {
@@ -706,19 +706,13 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             [upcomingQueue removeAllObjects];
             [bufferingQueue removeAllObjects];
             
-            if ((array.count > 0 && [self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
-                || completionBlock)
+            if ((array.count > 0 && [self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)]))
             {
                 [self playbackThreadQueueMainThreadSyncBlock:^
                  {
                      if (array.count > 0 && [self.delegate respondsToSelector:@selector(audioPlayer:didCancelQueuedItems:)])
                      {
                          [self.delegate audioPlayer:self didCancelQueuedItems:array];
-                     }
-                     
-                     if (completionBlock)
-                     {
-                         completionBlock();
                      }
                      
                  }];
@@ -728,19 +722,19 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         {
             [bufferingQueue removeAllObjects];
             [upcomingQueue removeAllObjects];
-            
-            if (completionBlock) {
-                [self playbackThreadQueueMainThreadSyncBlock:^
-                 {
-                     completionBlock();
-                 }];
-            }
+        }
+        
+        if (completionBlock) {
+            dispatch_async(dispatch_get_main_queue(), ^
+                           {
+                               completionBlock();
+                           });
         }
     }
     pthread_mutex_unlock(&playerMutex);
 }
 
--(void) dequeueURL:(NSURL*)url withCompletion:(void (^)(NSArray *resultQueue))completionBlock
+-(void) dequeueURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock
 {
     pthread_mutex_lock(&playerMutex);
     {
@@ -773,16 +767,16 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         if (completionBlock)
         {
-            [self playbackThreadQueueMainThreadSyncBlock:^
-             {
-                 completionBlock([resultQueue copy]);
-             }];
+            dispatch_async(dispatch_get_main_queue(), ^
+                           {
+                               completionBlock([resultQueue copy]);
+                           });
         }
     }
     pthread_mutex_unlock(&playerMutex);
 }
 
--(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^)(NSArray *resultQueue))completionBlock
+-(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock
 {
     pthread_mutex_lock(&playerMutex);
     {
@@ -815,10 +809,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         if (completionBlock)
         {
-            [self playbackThreadQueueMainThreadSyncBlock:^
-             {
-                 completionBlock([resultQueue copy]);
-             }];
+            dispatch_async(dispatch_get_main_queue(), ^
+                           {
+                               completionBlock([resultQueue copy]);
+                           });
         }
     }
     pthread_mutex_unlock(&playerMutex);
