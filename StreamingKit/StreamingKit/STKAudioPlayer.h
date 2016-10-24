@@ -229,13 +229,13 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// The didCancelItems event will be raised for the items removed from the queue.
 -(void) clearQueue;
 
--(void) clearQueueWithCompletion:(void (^)())completionBlock;
+-(void) clearQueueWithCompletion:(void (^_Nullable)())completionBlock;
 
 /// Dequeues the URL for playback and uses the NSURL as the queueItemID
--(void) dequeueURL:(NSURL*)url withCompletion:(void (^)(NSArray *resultQueue))completionBlock;
+-(void) dequeueURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock;
 
 /// Dequeues all items the URL for playback and uses the NSURL as the queueItemID
--(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^)(NSArray *resultQueue))completionBlock;
+-(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock;
 
 /// Pauses playback
 -(void) pause;
