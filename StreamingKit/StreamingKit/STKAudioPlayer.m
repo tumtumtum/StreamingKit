@@ -723,99 +723,99 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
             [bufferingQueue removeAllObjects];
             [upcomingQueue removeAllObjects];
         }
-        
-        if (completionBlock) {
-            dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               completionBlock();
-                           });
-        }
     }
     pthread_mutex_unlock(&playerMutex);
+    
+    if (completionBlock) {
+        dispatch_async(dispatch_get_main_queue(), ^
+                       {
+                           completionBlock();
+                       });
+    }
 }
 
 -(void) dequeueURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock
 {
     pthread_mutex_lock(&playerMutex);
+    
+    NSMutableArray* resultQueue = [NSMutableArray array];
+    NSMutableArray* upcomingCopy = [upcomingQueue mutableCopy];
+    
+    for (int i = 0; i < upcomingQueue.count; i++)
     {
-        NSMutableArray* resultQueue = [NSMutableArray array];
-        NSMutableArray* upcomingCopy = [upcomingQueue mutableCopy];
+        STKQueueEntry* entry = upcomingCopy[i];
         
-        for (int i = 0; i < upcomingQueue.count; i++)
-        {
-            STKQueueEntry* entry = upcomingCopy[i];
-            
-            if ([entry.queueItemId isEqual:url]) {
-                [upcomingQueue removeObjectAtIndex:i];
-            } else {
-                [resultQueue addObject:entry.queueItemId];
-            }
-        }
-        
-        NSMutableArray* bufferingCopy = [bufferingQueue mutableCopy];
-        
-        for (int i = 0; i < bufferingQueue.count; i++)
-        {
-            STKQueueEntry* entry = bufferingCopy[i];
-            
-            if ([entry.queueItemId isEqual:url]) {
-                [bufferingQueue removeObjectAtIndex:i];
-            } else {
-                [resultQueue addObject:entry.queueItemId];
-            }
-        }
-        
-        if (completionBlock)
-        {
-            dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               completionBlock([resultQueue copy]);
-                           });
+        if ([entry.queueItemId isEqual:url]) {
+            [upcomingQueue removeObjectAtIndex:i];
+        } else {
+            [resultQueue addObject:entry.queueItemId];
         }
     }
+    
+    NSMutableArray* bufferingCopy = [bufferingQueue mutableCopy];
+    
+    for (int i = 0; i < bufferingQueue.count; i++)
+    {
+        STKQueueEntry* entry = bufferingCopy[i];
+        
+        if ([entry.queueItemId isEqual:url]) {
+            [bufferingQueue removeObjectAtIndex:i];
+        } else {
+            [resultQueue addObject:entry.queueItemId];
+        }
+    }
+    
     pthread_mutex_unlock(&playerMutex);
+    
+    if (completionBlock)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^
+                       {
+                           completionBlock([resultQueue copy]);
+                       });
+    }
 }
 
 -(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock
 {
     pthread_mutex_lock(&playerMutex);
+    
+    NSMutableArray* resultQueue = [NSMutableArray array];
+    NSMutableArray* upcomingCopy = [upcomingQueue mutableCopy];
+    
+    for (int i = 0; i < upcomingQueue.count; i++)
     {
-        NSMutableArray* resultQueue = [NSMutableArray array];
-        NSMutableArray* upcomingCopy = [upcomingQueue mutableCopy];
+        STKQueueEntry* entry = upcomingCopy[i];
         
-        for (int i = 0; i < upcomingQueue.count; i++)
-        {
-            STKQueueEntry* entry = upcomingCopy[i];
-            
-            if (![entry.queueItemId isEqual:url]) {
-                [upcomingQueue removeObjectAtIndex:i];
-            } else {
-                [resultQueue addObject:entry.queueItemId];
-            }
-        }
-        
-        NSMutableArray* bufferingCopy = [bufferingQueue mutableCopy];
-        
-        for (int i = 0; i < bufferingQueue.count; i++)
-        {
-            STKQueueEntry* entry = bufferingCopy[i];
-            
-            if (![entry.queueItemId isEqual:url]) {
-                [bufferingQueue removeObjectAtIndex:i];
-            } else {
-                [resultQueue addObject:entry.queueItemId];
-            }
-        }
-        
-        if (completionBlock)
-        {
-            dispatch_async(dispatch_get_main_queue(), ^
-                           {
-                               completionBlock([resultQueue copy]);
-                           });
+        if (![entry.queueItemId isEqual:url]) {
+            [upcomingQueue removeObjectAtIndex:i];
+        } else {
+            [resultQueue addObject:entry.queueItemId];
         }
     }
+    
+    NSMutableArray* bufferingCopy = [bufferingQueue mutableCopy];
+    
+    for (int i = 0; i < bufferingQueue.count; i++)
+    {
+        STKQueueEntry* entry = bufferingCopy[i];
+        
+        if (![entry.queueItemId isEqual:url]) {
+            [bufferingQueue removeObjectAtIndex:i];
+        } else {
+            [resultQueue addObject:entry.queueItemId];
+        }
+    }
+    
     pthread_mutex_unlock(&playerMutex);
+    
+    if (completionBlock)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^
+                       {
+                           completionBlock([resultQueue copy]);
+                       });
+    }
 }
 
 -(void) play:(NSString*)urlString
