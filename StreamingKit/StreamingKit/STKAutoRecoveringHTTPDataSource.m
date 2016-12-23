@@ -124,11 +124,11 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
     {
         self.innerDataSource.delegate = self;
         
-        struct sockaddr_in zeroAddress;
+        struct sockaddr_in6 zeroAddress;
         
         bzero(&zeroAddress, sizeof(zeroAddress));
-        zeroAddress.sin_len = sizeof(zeroAddress);
-        zeroAddress.sin_family = AF_INET;
+        zeroAddress.sin6_len = sizeof(zeroAddress);
+        zeroAddress.sin6_family = AF_INET6;
         
         PopulateOptionsWithDefault(&optionsIn);
         
