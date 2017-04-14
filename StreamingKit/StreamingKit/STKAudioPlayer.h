@@ -247,6 +247,9 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Disposes the STKAudioPlayer and frees up all resources before returning
 -(void) dispose;
 
+//
+-(void)setPlaybackSpeed:(double)speed;
+
 /// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
 
