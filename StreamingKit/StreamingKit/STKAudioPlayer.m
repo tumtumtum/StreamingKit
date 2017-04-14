@@ -375,7 +375,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		.componentManufacturer = kAudioUnitManufacturer_Apple
 	};
     
-    playbackSpeedUnitDescription = (AudioComponentDescription) {
+    playbackSpeedUnitDescription = (AudioComponentDescription)
+    {
         .componentType = kAudioUnitType_FormatConverter,
         .componentSubType = kAudioUnitSubType_AUiPodTimeOther,
         .componentFlags = 0,
@@ -1924,8 +1925,14 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     [self stopThread];
 }
 
-- (void)setPlaybackSpeed:(double)speed {
+-(void)setPlaybackSpeed:(double)speed
+{
     AudioUnitSetParameter(playbackSpeedUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, speed, 0);
+}
+
+-(void)setDefaultPlaybackSpeed
+{
+    [self setPlaybackSpeed:1.f];
 }
 
 -(NSObject*) currentlyPlayingQueueItemId
@@ -2186,7 +2193,8 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
 }
 
-- (void)createPlaybackSpeedUnit {
+-(void) createPlaybackSpeedUnit
+{
     OSStatus status;
     
     CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &playbackSpeedUnitDescription, &playbackSpeedNode));
