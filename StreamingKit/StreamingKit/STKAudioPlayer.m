@@ -409,6 +409,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         case STKAudioPlayerInternalStateInitialised:
             newState = STKAudioPlayerStateReady;
 			stopReason = STKAudioPlayerStopReasonNone;
+            dataNotFoundReason = STKErrorDataNotFoundReasonNone;
             break;
         case STKAudioPlayerInternalStateRunning:
         case STKAudioPlayerInternalStateStartingThread:
@@ -561,8 +562,6 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         upcomingQueue = [[NSMutableArray alloc] init];
         bufferingQueue = [[NSMutableArray alloc] init];
         
-        dataNotFoundReason = STKErrorDataNotFoundReasonNone;
-
 		[self resetPcmBuffers];
         [self createAudioGraph];
         [self createPlaybackThread];
