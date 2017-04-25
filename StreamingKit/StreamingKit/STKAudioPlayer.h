@@ -79,6 +79,13 @@ typedef NS_ENUM(NSInteger, STKAudioPlayerErrorCode)
     STKAudioPlayerErrorOther = 0xffff
 };
 
+typedef NS_ENUM(NSInteger, STKErrorDataNotFoundReason)
+{
+    STKErrorDataNotFoundReasonNone = 0,
+    STKErrorDataNotFoundReasonForbidden,
+    STKErrorDataNotFoundReasonOther = 0xffff
+};
+
 ///
 /// Options to initiailise the Audioplayer with.
 /// By default if you set buffer size or seconds to 0, the non-zero default will be used
@@ -166,6 +173,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 @property (readonly) STKAudioPlayerOptions options;
 /// Gets the reason why the player is stopped (if any)
 @property (readonly) STKAudioPlayerStopReason stopReason;
+/// Gets the reason why data was not found (if any)
+@property (readonly) STKErrorDataNotFoundReason dataNotFoundReason;
 /// Gets and sets the delegate used for receiving events from the STKAudioPlayer
 @property (readwrite, unsafe_unretained) id<STKAudioPlayerDelegate> delegate;
 
