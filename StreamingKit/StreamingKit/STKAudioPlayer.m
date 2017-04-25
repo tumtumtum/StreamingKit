@@ -560,6 +560,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         upcomingQueue = [[NSMutableArray alloc] init];
         bufferingQueue = [[NSMutableArray alloc] init];
+        
+        dataNotFoundReason = STKErrorDataNotFoundReasonNone;
 
 		[self resetPcmBuffers];
         [self createAudioGraph];
