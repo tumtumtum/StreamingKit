@@ -487,6 +487,10 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return stopReason;
 }
 
+-(STKErrorDataNotFoundReason) dataNotFoundReason {
+    return dataNotFoundReason;
+}
+
 -(void) logInfo:(NSString*)line
 {
     if ([NSThread currentThread].isMainThread)
