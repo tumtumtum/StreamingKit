@@ -488,7 +488,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     return stopReason;
 }
 
--(STKErrorDataNotFoundReason) dataNotFoundReason {
+-(STKErrorDataNotFoundReason) dataNotFoundReason
+{
     return dataNotFoundReason;
 }
 
@@ -1627,7 +1628,8 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     {
         STKHTTPDataSource *httpDataSource = (STKHTTPDataSource *)dataSourceIn;
         
-        switch (httpDataSource.httpStatusCode) {
+        switch (httpDataSource.httpStatusCode)
+        {
             case 403:
                 dataNotFoundReason = STKErrorDataNotFoundReasonForbidden;
                 break;
