@@ -2547,6 +2547,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
     
     while (true)
     {
+    	if(!currentlyReadingEntry) break;
+    	
         OSSpinLockLock(&pcmBufferSpinLock);
         UInt32 used = pcmBufferUsedFrameCount;
         UInt32 start = pcmBufferFrameStartIndex;
@@ -2560,6 +2562,8 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             
             while (true)
             {
+            	if(!currentlyReadingEntry) break;
+            	
                 OSSpinLockLock(&pcmBufferSpinLock);
                 used = pcmBufferUsedFrameCount;
                 start = pcmBufferFrameStartIndex;
