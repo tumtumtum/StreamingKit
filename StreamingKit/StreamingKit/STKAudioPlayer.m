@@ -299,6 +299,7 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     volatile BOOL disposeWasRequested;
     volatile BOOL seekToTimeWasRequested;
     volatile STKAudioPlayerStopReason stopReason;
+    volatile STKErrorDataNotFoundReason dataNotFoundReason;
 }
 
 @property (readwrite) STKAudioPlayerInternalState internalState;
@@ -408,6 +409,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         case STKAudioPlayerInternalStateInitialised:
             newState = STKAudioPlayerStateReady;
 			stopReason = STKAudioPlayerStopReasonNone;
+            dataNotFoundReason = STKErrorDataNotFoundReasonNone;
             break;
         case STKAudioPlayerInternalStateRunning:
         case STKAudioPlayerInternalStateStartingThread:
@@ -420,7 +422,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         case STKAudioPlayerInternalStateRebuffering:
         case STKAudioPlayerInternalStateWaitingForData:
             newState = STKAudioPlayerStateBuffering;
-			stopReason = STKAudioPlayerStopReasonNone;
+            stopReason = STKAudioPlayerStopReasonNone;
             break;
         case STKAudioPlayerInternalStateStopped:
             newState = STKAudioPlayerStateStopped;
@@ -484,6 +486,11 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 -(STKAudioPlayerStopReason) stopReason
 {
     return stopReason;
+}
+
+-(STKErrorDataNotFoundReason) dataNotFoundReason
+{
+    return dataNotFoundReason;
 }
 
 -(void) logInfo:(NSString*)line
@@ -555,7 +562,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         
         upcomingQueue = [[NSMutableArray alloc] init];
         bufferingQueue = [[NSMutableArray alloc] init];
-
+        
 		[self resetPcmBuffers];
         [self createAudioGraph];
         [self createPlaybackThread];
@@ -1609,6 +1616,22 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     if (currentlyReadingEntry.dataSource != dataSourceIn)
     {
         return;
+    }
+    
+    if ([dataSourceIn isKindOfClass:[STKHTTPDataSource class]])
+    {
+        STKHTTPDataSource *httpDataSource = (STKHTTPDataSource *)dataSourceIn;
+        
+        switch (httpDataSource.httpStatusCode)
+        {
+            case 403:
+                dataNotFoundReason = STKErrorDataNotFoundReasonForbidden;
+                break;
+                
+            default:
+                dataNotFoundReason = STKErrorDataNotFoundReasonOther;
+                break;
+        }
     }
     
     [self unexpectedError:STKAudioPlayerErrorDataNotFound];
