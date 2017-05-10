@@ -51,10 +51,12 @@
 	NSTimer* timer;
     UILabel* label;
     UILabel* statusLabel;
+    UILabel* metaDataLabel;
 	UISlider* slider;
     UISwitch* enableEqSwitch;
     UISwitch* repeatSwitch;
 	UIButton* muteButton;
+    UISegmentedControl *rateControl;
 	UIButton* playButton;
     UIButton* stopButton;
 	UIButton* playFromHTTPButton;

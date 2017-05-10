@@ -29,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
     volatile SInt64 lastFrameQueued;
     volatile int processedPacketsCount;
 	volatile int processedPacketsSizeTotal;
+    volatile Float64 averageBytesPerPacket;
     AudioStreamBasicDescription audioStreamBasicDescription;
     double durationHint;
 }
@@ -44,6 +45,9 @@ NS_ASSUME_NONNULL_BEGIN
 -(Float64) progressInFrames;
 -(double) calculatedBitRate;
 -(BOOL) isDefinitelyCompatible:(AudioStreamBasicDescription*)basicDescription;
+
+-(void) addMetadataDictionaryFor:(NSDictionary *)metadata forFrame:(SInt64)frame;
+-(NSArray *) removeMetadataDictionariesStartingAtFrame:(SInt64)frame length:(SInt64)length;
 
 @end
 

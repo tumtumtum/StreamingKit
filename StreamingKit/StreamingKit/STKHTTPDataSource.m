@@ -57,6 +57,15 @@
     NSDictionary* httpHeaders;
     AudioFileTypeID audioFileTypeHint;
     NSDictionary* requestHeaders;
+    
+    // Meta data
+    BOOL metaDataPresent;
+    unsigned int metaDataInterval;        // how many data bytes between meta data
+    unsigned int metaDataBytesRemaining;  // how many bytes of metadata remain to be read
+    unsigned int dataBytesRead;           // how many bytes of data have been read
+    BOOL foundIcyStart;
+    BOOL foundIcyEnd;
+    NSMutableString *metaDataString;      //  meta data string
 }
 -(void) open;
 
@@ -97,6 +106,8 @@
         self->asyncUrlProvider = [asyncUrlProviderIn copy];
         
         audioFileTypeHint = [STKLocalFileDataSource audioFileTypeHintFromFileExtension:self->currentUrl.pathExtension];
+        
+        metaDataString = [NSMutableString new];
     }
     
     return self;
@@ -473,6 +484,10 @@
         return read;
     }
     
+    // method will move audio bytes to the beginning of the buffer,
+    // and return their number
+    read = [self checkForMetaDataInfoWithBuffer:buffer andLength:read];
+    
     relativePosition += read;
     
     return read;
@@ -521,8 +536,8 @@
         }
         
         CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Accept"), CFSTR("*/*"));
-        CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Ice-MetaData"), CFSTR("0"));
-
+        CFHTTPMessageSetHeaderFieldValue(message, CFSTR("Icy-MetaData"), CFSTR("1"));
+        
         stream = CFReadStreamCreateForHTTPRequest(NULL, message);
 
         if (stream == nil)
@@ -603,6 +618,144 @@
 -(BOOL) supportsSeek
 {
     return self->supportsSeek;
+}
+
+#pragma mark - Meta data
+
+// This code was mostly taken from the link below
+// https://code.google.com/p/audiostreamer-meta/
+
+// Returns new length: the number of bytes from buffer that contain audio data.
+// Other bytes are meta data bytes and this method "consumes" them.
+-(int) checkForMetaDataInfoWithBuffer:(UInt8 *)buffer andLength:(int)length
+{
+    CFHTTPMessageRef response = (CFHTTPMessageRef)CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
+    
+    if (foundIcyStart == NO && metaDataPresent == NO) {
+        // check if this is a ICY 200 OK response
+        NSString *icyCheck = [[NSString alloc] initWithBytes:buffer length:10 encoding:NSUTF8StringEncoding];
+        if (icyCheck != nil && [icyCheck caseInsensitiveCompare:@"ICY 200 OK"] == NSOrderedSame) {
+            foundIcyStart = YES;
+        } else {
+            NSString *metaInt = (__bridge NSString *) CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Icy-Metaint"));
+            
+            if (metaInt) {
+                metaDataPresent = YES;
+                metaDataInterval = [metaInt intValue];
+            }
+        }
+    }
+    
+    int streamStart = 0;
+    
+    if (foundIcyStart == YES && foundIcyEnd == NO) {
+        char c[4] = {};
+        
+        for (int lineStart = 0; streamStart + 3 < length; ++streamStart) {
+            
+            memcpy(c, buffer + streamStart, 4);
+            
+            if (c[0] == '\r' && c[1] == '\n') {
+                NSString *fullString = [[NSString alloc] initWithBytes:buffer length:streamStart encoding:NSUTF8StringEncoding];
+                
+                NSString *line = [fullString substringWithRange:NSMakeRange(lineStart, streamStart - lineStart)];
+                
+                NSArray *lineItems = [line componentsSeparatedByString:@":"];
+                if (lineItems.count > 1) {
+                    if ([lineItems[0] caseInsensitiveCompare:@"icy-metaint"] == NSOrderedSame) {
+                        metaDataInterval = [lineItems[1] intValue];
+                    } else if ([lineItems[0] caseInsensitiveCompare:@"content-type"] == NSOrderedSame) {
+                        AudioFileTypeID idFromMime = [STKHTTPDataSource audioFileTypeHintFromMimeType:lineItems[1]];
+                        if (idFromMime != 0) {
+                            audioFileTypeHint = idFromMime;
+                        }
+                    }
+                }
+                
+                // this is the end of a line, the new line starts in 2
+                lineStart = streamStart + 2;
+                
+                if (c[2] == '\r' && c[3] == '\n') {
+                    foundIcyEnd = YES;
+                    metaDataPresent = YES;
+                    streamStart += 4; // skip double new line
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (metaDataPresent == YES) {
+        int audioDataByteCount = 0;
+        
+        for (int i = streamStart; i < length; ++i) {
+            // is this a metadata byte?
+            if (metaDataBytesRemaining > 0) {
+                
+                [metaDataString appendFormat:@"%c", buffer[i]];
+                
+                if (--metaDataBytesRemaining == 0) {
+                    dataBytesRead = 0;
+                    
+                    NSDictionary *metadata = [self dictionaryFromMetadata:metaDataString];
+                    [self.delegate dataSource:self didReadMetadata:metadata whileReadingAtOffset:audioDataByteCount];
+                }
+                
+                continue;
+            }
+            
+            // is this the interval byte?
+            if (metaDataInterval > 0 && dataBytesRead == metaDataInterval) {
+                metaDataBytesRemaining = buffer[i] * 16;
+                
+                metaDataString.string = @"";
+                
+                if (metaDataBytesRemaining == 0) {
+                    dataBytesRead = 0;
+                }
+                
+                continue;
+            }
+            
+            // this is a data byte
+            ++dataBytesRead;
+            
+            // overwrite beginning of the buffer with the real audio data
+            // we don't need those bytes any more, since we already examined them
+            buffer[audioDataByteCount++] = buffer[i];
+        }
+        
+        return audioDataByteCount;
+        
+    } else if (foundIcyStart == YES) { // still parsing icy response
+        
+        return 0;
+        
+    } else { // no meta data in stream
+        
+        return length;
+        
+    }
+}
+
+-(NSDictionary *) dictionaryFromMetadata:(NSString *)metaData
+{
+    NSArray *components = [metaData componentsSeparatedByString:@";"];
+    
+    NSMutableDictionary *dictionary = [NSMutableDictionary new];
+    
+    for (NSString *entry in components) {
+        NSInteger equalitySignPosition = [entry rangeOfString:@"="].location;
+        if (equalitySignPosition != NSNotFound) {
+            NSString *key = [entry substringToIndex:equalitySignPosition];
+            NSString *value = [entry substringFromIndex:equalitySignPosition + 1];
+            NSString *valueWithoutQuotes = [value substringWithRange:NSMakeRange(1, value.length - 2)];
+            
+            dictionary[key] = valueWithoutQuotes;
+        }
+    }
+    
+    return dictionary;
 }
 
 @end

@@ -117,4 +117,9 @@
     [self.delegate dataSourceEof:self];
 }
 
+- (void)dataSource:(STKDataSource *)dataSource didReadMetadata:(NSDictionary *)metadata whileReadingAtOffset:(int)offset
+{
+    [self.delegate dataSource:self didReadMetadata:metadata whileReadingAtOffset:offset];
+}
+
 @end

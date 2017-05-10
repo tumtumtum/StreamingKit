@@ -199,6 +199,7 @@ STKAudioPlayerInternalState;
 
 static UInt32 maxFramesPerSlice = 4096;
 
+static AudioComponentDescription shifterDescription;
 static AudioComponentDescription mixerDescription;
 static AudioComponentDescription nbandUnitDescription;
 static AudioComponentDescription outputUnitDescription;
@@ -213,7 +214,9 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     UInt8* readBuffer;
     int readBufferSize;
     STKAudioPlayerInternalState internalState;
-	
+    
+	Float32 playbackRate;
+    
 	Float32 volume;
 	Float32 peakPowerDb[2];
 	Float32 averagePowerDb[2];
@@ -226,15 +229,19 @@ static AudioStreamBasicDescription recordAudioStreamBasicDescription;
     NSMutableArray* converterNodes;
 
 	AUGraph audioGraph;
+    AUNode shifterNode;
     AUNode eqNode;
 	AUNode mixerNode;
     AUNode outputNode;
-	
+
+    AUNode shifterInputNode;
+    AUNode shifterOutputNode;
 	AUNode eqInputNode;
 	AUNode eqOutputNode;
 	AUNode mixerInputNode;
 	AUNode mixerOutputNode;
 	
+    AudioComponentInstance shifterUnit;
     AudioComponentInstance eqUnit;
 	AudioComponentInstance mixerUnit;
 	AudioComponentInstance outputUnit;
@@ -367,6 +374,15 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
 		.componentFlagsMask = 0,
 		.componentManufacturer = kAudioUnitManufacturer_Apple
 	};
+    
+    shifterDescription = (AudioComponentDescription)
+    {
+        .componentType = kAudioUnitType_FormatConverter,
+        .componentSubType = kAudioUnitSubType_NewTimePitch,
+        .componentFlags = 0,
+        .componentFlagsMask = 0,
+        .componentManufacturer = kAudioUnitManufacturer_Apple
+    };
 	
 	mixerDescription = (AudioComponentDescription)
 	{
@@ -516,6 +532,7 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
         options = optionsIn;
 		
 		self->volume = 1.0;
+        self->playbackRate = 1.0;
         self->equalizerEnabled = optionsIn.equalizerBandFrequencies[0] != 0;
 
         PopulateOptionsWithDefault(&options);
@@ -876,15 +893,18 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
                     if (error || packetBufferSize == 0)
                     {
                         entryToUpdate->packetBufferSize = STK_DEFAULT_PACKET_BUFFER_SIZE;
+                        entryToUpdate->averageBytesPerPacket = STK_DEFAULT_PACKET_BUFFER_SIZE;
                     }
                     else
                     {
                         entryToUpdate->packetBufferSize = packetBufferSize;
+                        entryToUpdate->averageBytesPerPacket = packetBufferSize;
                     }
                 }
                 else
                 {
                     entryToUpdate->packetBufferSize = packetBufferSize;
+                    entryToUpdate->averageBytesPerPacket = packetBufferSize;
                 }
                 
                 [self createAudioConverter:&currentlyReadingEntry->audioStreamBasicDescription];
@@ -1027,6 +1047,29 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     double retval = entry->seekTime + (entry->framesPlayed / canonicalAudioStreamBasicDescription.mSampleRate);
     OSSpinLockUnlock(&entry->spinLock);
 	
+    return retval;
+}
+
+-(double) bufferedProgress
+{
+    if (self.internalState == STKAudioPlayerInternalStatePendingNext)
+    {
+        return 0;
+    }
+    
+    OSSpinLockLock(&currentEntryReferencesLock);
+    STKQueueEntry* entry = currentlyPlayingEntry;
+    OSSpinLockUnlock(&currentEntryReferencesLock);
+    
+    if (entry == nil)
+    {
+        return 0;
+    }
+    
+    OSSpinLockLock(&entry->spinLock);
+    double retval = (pcmBufferUsedFrameCount / canonicalAudioStreamBasicDescription.mSampleRate);
+    OSSpinLockUnlock(&entry->spinLock);
+    
     return retval;
 }
 
@@ -1667,6 +1710,41 @@ static void AudioFileStreamPacketsProc(void* clientData, UInt32 numberBytes, UIn
     [self processRunloop];
 }
 
+- (void)dataSource:(STKDataSource *)dataSource didReadMetadata:(NSDictionary *)metadata whileReadingAtOffset:(int)offset
+{
+    OSSpinLockLock(&currentlyReadingEntry->spinLock);
+    const SInt64 framesPlayed = currentlyReadingEntry->framesPlayed;
+    const SInt64 framesQueued = currentlyReadingEntry->framesQueued;
+    const Float64 sampleRate = currentlyReadingEntry->sampleRate;
+    const Float64 seekTime = currentlyReadingEntry->seekTime;
+    const double packetDuration = currentlyReadingEntry->packetDuration;
+    const Float64 averageBytesPerPacket = currentlyReadingEntry->averageBytesPerPacket;
+    OSSpinLockUnlock(&currentlyReadingEntry->spinLock);
+    
+    // Determine the frame number of the frame currently at the end of the queue.
+    const SInt64 unplayedFrames = framesQueued - framesPlayed;
+    const SInt64 frameAtEndOfQueue = seekTime * sampleRate + framesQueued;
+    // Estimate the number of frames occurring before the metadata.
+    const Float64 unprocessedPackets = (Float64)offset / averageBytesPerPacket;
+    const Float64 unprocessedPacketsDuration = unprocessedPackets * packetDuration;
+    const SInt64 unprocessedFrames = (SInt64)(unprocessedPacketsDuration * sampleRate);
+    // This is the estimate for the audio frame that the metadata is associated with.
+    const SInt64 metadataFrame = frameAtEndOfQueue + unprocessedFrames;
+    
+    /*
+    NSLog(@"metadata received for frame %d (bytespp: %d, bitrate: %f, unplayedFramesDuration: %f, unprocessedPacketsDuration: %f, metadataDelay: %f\n%@)",
+          metadataFrame,
+          (int)averageBytesPerPacket,
+          (averageBytesPerPacket * 8.0) / packetDuration,
+          unplayedFrames / sampleRate,
+          unprocessedFrames / sampleRate,
+          (unplayedFrames / sampleRate + unprocessedFrames / sampleRate),
+          metadata);
+     */
+    
+    [currentlyReadingEntry addMetadataDictionaryFor:metadata forFrame:metadataFrame];
+}
+
 -(void) pause
 {
     pthread_mutex_lock(&playerMutex);
@@ -2147,6 +2225,16 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &canonicalAudioStreamBasicDescription, sizeof(canonicalAudioStreamBasicDescription)));
 }
 
+-(void) createShifterUnit
+{
+    OSStatus status;
+    
+    CHECK_STATUS_AND_RETURN(AUGraphAddNode(audioGraph, &shifterDescription, &shifterNode));
+    CHECK_STATUS_AND_RETURN(AUGraphNodeInfo(audioGraph, shifterNode, &shifterDescription, &shifterUnit));
+	CHECK_STATUS_AND_RETURN(AudioUnitSetProperty(shifterUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFramesPerSlice, sizeof(maxFramesPerSlice)));
+    CHECK_STATUS_AND_RETURN(AudioUnitSetParameter(shifterUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, 1.0, 0));
+}
+
 -(void) createMixerUnit
 {
 	OSStatus status;
@@ -2304,6 +2392,7 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
 	CHECK_STATUS_AND_RETURN(AUGraphOpen(audioGraph));
 	
 	[self createEqUnit];
+    [self createShifterUnit];
 	[self createMixerUnit];
 	[self createOutputUnit];
     
@@ -2346,6 +2435,12 @@ static BOOL GetHardwareCodecClassDesc(UInt32 formatId, AudioClassDescription* cl
     else
     {
         self->equalizerOn = NO;
+    }
+    
+    if (shifterUnit)
+    {
+        [nodes addObject:@(shifterNode)];
+        [units addObject:[NSValue valueWithPointer:shifterUnit]];
     }
     
     if (mixerNode)
@@ -2543,6 +2638,18 @@ OSStatus AudioConverterCallback(AudioConverterRef inAudioConverter, UInt32* ioNu
             OSAtomicAdd32((int32_t)packetSize, &currentlyReadingEntry->processedPacketsSizeTotal);
             OSAtomicIncrement32(&currentlyReadingEntry->processedPacketsCount);
         }
+    }
+    
+    // Update data about average bytes per packet every time packets are processed
+    Float64 averageBytesPerPacket = 0;
+    UInt32 bytesPerPacketSize = sizeof(averageBytesPerPacket);
+    OSStatus error = AudioFileStreamGetProperty(audioFileStream, kAudioFileStreamProperty_AverageBytesPerPacket, &bytesPerPacketSize, &averageBytesPerPacket);
+    
+    if (!error)
+    {
+        OSSpinLockLock(&currentlyReadingEntry->spinLock);
+        currentlyReadingEntry->averageBytesPerPacket = averageBytesPerPacket;
+        OSSpinLockUnlock(&currentlyReadingEntry->spinLock);
     }
     
     while (true)
@@ -3047,8 +3154,10 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
         framesPlayedForCurrent = MIN(entry->lastFrameQueued - entry->framesPlayed, framesPlayedForCurrent);
     }
     
+    const SInt64 previousFramesProgress = (entry->seekTime * entry->audioStreamBasicDescription.mSampleRate) + entry->framesPlayed;
     entry->framesPlayed += framesPlayedForCurrent;
     extraFramesPlayedNotAssigned = totalFramesCopied - framesPlayedForCurrent;
+    NSArray *metadataDictionaries = [entry removeMetadataDictionariesStartingAtFrame:previousFramesProgress length:framesPlayedForCurrent];
     
     BOOL lastFramePlayed = entry->framesPlayed == entry->lastFrameQueued;
 
@@ -3107,6 +3216,14 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 
         pthread_cond_signal(&audioPlayer->playerThreadReadyCondition);
         pthread_mutex_unlock(&audioPlayer->playerMutex);
+    }
+    
+    // Report any metadata that was rendered during the callback
+    if (metadataDictionaries.count > 0) {
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [audioPlayer.delegate audioPlayer:audioPlayer didUpdateMetadata:metadataDictionaries];
+        });
     }
     
     return 0;
@@ -3435,5 +3552,21 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
     self->equalizerEnabled = value;
 }
 
+#pragma mark Playback rate
+
+-(void) setPlaybackRate:(Float32)value
+{
+    self->playbackRate = value;
+    
+    if (self->shifterUnit)
+    {
+        AudioUnitSetParameter(self->shifterUnit, kNewTimePitchParam_Rate, kAudioUnitScope_Global, 0, self->playbackRate, 0);
+    }
+}
+
+-(Float32) playbackRate
+{
+    return self->playbackRate;
+}
 
 @end
