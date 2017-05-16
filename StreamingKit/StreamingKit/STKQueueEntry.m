@@ -110,7 +110,7 @@
 -(Float64) progressInFrames
 {
     OSSpinLockLock(&self->spinLock);
-    Float64 retval = (self->seekTime + self->audioStreamBasicDescription.mSampleRate) + self->framesPlayed;
+    Float64 retval = (self->seekTime * self->audioStreamBasicDescription.mSampleRate) + self->framesPlayed;
     OSSpinLockUnlock(&self->spinLock);
     
     return retval;

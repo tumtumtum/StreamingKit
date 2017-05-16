@@ -95,7 +95,7 @@ typedef struct
 	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
     UInt32 readBufferSize;
     /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)
-    Float32 bufferSizeInSeconds;
+    float bufferSizeInSeconds;
     /// Number of seconds of decompressed audio is required before playback first starts for each item (Default is 0.5 seconds. Must be larger than bufferSizeInSeconds)
     Float32 secondsRequiredToStartPlaying;
 	/// Seconds after a seek is performed before data needs to come in (after which the state will change to playing/buffering)
@@ -107,7 +107,7 @@ STKAudioPlayerOptions;
 
 #define STK_DISABLE_BUFFER (0xffffffff)
 
-typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames);
+typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, float* frames);
 
 @interface STKFrameFilterEntry : NSObject
 @property (readonly) NSString* name;
@@ -134,6 +134,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer logInfo:(NSString*)line;
 /// Raised when items queued items are cleared (usually because of a call to play, setDataSource or stop)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
+
+-(void) plotGraphWithBuffer:(float*)buffer andLength:(UInt32)count;
 
 @end
 
@@ -245,6 +247,12 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Disposes the STKAudioPlayer and frees up all resources before returning
 -(void) dispose;
 
+/// Sets playback speed
+-(void)setPlaybackSpeed:(double)speed;
+
+/// Sets playback speed to 1.0
+-(void)setDefaultPlaybackSpeed;
+
 /// The QueueItemId of the currently playing item
 -(NSObject*) currentlyPlayingQueueItemId;
 
@@ -260,11 +268,11 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 
 /// Reads the peak power in decibals for the given channel (0 or 1).
 /// Return values are between -60 (low) and 0 (high).
--(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
+//-(float) peakPowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 /// Reads the average power in decibals for the given channel (0 or 1)
 /// Return values are between -60 (low) and 0 (high).
--(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
+//-(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber;
 
 /// Sets the gain value (from -96 low to +24 high) for an equalizer band (0 based index)
 -(void) setGain:(float)gain forEqualizerBand:(int)bandIndex;
