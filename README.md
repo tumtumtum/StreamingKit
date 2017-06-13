@@ -22,7 +22,7 @@ The primary motivation of this project was to decouple the input data sources fr
 
 ## Installation
 
-StreamingKit is available as a [Cocoapods](http://cocoapods.org/?q=StreamingKit). You can also simply copy all the source files located inside `StreamingKit/StreamingKit/*` into your Xcode project.
+StreamingKit is available as a [CocoaPods](http://cocoapods.org/?q=StreamingKit). You can also simply copy all the source files located inside `StreamingKit/StreamingKit/*` into your Xcode project.
 
 ## Example
 
