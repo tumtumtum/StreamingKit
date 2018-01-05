@@ -554,11 +554,9 @@
         if ([self->currentUrl.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame)
         {
             NSDictionary* sslSettings = [NSDictionary dictionaryWithObjectsAndKeys:
-            (NSString*)kCFStreamSocketSecurityLevelNegotiatedSSL, kCFStreamSSLLevel,
-            [NSNumber numberWithBool:NO], kCFStreamSSLValidatesCertificateChain,
-            [NSNull null], kCFStreamSSLPeerName,
-            nil];
-
+                                         (NSString*)kCFStreamSocketSecurityLevelNegotiatedSSL, kCFStreamSSLLevel,
+                                         [NSNumber numberWithBool:NO], kCFStreamSSLValidatesCertificateChain,
+                                         nil];
             CFReadStreamSetProperty(stream, kCFStreamPropertySSLSettings, (__bridge CFTypeRef)sslSettings);
         }
 
