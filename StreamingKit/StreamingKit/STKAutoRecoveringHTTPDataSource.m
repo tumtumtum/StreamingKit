@@ -385,6 +385,11 @@ static void PopulateOptionsWithDefault(STKAutoRecoveringHTTPDataSourceOptions* o
     }
 }
 
+-(SInt64) bytesRead
+{
+    return self.innerDataSource.bytesRead;
+}
+
 -(NSString*) description
 {
     return [NSString stringWithFormat:@"HTTP data source with file length: %lld and position: %lld", self.length, self.position];

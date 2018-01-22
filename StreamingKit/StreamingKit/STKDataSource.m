@@ -84,4 +84,9 @@
     return YES;
 }
 
+-(SInt64) bytesRead
+{
+    return 0;
+}
+
 @end

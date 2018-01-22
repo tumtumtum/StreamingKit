@@ -60,18 +60,18 @@ typedef NS_OPTIONS(NSInteger, STKAudioPlayerState)
 
 typedef NS_ENUM(NSInteger, STKAudioPlayerStopReason)
 {
-	STKAudioPlayerStopReasonNone = 0,
-	STKAudioPlayerStopReasonEof,
-	STKAudioPlayerStopReasonUserAction,
-	STKAudioPlayerStopReasonPendingNext,
-	STKAudioPlayerStopReasonDisposed,
-	STKAudioPlayerStopReasonError = 0xffff
+    STKAudioPlayerStopReasonNone = 0,
+    STKAudioPlayerStopReasonEof,
+    STKAudioPlayerStopReasonUserAction,
+    STKAudioPlayerStopReasonPendingNext,
+    STKAudioPlayerStopReasonDisposed,
+    STKAudioPlayerStopReasonError = 0xffff
 };
 
 typedef NS_ENUM(NSInteger, STKAudioPlayerErrorCode)
 {
-	STKAudioPlayerErrorNone = 0,
-	STKAudioPlayerErrorDataSource,
+    STKAudioPlayerErrorNone = 0,
+    STKAudioPlayerErrorDataSource,
     STKAudioPlayerErrorStreamParseBytesFailed,
     STKAudioPlayerErrorAudioSystemError,
     STKAudioPlayerErrorCodecError,
@@ -92,13 +92,13 @@ typedef struct
     BOOL enableVolumeMixer;
     /// A pointer to a 0 terminated array of band frequencies (iOS 5.0 and later, OSX 10.9 and later)
     Float32 equalizerBandFrequencies[24];
-	/// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
+    /// The size of the internal I/O read buffer. This data in this buffer is transient and does not need to be larger.
     UInt32 readBufferSize;
     /// The size of the decompressed buffer (Default is 10 seconds which uses about 1.7MB of RAM)
     Float32 bufferSizeInSeconds;
     /// Number of seconds of decompressed audio is required before playback first starts for each item (Default is 0.5 seconds. Must be larger than bufferSizeInSeconds)
     Float32 secondsRequiredToStartPlaying;
-	/// Seconds after a seek is performed before data needs to come in (after which the state will change to playing/buffering)
+    /// Seconds after a seek is performed before data needs to come in (after which the state will change to playing/buffering)
     Float32 gracePeriodAfterSeekInSeconds;
     /// Number of seconds of decompressed audio required before playback resumes after a buffer underrun (Default is 5 seconds. Must be larger than bufferSizeinSeconds)
     Float32 secondsRequiredToStartPlayingAfterBufferUnderun;
@@ -122,7 +122,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didStartPlayingQueueItemId:(NSObject*)queueItemId;
 /// Raised when an item has finished buffering (may or may not be the currently playing item)
 /// This event may be raised multiple times for the same item if seek is invoked on the player
--(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishBufferingSourceWithQueueItemId:(NSObject*)queueItemId;
+/// If recording stream to a file only fully proccesed source represents correctly written file without skips
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFinishBufferingSourceWithQueueItemId:(NSObject*)queueItemId fullyProcessed:(BOOL)fullyProcessed;
 /// Raised when the state of the player has changed
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer stateChanged:(STKAudioPlayerState)state previousState:(STKAudioPlayerState)previousState;
 /// Raised when an item has finished playing
@@ -134,7 +135,8 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer logInfo:(NSString*)line;
 /// Raised when items queued items are cleared (usually because of a call to play, setDataSource or stop)
 -(void) audioPlayer:(STKAudioPlayer*)audioPlayer didCancelQueuedItems:(NSArray*)queuedItems;
-
+/// Raised when stream recording fails
+-(void) audioPlayer:(STKAudioPlayer*)audioPlayer didFailToRecordQueueItemId:(NSObject*)queueItemId withStatus:(OSStatus)status;
 @end
 
 @interface STKAudioPlayer : NSObject<STKDataSourceDelegate>
@@ -226,6 +228,14 @@ typedef void(^STKFrameFilter)(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UIn
 /// Clears any upcoming items already queued for playback (does not stop the current item).
 /// The didCancelItems event will be raised for the items removed from the queue.
 -(void) clearQueue;
+
+-(void) clearQueueWithCompletion:(void (^_Nullable)())completionBlock;
+
+/// Dequeues the URL for playback and uses the NSURL as the queueItemID
+-(void) dequeueURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock;
+
+/// Dequeues all items the URL for playback and uses the NSURL as the queueItemID
+-(void) dequeueAllItemsExceptURL:(NSURL*)url withCompletion:(void (^_Nullable)(NSArray *resultQueue))completionBlock;
 
 /// Pauses playback
 -(void) pause;
