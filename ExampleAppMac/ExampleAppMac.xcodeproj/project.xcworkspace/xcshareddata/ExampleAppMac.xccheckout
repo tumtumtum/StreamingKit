@@ -10,29 +10,29 @@
 	<string>ExampleAppMac</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>DD310C30-B3D0-4BD7-9565-9F29F09CC4F8</key>
+		<key>3E9414865BAE5433092B9D136FFC1F054EA505C2</key>
 		<string>https://github.com/tumtumtum/StreamingKit.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>ExampleAppMac/ExampleAppMac.xcodeproj/project.xcworkspace</string>
+	<string>ExampleAppMac/ExampleAppMac.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>DD310C30-B3D0-4BD7-9565-9F29F09CC4F8</key>
+		<key>3E9414865BAE5433092B9D136FFC1F054EA505C2</key>
 		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/tumtumtum/StreamingKit.git</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>DD310C30-B3D0-4BD7-9565-9F29F09CC4F8</string>
+	<string>3E9414865BAE5433092B9D136FFC1F054EA505C2</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>DD310C30-B3D0-4BD7-9565-9F29F09CC4F8</string>
+			<string>3E9414865BAE5433092B9D136FFC1F054EA505C2</string>
 			<key>IDESourceControlWCCName</key>
 			<string>StreamingKit</string>
 		</dict>
