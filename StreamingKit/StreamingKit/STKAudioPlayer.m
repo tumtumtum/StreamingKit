@@ -3196,6 +3196,16 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	return peakPowerDb[channelNumber];
 }
 
+-(void) setPeakPowerInDecibelsForChannel:(NSUInteger)channelNumber andPower: (Float32)power
+{
+    if (channelNumber >= canonicalAudioStreamBasicDescription.mChannelsPerFrame)
+    {
+        return;
+    }
+    
+    peakPowerDb[channelNumber] = power;
+}
+
 -(float) averagePowerInDecibelsForChannel:(NSUInteger)channelNumber
 {
 	if (channelNumber >= canonicalAudioStreamBasicDescription.mChannelsPerFrame)
@@ -3204,6 +3214,16 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	}
 	
 	return averagePowerDb[channelNumber];
+}
+
+-(void) setAveragePowerInDecibelsForChannel:(NSUInteger)channelNumber andPower: (Float32)power
+{
+    if (channelNumber >= canonicalAudioStreamBasicDescription.mChannelsPerFrame)
+    {
+        return;
+    }
+    
+    averagePowerDb[channelNumber] = power;
 }
 
 -(BOOL) meteringEnabled
@@ -3243,6 +3263,8 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 	}
 	else
 	{
+		__weak STKAudioPlayer* weakSelf = self;
+        
 		[self appendFrameFilterWithName:@"STKMeteringFilter" block:^(UInt32 channelsPerFrame, UInt32 bytesPerFrame, UInt32 frameCount, void* frames)
 		{
 			SInt16* samples16 = (SInt16*)frames;
@@ -3285,17 +3307,17 @@ static OSStatus OutputRenderCallback(void* inRefCon, AudioUnitRenderActionFlags*
 				return;
 			}
 			
-			peakPowerDb[0] = MIN(MAX(decibelsLeft, -60), 0);
-			peakPowerDb[1] = MIN(MAX(decibelsRight, -60), 0);
+			[weakSelf setPeakPowerInDecibelsForChannel:0 andPower:MIN(MAX(decibelsLeft, -60), 0)];
+			[weakSelf setPeakPowerInDecibelsForChannel:1 andPower:MIN(MAX(decibelsRight, -60), 0)];
 			
 			if (countLeft > 0)
 			{
-				averagePowerDb[0] = MIN(MAX(totalValueLeft / frameCount, -60), 0);
+				[weakSelf setAveragePowerInDecibelsForChannel:0 andPower:MIN(MAX(totalValueLeft / frameCount, -60), 0)];
 			}
 			
 			if (countRight != 0)
 			{
-				averagePowerDb[1] = MIN(MAX(totalValueRight / frameCount, -60), 0);
+				[weakSelf setAveragePowerInDecibelsForChannel:1 andPower:MIN(MAX(totalValueRight / frameCount, -60), 0)];
 			}
 		}];
 	}
