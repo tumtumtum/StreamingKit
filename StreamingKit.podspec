@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.homepage     = "https://github.com/tumtumtum/StreamingKit/"
   s.license      = 'MIT'
   s.author       = { "Thong Nguyen" => "tumtumtum@gmail.com" }
-  s.source       = { :git => "https://github.com/tepmnthar/StreamingKit.git", :tag => s.version.to_s}
+  s.source       = { :git => "https://github.com/tumtumtum/StreamingKit.git", :tag => s.version.to_s}
   s.requires_arc = true
   s.source_files = 'StreamingKit/StreamingKit/*.{h,m}'
   s.ios.frameworks   = 'SystemConfiguration', 'CFNetwork', 'CoreFoundation', 'AudioToolbox'
