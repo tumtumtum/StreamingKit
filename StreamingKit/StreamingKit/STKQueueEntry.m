@@ -18,8 +18,8 @@
 {
     if (self = [super init])
     {
-        self->spinLock = OS_SPINLOCK_INIT;
-        
+        self->_spinLock = OS_UNFAIR_LOCK_INIT;
+        self->spinLock = &_spinLock;
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
         self->lastFrameQueued = -1;
@@ -31,11 +31,11 @@
 
 -(void) reset
 {
-    OSSpinLockLock(&self->spinLock);
+    os_unfair_lock_lock(spinLock);
     self->framesQueued = 0;
     self->framesPlayed = 0;
     self->lastFrameQueued = -1;
-    OSSpinLockUnlock(&self->spinLock);
+    os_unfair_lock_unlock(spinLock);
 }
 
 -(double) calculatedBitRate
@@ -43,17 +43,17 @@
     double retval;
     
     if (packetDuration > 0)
-	{
-		if (processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_PREFERRED || (audioStreamBasicDescription.mBytesPerFrame == 0 && processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MIN))
-		{
-			double averagePacketByteSize = (double)processedPacketsSizeTotal / (double)processedPacketsCount;
-			
-			retval = averagePacketByteSize / packetDuration * 8;
-			
-			return retval;
-		}
-	}
-	
+    {
+        if (processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_PREFERRED || (audioStreamBasicDescription.mBytesPerFrame == 0 && processedPacketsCount > STK_BIT_RATE_ESTIMATION_MIN_PACKETS_MIN))
+        {
+            double averagePacketByteSize = (double)processedPacketsSizeTotal / (double)processedPacketsCount;
+            
+            retval = averagePacketByteSize / packetDuration * 8;
+            
+            return retval;
+        }
+    }
+    
     retval = (audioStreamBasicDescription.mBytesPerFrame * audioStreamBasicDescription.mSampleRate) * 8;
     
     return retval;
@@ -109,9 +109,9 @@
 
 -(Float64) progressInFrames
 {
-    OSSpinLockLock(&self->spinLock);
+    os_unfair_lock_lock(spinLock);
     Float64 retval = (self->seekTime + self->audioStreamBasicDescription.mSampleRate) + self->framesPlayed;
-    OSSpinLockUnlock(&self->spinLock);
+    os_unfair_lock_unlock(spinLock);
     
     return retval;
 }
