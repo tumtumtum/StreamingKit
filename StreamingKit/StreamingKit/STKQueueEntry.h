@@ -9,13 +9,15 @@
 #import "STKDataSource.h"
 #import "libkern/OSAtomic.h"
 #import "AudioToolbox/AudioToolbox.h"
+#import <os/lock.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface STKQueueEntry : NSObject
 {
+    os_unfair_lock _spinLock;
 @public
-    OSSpinLock spinLock;
+    os_unfair_lock_t spinLock;
     
     BOOL parsedHeader;
     Float64 sampleRate;
@@ -28,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
     volatile SInt64 framesPlayed;
     volatile SInt64 lastFrameQueued;
     volatile int processedPacketsCount;
-	volatile int processedPacketsSizeTotal;
+    volatile int processedPacketsSizeTotal;
     AudioStreamBasicDescription audioStreamBasicDescription;
     double durationHint;
 }
