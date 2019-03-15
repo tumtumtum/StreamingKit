@@ -72,6 +72,7 @@
 
 -(instancetype) initWithURL:(NSURL*)urlIn
 {
+    currentUrl = urlIn;
     return [self initWithURLProvider:^NSURL* { return urlIn; }];
 }
 
