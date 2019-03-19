@@ -59,6 +59,7 @@
 -(void) playFromHTTP
 {
 	[audioPlayer play:@"http://www.abstractpath.com/files/audiosamples/sample.mp3"];
+    audioPlayer.rate = 2;
 }
 
 -(void) tick:(NSTimer*)timer
