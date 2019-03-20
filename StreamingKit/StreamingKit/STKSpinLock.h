@@ -40,6 +40,7 @@ static void setLock(os_unfair_lock *lock)
         }
     }
 
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     OSSpinLockLock((void *)lock);
 #endif
 }
@@ -59,6 +60,7 @@ static void lockUnlock(os_unfair_lock *lock)
         }
     }
 
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     OSSpinLockUnlock((void *)lock);
 #endif
 }
