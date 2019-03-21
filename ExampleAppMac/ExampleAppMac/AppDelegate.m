@@ -14,6 +14,7 @@
 	NSView* meter;
 	NSSlider* slider;
 	STKAudioPlayer* audioPlayer;
+    NSTextField* textField;
 }
 @end
 
@@ -21,26 +22,67 @@
 
 -(void) applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-	CGRect frame = [self.window.contentView frame];
-	
-	NSButton* playFromHTTPButton = [[NSButton alloc] initWithFrame:CGRectMake(10, 10, frame.size.width - 20, 100)];
-	
+	NSButton* playFromHTTPButton = [[NSButton alloc] init];
 	[playFromHTTPButton setTitle:@"Play from HTTP"];
 	[playFromHTTPButton setAction:@selector(playFromHTTP)];
+
+    NSButton* stopButton = [[NSButton alloc] init];
+    [stopButton setTitle:@"Stop"];
+    [stopButton setAction:@selector(stopPlaying)];
+
+    NSStackView *buttonStackView = [[NSStackView alloc] initWithFrame:self.window.contentView.frame];
+    [buttonStackView setDistribution:NSStackViewDistributionFillEqually];
+    [buttonStackView setSpacing:8];
+    [buttonStackView setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+
+    [buttonStackView addArrangedSubview:playFromHTTPButton];
+    [buttonStackView addArrangedSubview:stopButton];
 	
-	slider = [[NSSlider alloc] initWithFrame:CGRectMake(10, 140, frame.size.width - 20, 20)];
+	slider = [[NSSlider alloc] init];
+    [slider setTranslatesAutoresizingMaskIntoConstraints:false];
 	[slider setAction:@selector(sliderChanged:)];
 	
-	meter = [[NSView alloc] initWithFrame:CGRectMake(10, 200, 0, 20)];
+	meter = [[NSView alloc] init];
+    [meter setTranslatesAutoresizingMaskIntoConstraints:false];
 	[meter setLayer:[CALayer new]];
 	[meter setWantsLayer:YES];
 	meter.layer.backgroundColor = [NSColor greenColor].CGColor;
-	
-	[[self.window contentView] addSubview:slider];
-	[[self.window contentView] addSubview:playFromHTTPButton];
-	[[self.window contentView] addSubview:meter];
-	
-	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions){ .enableVolumeMixer = NO, .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000} } ];
+
+    NSView *meterWrapper = [[NSView alloc] init];
+    [meterWrapper setTranslatesAutoresizingMaskIntoConstraints:false];
+    [meterWrapper addSubview:meter];
+
+    textField = [[NSTextField alloc] init];
+    [textField setTranslatesAutoresizingMaskIntoConstraints:false];
+    textField.stringValue = @"http://www.abstractpath.com/files/audiosamples/sample.mp3";
+
+    NSStackView *stackView = [[NSStackView alloc] initWithFrame:self.window.contentView.frame];
+    [stackView setTranslatesAutoresizingMaskIntoConstraints:false];
+    [stackView setDistribution:NSStackViewDistributionEqualSpacing];
+    [stackView setSpacing:8];
+    [stackView setOrientation:NSUserInterfaceLayoutOrientationVertical];
+
+    [stackView addArrangedSubview:textField];
+    [stackView addArrangedSubview:meterWrapper];
+    [stackView addArrangedSubview:slider];
+    [stackView addArrangedSubview:buttonStackView];
+
+    [[self.window contentView] addSubview:stackView];
+
+    [stackView.topAnchor constraintEqualToAnchor:self.window.contentView.topAnchor constant:16].active = true;
+    [stackView.bottomAnchor constraintEqualToAnchor:self.window.contentView.bottomAnchor constant:-16].active = true;
+    [stackView.rightAnchor constraintEqualToAnchor:self.window.contentView.rightAnchor constant:-16].active = true;
+    [stackView.leftAnchor constraintEqualToAnchor:self.window.contentView.leftAnchor constant:16].active = true;
+
+    [meter.topAnchor constraintEqualToAnchor:meterWrapper.topAnchor].active = true;
+    [meter.bottomAnchor constraintEqualToAnchor:meterWrapper.bottomAnchor].active = true;
+    [meter.leadingAnchor constraintEqualToAnchor:meterWrapper.leadingAnchor].active = true;
+
+	audioPlayer = [[STKAudioPlayer alloc] initWithOptions:(STKAudioPlayerOptions)
+    {
+        .enableVolumeMixer = NO,
+        .equalizerBandFrequencies = {50, 100, 200, 400, 800, 1600, 2600, 16000}
+    }];
 	audioPlayer.delegate = self;
 	audioPlayer.meteringEnabled = YES;
 	audioPlayer.volume = 0.1;
@@ -58,8 +100,13 @@
 
 -(void) playFromHTTP
 {
-	[audioPlayer play:@"http://www.abstractpath.com/files/audiosamples/sample.mp3"];
+	[audioPlayer play:textField.stringValue];
     audioPlayer.rate = 2;
+}
+
+- (void) stopPlaying
+{
+    [audioPlayer stop];
 }
 
 -(void) tick:(NSTimer*)timer
