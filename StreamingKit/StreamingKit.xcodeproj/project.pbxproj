@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		40B6239322423B1E005D725D /* STKMacro.h in Headers */ = {isa = PBXBuildFile; fileRef = 40B6239222423B1E005D725D /* STKMacro.h */; };
+		40B6239422423B1F005D725D /* STKMacro.h in Headers */ = {isa = PBXBuildFile; fileRef = 40B6239222423B1E005D725D /* STKMacro.h */; };
+		40B6239822423F28005D725D /* STKSpinLock.h in Headers */ = {isa = PBXBuildFile; fileRef = 40B6239722423F28005D725D /* STKSpinLock.h */; };
+		40B6239922423F28005D725D /* STKSpinLock.h in Headers */ = {isa = PBXBuildFile; fileRef = 40B6239722423F28005D725D /* STKSpinLock.h */; };
 		5B949CD21A1140E4005675A0 /* STKAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F1188D5E550010896F /* STKAudioPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5B949CD31A1140E4005675A0 /* STKAutoRecoveringHTTPDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */ = {isa = PBXBuildFile; fileRef = A1E7C4F5188D5E550010896F /* STKCoreFoundationDataSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -91,6 +95,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		40B6239222423B1E005D725D /* STKMacro.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = STKMacro.h; sourceTree = "<group>"; };
+		40B6239722423F28005D725D /* STKSpinLock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = STKSpinLock.h; sourceTree = "<group>"; };
 		A1A49969189E744400E2A2E2 /* libStreamingKitMac.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStreamingKitMac.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A4996A189E744400E2A2E2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		A1A4996D189E744500E2A2E2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -270,6 +276,8 @@
 		A1E7C4CD188D57F50010896F /* StreamingKit */ = {
 			isa = PBXGroup;
 			children = (
+				A1BF65D3189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.h */,
+				A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */,
 				A1E7C4F1188D5E550010896F /* STKAudioPlayer.h */,
 				A1E7C4F2188D5E550010896F /* STKAudioPlayer.m */,
 				A1E7C4F3188D5E550010896F /* STKAutoRecoveringHTTPDataSource.h */,
@@ -284,10 +292,10 @@
 				A1E7C4FC188D5E550010896F /* STKHTTPDataSource.m */,
 				A1E7C4FD188D5E550010896F /* STKLocalFileDataSource.h */,
 				A1E7C4FE188D5E550010896F /* STKLocalFileDataSource.m */,
+				40B6239222423B1E005D725D /* STKMacro.h */,
 				A1BF65D0189A6582004DD08C /* STKQueueEntry.h */,
 				A1BF65D1189A6582004DD08C /* STKQueueEntry.m */,
-				A1BF65D3189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.h */,
-				A1BF65D4189A65C6004DD08C /* NSMutableArray+STKAudioPlayer.m */,
+				40B6239722423F28005D725D /* STKSpinLock.h */,
 				A1E7C4CE188D57F50010896F /* Supporting Files */,
 			);
 			path = StreamingKit;
@@ -326,9 +334,11 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40B6239822423F28005D725D /* STKSpinLock.h in Headers */,
 				5B949CD21A1140E4005675A0 /* STKAudioPlayer.h in Headers */,
 				5B949CD31A1140E4005675A0 /* STKAutoRecoveringHTTPDataSource.h in Headers */,
 				5B949CD41A1140E4005675A0 /* STKCoreFoundationDataSource.h in Headers */,
+				40B6239322423B1E005D725D /* STKMacro.h in Headers */,
 				5B949CD51A1140E4005675A0 /* STKDataSource.h in Headers */,
 				5B949CD61A1140E4005675A0 /* STKDataSourceWrapper.h in Headers */,
 				5B949CD71A1140E4005675A0 /* STKHTTPDataSource.h in Headers */,
@@ -341,6 +351,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40B6239922423F28005D725D /* STKSpinLock.h in Headers */,
+				40B6239422423B1F005D725D /* STKMacro.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
