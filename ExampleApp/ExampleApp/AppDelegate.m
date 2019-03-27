@@ -24,12 +24,11 @@
 -(BOOL) application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     NSError* error;
+    Float32 bufferLength = 0.1;
     
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
+    [[AVAudioSession sharedInstance] setPreferredIOBufferDuration:bufferLength error:&error];
 	[[AVAudioSession sharedInstance] setActive:YES error:&error];
-    
-    Float32 bufferLength = 0.1;
-    AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(bufferLength), &bufferLength);
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     self.window.rootViewController = [[UIViewController alloc] init];

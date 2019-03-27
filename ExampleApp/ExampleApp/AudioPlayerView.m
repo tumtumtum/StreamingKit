@@ -388,7 +388,9 @@
 
 - (void)audioPlayer:(STKAudioPlayer *)audioPlayer didReadStreamMetadata:(NSDictionary *)dictionary
 {
-    metadataLabel.text = dictionary[@"StreamTitle"];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self->metadataLabel.text = dictionary[@"StreamTitle"];
+    });
 }
 
 @end

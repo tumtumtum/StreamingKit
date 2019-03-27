@@ -18,7 +18,7 @@
 {
     if (self = [super init])
     {
-        self->spinLock = &(OS_UNFAIR_LOCK_INIT);
+        self->spinLock = OS_UNFAIR_LOCK_INIT;
         
         self.dataSource = dataSourceIn;
         self.queueItemId = queueItemIdIn;
@@ -31,11 +31,11 @@
 
 -(void) reset
 {
-    setLock(self->spinLock);
+    setLock(&self->spinLock);
     self->framesQueued = 0;
     self->framesPlayed = 0;
     self->lastFrameQueued = -1;
-    lockUnlock(self->spinLock);
+    lockUnlock(&self->spinLock);
 }
 
 -(double) calculatedBitRate
@@ -109,9 +109,9 @@
 
 -(Float64) progressInFrames
 {
-    setLock(self->spinLock);
+    setLock(&self->spinLock);
     Float64 retval = (self->seekTime + self->audioStreamBasicDescription.mSampleRate) + self->framesPlayed;
-    lockUnlock(self->spinLock);
+    lockUnlock(&self->spinLock);
     
     return retval;
 }

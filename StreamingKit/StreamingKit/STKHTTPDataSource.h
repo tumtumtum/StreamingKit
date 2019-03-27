@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class STKHTTPDataSource;
 
 typedef void(^STKURLBlock)(NSURL* url);
-typedef NSURL* _Nonnull (^STKURLProvider)();
+typedef NSURL* _Nonnull (^STKURLProvider)(void);
 typedef void(^STKAsyncURLProvider)(STKHTTPDataSource* dataSource, BOOL forSeek, STKURLBlock callback);
 
 @interface STKHTTPDataSource : STKCoreFoundationDataSource

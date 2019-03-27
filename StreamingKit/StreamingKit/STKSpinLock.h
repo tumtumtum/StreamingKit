@@ -23,6 +23,8 @@ typedef struct _os_unfair_lock_s {
 
 #if !DEPLOYMENT_TARGET_HIGHER_THAN_10
 #import <libkern/OSAtomic.h>
+static void (*os_unfair_lock_lock_ptr)(void *lock) = NULL;
+static void (*os_unfair_lock_unlock_ptr)(void *lock) = NULL;
 #endif
 
 static void setLock(os_unfair_lock *lock)
@@ -32,10 +34,14 @@ static void setLock(os_unfair_lock *lock)
 #else
     if (DEVICE_HIGHER_THAN_10)
     {
-        void (*os_unfair_lock_lock)(void *lock) = dlsym(dlopen(NULL, RTLD_NOW | RTLD_GLOBAL), "os_unfair_lock_lock");
-        if (os_unfair_lock_lock != NULL)
+        if (os_unfair_lock_lock_ptr == NULL)
         {
-            os_unfair_lock_lock(lock);
+            os_unfair_lock_lock_ptr = dlsym(dlopen(NULL, RTLD_NOW | RTLD_GLOBAL), "os_unfair_lock_lock");
+        }
+        
+        if (os_unfair_lock_lock_ptr != NULL)
+        {
+            os_unfair_lock_lock_ptr(lock);
             return;
         }
     }
@@ -52,11 +58,15 @@ static void lockUnlock(os_unfair_lock *lock)
 #else
     if (DEVICE_HIGHER_THAN_10)
     {
-        void (*os_unfair_lock_unlock)(void *lock) = dlsym(dlopen(NULL, RTLD_NOW | RTLD_GLOBAL), "os_unfair_lock_unlock");
-        if (os_unfair_lock_unlock != NULL)
+        if (os_unfair_lock_unlock_ptr == NULL)
         {
-            os_unfair_lock_unlock(lock);
-            return;
+            os_unfair_lock_unlock_ptr = dlsym(dlopen(NULL, RTLD_NOW | RTLD_GLOBAL), "os_unfair_lock_unlock");
+        }
+        
+        if (os_unfair_lock_unlock_ptr != NULL)
+        {
+            os_unfair_lock_unlock_ptr(lock);
+            return;         
         }
     }
 
