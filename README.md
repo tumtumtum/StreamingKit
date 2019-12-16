@@ -63,4 +63,4 @@ STKAudioPlayer* audioPlayer = [[STKAudioPlayer alloc] init];
 More documentation is available on the project [Wiki](https://github.com/tumtumtum/StreamingKit/wiki/_pages)
 
 ### Authors and Contributors
-Copyright (c) 2012-2014, Thong Nguyen ([@tumtumtum](http://www.twitter.com/tumtumtum))
+Copyright (c) 2012-2019, Thong Nguyen ([@tumtumtum](http://www.twitter.com/tumtumtum))
