@@ -7,7 +7,7 @@
 //
 
 #import "STKDataSource.h"
-#import "libkern/OSAtomic.h"
+#import "STKSpinLock.h"
 #import "AudioToolbox/AudioToolbox.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface STKQueueEntry : NSObject
 {
 @public
-    OSSpinLock spinLock;
+    os_unfair_lock spinLock;
     
     BOOL parsedHeader;
     Float64 sampleRate;
