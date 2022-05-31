@@ -319,10 +319,11 @@
     }
     
     // check ICY headers
-    if ([httpHeaders objectForKey:@"Icy-metaint"] != nil)
+    NSString* icyHeaders = [httpHeaders objectForKey:@"Icy-Metaint"] ?: [httpHeaders objectForKey:@"icy-metaint"];
+    if (icyHeaders != nil)
     {
         _metadataBytesRead  = 0;
-        _metadataStep       = [[httpHeaders objectForKey:@"Icy-metaint"] intValue];
+        _metadataStep       = [icyHeaders intValue];
         _metadataOffset     = _metadataStep;
     }
 
